@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Eye, EyeOff, AlertTriangle, Plus, Pencil, Trash2, Copy } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, EyeOff, AlertTriangle, Plus, Pencil, Trash2, Copy, Users } from "lucide-react";
+import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -60,6 +61,7 @@ export default function Roster() {
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [editingShift, setEditingShift] = useState<string | null>(null);
   const [form, setForm] = useState<ShiftFormData>(defaultForm());
 
@@ -247,6 +249,10 @@ export default function Roster() {
             <Copy className="mr-1 h-4 w-4" />
             Copy Week
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
+            <Users className="mr-1 h-4 w-4" />
+            Bulk Assign
+          </Button>
           <Button size="sm" onClick={() => openCreate()}>
             <Plus className="mr-1 h-4 w-4" />
             Add Shift
@@ -368,6 +374,8 @@ export default function Roster() {
           </table>
         </CardContent>
       </Card>
+
+      <BulkAssignDialog open={bulkOpen} onOpenChange={setBulkOpen} staff={staff} blockedDates={blockedDates} />
 
       {/* Shift create/edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

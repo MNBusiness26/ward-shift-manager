@@ -6,6 +6,7 @@ import {
   BarChart3,
   Users,
   ClipboardList,
+  CalendarDays,
   Settings,
   LogOut,
   ChevronLeft,
@@ -37,6 +38,7 @@ const nurseItems = [
 
 const managerItems = [
   { title: "Master Roster", url: "/roster", icon: ClipboardList },
+  { title: "Mgmt Calendar", url: "/management-calendar", icon: CalendarDays },
   { title: "Requests", url: "/requests", icon: Settings },
   { title: "Staff", url: "/staff", icon: Users },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
