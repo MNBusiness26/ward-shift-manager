@@ -5,13 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   format,
@@ -22,9 +29,11 @@ import {
   isSameDay,
   addMonths,
   subMonths,
+  isWithinInterval,
+  parseISO,
 } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, CalendarOff, Palmtree } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -32,12 +41,19 @@ const statusColors: Record<string, string> = {
   declined: "bg-red-100 text-red-800 border-red-200",
 };
 
+const typeIcons: Record<string, React.ReactNode> = {
+  block: <CalendarOff className="h-3 w-3" />,
+  vacation: <Palmtree className="h-3 w-3" />,
+};
+
 export default function Availability() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<string>("");
   const [reason, setReason] = useState("");
+  const [requestType, setRequestType] = useState<"block" | "vacation">("block");
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const monthStart = startOfMonth(currentMonth);
@@ -50,7 +66,7 @@ export default function Availability() {
         .from("availability_requests")
         .select("*")
         .eq("user_id", user!.id)
-        .gte("date", format(monthStart, "yyyy-MM-dd"))
+        .or(`date.gte.${format(monthStart, "yyyy-MM-dd")},end_date.gte.${format(monthStart, "yyyy-MM-dd")}`)
         .lte("date", format(monthEnd, "yyyy-MM-dd"))
         .order("date");
       if (error) throw error;
@@ -62,19 +78,21 @@ export default function Availability() {
   const createRequest = useMutation({
     mutationFn: async () => {
       if (!selectedDate || !user) return;
+      const startStr = format(selectedDate, "yyyy-MM-dd");
+      const endStr = endDate || startStr;
       const { error } = await supabase.from("availability_requests").insert({
         user_id: user.id,
-        date: format(selectedDate, "yyyy-MM-dd"),
+        date: startStr,
+        end_date: endStr,
         reason: reason || null,
-      });
+        request_type: requestType,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["availability-requests"] });
-      toast.success("Availability block submitted");
-      setDialogOpen(false);
-      setReason("");
-      setSelectedDate(null);
+      toast.success("Request submitted");
+      closeDialog();
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -91,10 +109,37 @@ export default function Availability() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setReason("");
+    setEndDate("");
+    setRequestType("block");
+    setSelectedDate(null);
+  };
+
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const startPad = getDay(monthStart);
+
   const getRequestsForDay = (day: Date) =>
-    requests.filter((r) => isSameDay(new Date(r.date), day));
+    requests.filter((r) => {
+      const start = parseISO(r.date);
+      const end = (r as any).end_date ? parseISO((r as any).end_date) : start;
+      return isSameDay(day, start) || isSameDay(day, end) || isWithinInterval(day, { start, end });
+    });
+
+  const getDayCellStyle = (dayReqs: any[]) => {
+    if (dayReqs.length === 0) return "hover:bg-accent/50";
+    const req = dayReqs[0];
+    const type = (req as any).request_type || "block";
+    if (type === "vacation") {
+      return req.status === "approved"
+        ? "bg-blue-100 border-blue-300"
+        : "bg-blue-50 border-blue-200";
+    }
+    return req.status === "approved"
+      ? "bg-destructive/10 border-destructive/30"
+      : "bg-yellow-50 border-yellow-200";
+  };
 
   return (
     <div className="space-y-6">
@@ -134,19 +179,16 @@ export default function Availability() {
                       setDialogOpen(true);
                     }
                   }}
-                  className={`h-16 md:h-20 rounded-md border p-1 text-xs cursor-pointer transition-colors ${
-                    hasBlock
-                      ? dayReqs[0].status === "approved"
-                        ? "bg-destructive/10 border-destructive/30"
-                        : "bg-yellow-50 border-yellow-200"
-                      : "hover:bg-accent/50"
-                  }`}
+                  className={`h-16 md:h-20 rounded-md border p-1 text-xs cursor-pointer transition-colors ${getDayCellStyle(dayReqs)}`}
                 >
                   <span className="text-muted-foreground">{format(day, "d")}</span>
                   {dayReqs.map((r) => (
-                    <Badge key={r.id} variant="outline" className={`mt-1 text-[10px] ${statusColors[r.status]}`}>
-                      {r.status}
-                    </Badge>
+                    <div key={r.id} className="flex items-center gap-0.5 mt-1">
+                      {typeIcons[(r as any).request_type || "block"]}
+                      <Badge variant="outline" className={`text-[10px] ${statusColors[r.status]}`}>
+                        {r.status}
+                      </Badge>
+                    </div>
                   ))}
                 </div>
               );
@@ -155,60 +197,106 @@ export default function Availability() {
         </CardContent>
       </Card>
 
-      {/* Pending requests list */}
+      {/* Requests list */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Your Requests</CardTitle>
         </CardHeader>
         <CardContent>
           {requests.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No availability blocks this month.</p>
+            <p className="text-sm text-muted-foreground">No availability requests this month.</p>
           ) : (
             <div className="space-y-2">
-              {requests.map((r) => (
-                <div key={r.id} className="flex items-center justify-between rounded-lg border p-3">
-                  <div>
-                    <p className="text-sm font-medium">{format(new Date(r.date), "EEE, MMM d")}</p>
-                    {r.reason && <p className="text-xs text-muted-foreground">{r.reason}</p>}
+              {requests.map((r) => {
+                const rType = (r as any).request_type || "block";
+                const rEnd = (r as any).end_date;
+                const isRange = rEnd && rEnd !== r.date;
+                return (
+                  <div key={r.id} className="flex items-center justify-between rounded-lg border p-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">
+                          {format(new Date(r.date), "EEE, MMM d")}
+                          {isRange && ` → ${format(new Date(rEnd), "EEE, MMM d")}`}
+                        </p>
+                        <Badge variant="outline" className="text-[10px] capitalize">
+                          {typeIcons[rType]}
+                          <span className="ml-1">{rType}</span>
+                        </Badge>
+                      </div>
+                      {r.reason && <p className="text-xs text-muted-foreground">{r.reason}</p>}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={statusColors[r.status]}>{r.status}</Badge>
+                      {r.status === "pending" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => deleteRequest.mutate(r.id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={statusColors[r.status]}>{r.status}</Badge>
-                    {r.status === "pending" && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => deleteRequest.mutate(r.id)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Block date dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* New request dialog */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Block Date</DialogTitle>
+            <DialogTitle>New Availability Request</DialogTitle>
           </DialogHeader>
           {selectedDate && (
             <div className="space-y-4">
-              <p className="text-sm">
-                Block <strong>{format(selectedDate, "EEEE, MMMM d, yyyy")}</strong> from scheduling?
-              </p>
-              <Input
-                placeholder="Reason (optional)"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-              />
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select value={requestType} onValueChange={(v: any) => setRequestType(v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="block">
+                      <span className="flex items-center gap-2"><CalendarOff className="h-3 w-3" /> Block Dates</span>
+                    </SelectItem>
+                    <SelectItem value="vacation">
+                      <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> Vacation</span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Input type="date" value={format(selectedDate, "yyyy-MM-dd")} readOnly className="bg-muted" />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <Input
+                    type="date"
+                    value={endDate || format(selectedDate, "yyyy-MM-dd")}
+                    min={format(selectedDate, "yyyy-MM-dd")}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Reason (optional)</Label>
+                <Input
+                  placeholder="Reason for request"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                />
+              </div>
+
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button variant="outline" onClick={closeDialog}>Cancel</Button>
                 <Button onClick={() => createRequest.mutate()} disabled={createRequest.isPending}>
                   Submit Request
                 </Button>
