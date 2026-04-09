@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Users, Star, X, Trash2 } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
@@ -76,14 +76,21 @@ export default function ManagementCalendar() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkDate, setBulkDate] = useState<string | undefined>();
+  const [bulkType, setBulkType] = useState<ShiftType | undefined>();
   const [form, setForm] = useState<ShiftFormData>(defaultForm());
+
+  // Shift detail panel state
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailDate, setDetailDate] = useState("");
+  const [detailType, setDetailType] = useState<ShiftType>("morning");
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["mgmt-calendar-shifts", format(weekStart, "yyyy-MM-dd")],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
-        .select("*, profiles:assigned_user_id(full_name)")
+        .select("*, profiles:shifts_assigned_user_id_fkey(full_name)")
         .gte("date", format(weekStart, "yyyy-MM-dd"))
         .lte("date", format(weekEnd, "yyyy-MM-dd"))
         .order("date")
@@ -132,6 +139,11 @@ export default function ManagementCalendar() {
     },
   });
 
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ["mgmt-calendar-shifts"] });
+    queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
+  };
+
   const saveShift = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -149,10 +161,36 @@ export default function ManagementCalendar() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mgmt-calendar-shifts"] });
-      queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
+      invalidateAll();
       setDialogOpen(false);
       toast.success("Shift created");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggleResponsible = useMutation({
+    mutationFn: async ({ shiftId, value }: { shiftId: string; value: boolean }) => {
+      const { error } = await supabase
+        .from("shifts")
+        .update({ is_responsible_on_shift: value })
+        .eq("id", shiftId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateAll();
+      toast.success("Updated responsible status");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const removeShift = useMutation({
+    mutationFn: async (shiftId: string) => {
+      const { error } = await supabase.from("shifts").delete().eq("id", shiftId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateAll();
+      toast.success("Staff removed from shift");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -172,15 +210,35 @@ export default function ManagementCalendar() {
     return fullName.split(" ")[0];
   };
 
+  const handleCellClick = (dateStr: string, type: ShiftType) => {
+    const dayShifts = shifts.filter(
+      (s) => s.date === dateStr && s.type === type && s.assigned_user_id
+    );
+    if (dayShifts.length === 0) {
+      // Empty → open bulk assign pre-filled
+      setBulkDate(dateStr);
+      setBulkType(type);
+      setBulkOpen(true);
+    } else {
+      // Populated → open detail panel
+      setDetailDate(dateStr);
+      setDetailType(type);
+      setDetailOpen(true);
+    }
+  };
+
+  const detailShifts = shifts.filter(
+    (s) => s.date === detailDate && s.type === detailType && s.assigned_user_id
+  );
+
   const managerStaff = staff.filter((s) => managers.includes(s.id));
-  const nonManagerStaff = staff.filter((s) => !managers.includes(s.id));
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Management Calendar</h1>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setBulkOpen(true)}>
+          <Button variant="outline" onClick={() => { setBulkDate(undefined); setBulkType(undefined); setBulkOpen(true); }}>
             <Users className="h-4 w-4 mr-2" />
             Bulk Assign
           </Button>
@@ -233,7 +291,7 @@ export default function ManagementCalendar() {
                       <td
                         key={d.toISOString()}
                         className={`p-2 border-l align-top ${shiftColors[type]} cursor-pointer hover:opacity-80`}
-                        onClick={() => openAddShift(dateStr, type)}
+                        onClick={() => handleCellClick(dateStr, type)}
                       >
                         {dayShifts.length === 0 ? (
                           <span className="text-xs text-muted-foreground italic">—</span>
@@ -246,12 +304,8 @@ export default function ManagementCalendar() {
                                 className={`text-xs ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${s.is_draft ? "opacity-60 border-dashed" : ""}`}
                               >
                                 {getFirstName(s)}
-                                {s.is_responsible_on_shift && (
-                                  <span className="ml-0.5 text-[9px]">★</span>
-                                )}
-                                {s.is_draft && (
-                                  <span className="ml-0.5 text-[9px]">D</span>
-                                )}
+                                {s.is_responsible_on_shift && <span className="ml-0.5 text-[9px]">★</span>}
+                                {s.is_draft && <span className="ml-0.5 text-[9px]">D</span>}
                               </Badge>
                             ))}
                           </div>
@@ -280,6 +334,75 @@ export default function ManagementCalendar() {
           <span>Draft</span>
         </div>
       </div>
+
+      {/* Shift Detail Panel */}
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className={shiftTextColors[detailType]}>{shiftLabels[detailType]}</span>
+              <span className="text-muted-foreground font-normal text-sm">
+                {detailDate && format(new Date(detailDate + "T00:00"), "EEE, MMM d")}
+              </span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {detailShifts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No staff assigned.</p>
+            ) : (
+              detailShifts.map((s) => (
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between rounded-md border px-3 py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{(s as any).profiles?.full_name || "Unknown"}</span>
+                    {s.is_responsible_on_shift && (
+                      <Badge variant="default" className="text-[10px] px-1 py-0">★ Responsible</Badge>
+                    )}
+                    {s.is_draft && (
+                      <Badge variant="outline" className="text-[10px] px-1 py-0 opacity-60">Draft</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      title={s.is_responsible_on_shift ? "Remove responsible" : "Set as responsible"}
+                      onClick={() => toggleResponsible.mutate({ shiftId: s.id, value: !s.is_responsible_on_shift })}
+                    >
+                      <Star className={`h-4 w-4 ${s.is_responsible_on_shift ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      title="Remove from shift"
+                      onClick={() => removeShift.mutate(s.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <Button
+            variant="outline"
+            className="w-full mt-2"
+            onClick={() => {
+              setDetailOpen(false);
+              setBulkDate(detailDate);
+              setBulkType(detailType);
+              setBulkOpen(true);
+            }}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Add More Staff
+          </Button>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Shift Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -371,6 +494,8 @@ export default function ManagementCalendar() {
         onOpenChange={setBulkOpen}
         staff={staff}
         blockedDates={blockedDates}
+        initialDate={bulkDate}
+        initialType={bulkType}
       />
     </div>
   );

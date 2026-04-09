@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -33,16 +33,30 @@ interface BulkAssignDialogProps {
   onOpenChange: (open: boolean) => void;
   staff: StaffMember[];
   blockedDates: { user_id: string; date: string }[];
+  initialDate?: string;
+  initialType?: ShiftType;
 }
 
-export function BulkAssignDialog({ open, onOpenChange, staff, blockedDates }: BulkAssignDialogProps) {
+export function BulkAssignDialog({ open, onOpenChange, staff, blockedDates, initialDate, initialType }: BulkAssignDialogProps) {
   const queryClient = useQueryClient();
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
-  const [date, setDate] = useState("");
-  const [type, setType] = useState<ShiftType>("morning");
-  const [startTime, setStartTime] = useState("07:00");
-  const [endTime, setEndTime] = useState("15:00");
+  const [date, setDate] = useState(initialDate || "");
+  const [type, setType] = useState<ShiftType>(initialType || "morning");
+  const [startTime, setStartTime] = useState(shiftTimes[initialType || "morning"].start);
+  const [endTime, setEndTime] = useState(shiftTimes[initialType || "morning"].end);
   const [isDraft, setIsDraft] = useState(true);
+
+  useEffect(() => {
+    if (open) {
+      if (initialDate) setDate(initialDate);
+      if (initialType) {
+        setType(initialType);
+        setStartTime(shiftTimes[initialType].start);
+        setEndTime(shiftTimes[initialType].end);
+      }
+      setSelectedStaff([]);
+    }
+  }, [open, initialDate, initialType]);
 
   const isBlocked = (userId: string) =>
     blockedDates.some((b) => b.user_id === userId && b.date === date);
