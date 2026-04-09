@@ -356,7 +356,7 @@ export default function ManagementCalendar() {
                   className="flex items-center justify-between rounded-md border px-3 py-2"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{s.profiles?.full_name || "Unknown"}</span>
+                    <span className="text-sm font-medium">{(s as any).profiles?.full_name || "Unknown"}</span>
                     {s.is_responsible_on_shift && (
                       <Badge variant="default" className="text-[10px] px-1 py-0">★ Responsible</Badge>
                     )}
