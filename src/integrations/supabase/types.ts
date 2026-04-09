@@ -56,27 +56,36 @@ export type Database = {
         Row: {
           constraints: Json
           created_at: string
+          email: string | null
           full_name: string
           id: string
           is_active: boolean
+          is_responsible: boolean | null
+          role: string | null
           target_fte_percent: number
           updated_at: string
         }
         Insert: {
           constraints?: Json
           created_at?: string
+          email?: string | null
           full_name?: string
           id: string
           is_active?: boolean
+          is_responsible?: boolean | null
+          role?: string | null
           target_fte_percent?: number
           updated_at?: string
         }
         Update: {
           constraints?: Json
           created_at?: string
+          email?: string | null
           full_name?: string
           id?: string
           is_active?: boolean
+          is_responsible?: boolean | null
+          role?: string | null
           target_fte_percent?: number
           updated_at?: string
         }
