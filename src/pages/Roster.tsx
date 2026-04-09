@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval } from "date-fns";
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, eachDayOfInterval } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Eye, EyeOff, AlertTriangle, Plus, Pencil, Trash2, Copy, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Pencil, Trash2, Copy, Users, Star } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
@@ -56,9 +56,9 @@ const defaultForm = (date?: string): ShiftFormData => ({
 
 export default function Roster() {
   const queryClient = useQueryClient();
-  const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
-  const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
-  const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const [viewStart, setViewStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
+  const viewEnd = addDays(viewStart, 6);
+  const days = eachDayOfInterval({ start: viewStart, end: viewEnd });
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -66,13 +66,13 @@ export default function Roster() {
   const [form, setForm] = useState<ShiftFormData>(defaultForm());
 
   const { data: shifts = [] } = useQuery({
-    queryKey: ["roster-shifts", format(weekStart, "yyyy-MM-dd")],
+    queryKey: ["roster-shifts", format(viewStart, "yyyy-MM-dd")],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
         .select("*, profiles:assigned_user_id(full_name)")
-        .gte("date", format(weekStart, "yyyy-MM-dd"))
-        .lte("date", format(weekEnd, "yyyy-MM-dd"))
+        .gte("date", format(viewStart, "yyyy-MM-dd"))
+        .lte("date", format(viewEnd, "yyyy-MM-dd"))
         .order("date")
         .order("start_time");
       if (error) throw error;
@@ -85,7 +85,7 @@ export default function Roster() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, is_active")
+        .select("id, full_name, is_active, is_responsible")
         .eq("is_active", true)
         .order("full_name");
       if (error) throw error;
@@ -106,14 +106,14 @@ export default function Roster() {
   });
 
   const { data: blockedDates = [] } = useQuery({
-    queryKey: ["approved-blocks", format(weekStart, "yyyy-MM-dd")],
+    queryKey: ["approved-blocks", format(viewStart, "yyyy-MM-dd")],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("availability_requests")
         .select("user_id, date")
         .eq("status", "approved")
-        .gte("date", format(weekStart, "yyyy-MM-dd"))
-        .lte("date", format(weekEnd, "yyyy-MM-dd"));
+        .gte("date", format(viewStart, "yyyy-MM-dd"))
+        .lte("date", format(viewEnd, "yyyy-MM-dd"));
       if (error) throw error;
       return data;
     },
@@ -178,7 +178,7 @@ export default function Roster() {
 
   const copyWeek = useMutation({
     mutationFn: async () => {
-      const nextWeekStart = addWeeks(weekStart, 1);
+      const nextWeekStart = addWeeks(viewStart, 1);
       const inserts = shifts.map((s) => {
         const dayOffset = days.findIndex((d) => format(d, "yyyy-MM-dd") === s.date);
         const newDate = format(addWeeks(new Date(s.date), 1), "yyyy-MM-dd");
@@ -197,7 +197,7 @@ export default function Roster() {
       if (inserts.length === 0) return;
       const { error } = await supabase.from("shifts").insert(inserts);
       if (error) throw error;
-      setWeekStart(nextWeekStart);
+      setViewStart(nextWeekStart);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
@@ -275,15 +275,25 @@ export default function Roster() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <Button variant="ghost" size="icon" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={() => setViewStart(subWeeks(viewStart, 1))} title="Previous week">
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setViewStart(subDays(viewStart, 1))} title="Previous day">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
           <CardTitle className="text-base">
-            {format(weekStart, "MMM d")} — {format(weekEnd, "MMM d, yyyy")}
+            {format(viewStart, "MMM d")} — {format(viewEnd, "MMM d, yyyy")}
           </CardTitle>
-          <Button variant="ghost" size="icon" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={() => setViewStart(addDays(viewStart, 1))} title="Next day">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setViewStart(addWeeks(viewStart, 1))} title="Next week">
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -302,7 +312,10 @@ export default function Roster() {
               {staff.map((member) => (
                 <tr key={member.id} className="border-t">
                   <td className="sticky left-0 z-10 bg-card p-2 font-medium">
-                    <span className="truncate block max-w-[130px]">{member.full_name}</span>
+                    <div className="flex items-center gap-1 max-w-[130px]">
+                      <span className="truncate">{member.full_name}</span>
+                      {member.is_responsible && <Star className="h-3 w-3 fill-primary text-primary flex-shrink-0" />}
+                    </div>
                   </td>
                   {days.map((d) => {
                     const dateStr = format(d, "yyyy-MM-dd");
