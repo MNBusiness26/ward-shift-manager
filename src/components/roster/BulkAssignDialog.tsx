@@ -13,7 +13,7 @@ import { Users, AlertTriangle, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { startOfMonth, endOfMonth, format, parseISO, isWeekend } from "date-fns";
+import { startOfMonth, endOfMonth, format, parseISO, getDay } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
 
 type ShiftType = Database["public"]["Enums"]["shift_type"];
@@ -124,7 +124,8 @@ export function BulkAssignDialog({ open, onOpenChange, staff, blockedDates, init
     if (date) {
       try {
         const d = parseISO(date);
-        if (isWeekend(d) && (c as any).no_weekends) {
+        // Only Saturday (6) is considered a weekend
+        if (getDay(d) === 6 && (c as any).no_weekends) {
           return "No weekend shifts";
         }
       } catch {}
