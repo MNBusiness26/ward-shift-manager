@@ -90,7 +90,7 @@ export default function ManagementCalendar() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
-        .select("*, profiles:assigned_user_id(full_name)")
+        .select("*, profiles:shifts_assigned_user_id_fkey(full_name)")
         .gte("date", format(weekStart, "yyyy-MM-dd"))
         .lte("date", format(weekEnd, "yyyy-MM-dd"))
         .order("date")
