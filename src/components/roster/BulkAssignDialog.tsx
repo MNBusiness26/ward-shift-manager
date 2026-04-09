@@ -90,6 +90,7 @@ export function BulkAssignDialog({ open, onOpenChange, staff, blockedDates, init
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
+      queryClient.invalidateQueries({ queryKey: ["mgmt-calendar-shifts"] });
       toast.success(`${selectedStaff.length} shifts created`);
       setSelectedStaff([]);
       onOpenChange(false);
