@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { UserCheck, UserX, Pencil, Users, Clock, Shield } from "lucide-react";
+import { UserCheck, UserX, Pencil, Users, Clock, Shield, Star } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -23,6 +23,7 @@ export default function Staff() {
     full_name: "",
     target_fte_percent: 1,
     role: "nurse" as AppRole,
+    is_responsible: false,
     no_nights: false,
     no_weekends: false,
   });
@@ -68,6 +69,7 @@ export default function Staff() {
         .update({
           full_name: editForm.full_name,
           target_fte_percent: editForm.target_fte_percent,
+          is_responsible: editForm.is_responsible,
           constraints,
         })
         .eq("id", editMember.id);
@@ -97,6 +99,7 @@ export default function Staff() {
       full_name: member.full_name || "",
       target_fte_percent: member.target_fte_percent ?? 1,
       role: member.roles?.[0] || "nurse",
+      is_responsible: !!member.is_responsible,
       no_nights: !!(constraints as any).no_nights,
       no_weekends: !!(constraints as any).no_weekends,
     });
@@ -185,6 +188,11 @@ export default function Staff() {
                         <span className="text-xs text-muted-foreground">
                           {(member.target_fte_percent * 100).toFixed(0)}% FTE
                         </span>
+                        {member.is_responsible && (
+                          <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                            <Star className="mr-0.5 h-2.5 w-2.5" /> Resp. Nurse
+                          </Badge>
+                        )}
                         {(constraints as any)?.no_nights && (
                           <Badge variant="outline" className="text-[10px] bg-muted">No nights</Badge>
                         )}
@@ -248,6 +256,14 @@ export default function Staff() {
                   value={editForm.target_fte_percent * 100}
                   onChange={(e) => setEditForm((f) => ({ ...f, target_fte_percent: Number(e.target.value) / 100 }))}
                 />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Qualifications</Label>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Can be Responsible Nurse</span>
+                <Switch checked={editForm.is_responsible} onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_responsible: v }))} />
               </div>
             </div>
 
