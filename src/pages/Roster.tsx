@@ -407,10 +407,10 @@ export default function Roster() {
 
             <div className="space-y-2">
               <Label>Assign to Staff</Label>
-              <Select value={form.assigned_user_id} onValueChange={(v) => setForm((f) => ({ ...f, assigned_user_id: v }))}>
+              <Select value={form.assigned_user_id || "__unassigned__"} onValueChange={(v) => setForm((f) => ({ ...f, assigned_user_id: v === "__unassigned__" ? "" : v }))}>
                 <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
                   {staff.map((s) => {
                     const blocked = isBlocked(s.id, form.date);
                     return (
@@ -425,10 +425,10 @@ export default function Roster() {
 
             <div className="space-y-2">
               <Label>Manager on Duty</Label>
-              <Select value={form.manager_on_duty_id} onValueChange={(v) => setForm((f) => ({ ...f, manager_on_duty_id: v }))}>
+              <Select value={form.manager_on_duty_id || "__none__"} onValueChange={(v) => setForm((f) => ({ ...f, manager_on_duty_id: v === "__none__" ? "" : v }))}>
                 <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="__none__">None</SelectItem>
                   {managerStaff.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>
                   ))}
