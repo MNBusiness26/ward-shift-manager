@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sun, Sunset, Moon } from "lucide-react";
+import { Sun, Sunset, Moon, Star, Users } from "lucide-react";
 import {
   format,
   startOfMonth,
@@ -21,6 +21,7 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -35,14 +36,21 @@ const shiftDot: Record<string, string> = {
 
 const shiftIcons = { morning: Sun, evening: Sunset, night: Moon };
 
+const shiftLabels: Record<string, string> = {
+  morning: "Morning",
+  evening: "Evening",
+  night: "Night",
+};
+
 export default function MyCalendar() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
 
+  // Fetch my shifts
   const { data: shifts = [] } = useQuery({
     queryKey: ["my-shifts-month", user?.id, format(monthStart, "yyyy-MM")],
     queryFn: async () => {
@@ -60,11 +68,53 @@ export default function MyCalendar() {
     enabled: !!user,
   });
 
+  // Fetch my role
+  const { data: myRoles = [] } = useQuery({
+    queryKey: ["my-roles", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return data.map((r) => r.role);
+    },
+    enabled: !!user,
+  });
+
+  // Fetch all shifts for selected day to find colleagues
+  const selectedDateStr = selectedDay ? format(selectedDay, "yyyy-MM-dd") : null;
+  const { data: dayAllShifts = [] } = useQuery({
+    queryKey: ["day-all-shifts", selectedDateStr],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shifts")
+        .select("*, profiles:shifts_assigned_user_id_fkey(full_name, is_responsible)")
+        .eq("date", selectedDateStr!)
+        .not("assigned_user_id", "is", null)
+        .order("start_time");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedDateStr,
+  });
+
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const startPad = getDay(monthStart);
 
   const getShiftsForDay = (day: Date) =>
     shifts.filter((s) => isSameDay(new Date(s.date), day));
+
+  // Get my shifts for selected day
+  const myDayShifts = selectedDay ? getShiftsForDay(selectedDay) : [];
+
+  // Group all shifts by type for the selected day
+  const getColleaguesByShift = (shiftType: string) =>
+    dayAllShifts.filter(
+      (s) => s.type === shiftType && s.assigned_user_id !== user?.id
+    );
+
+  const myRole = myRoles[0] || "nurse";
 
   return (
     <div className="space-y-6">
@@ -92,13 +142,14 @@ export default function MyCalendar() {
             ))}
             {days.map((day) => {
               const dayShifts = getShiftsForDay(day);
+              const isSelected = selectedDay && isSameDay(day, selectedDay);
               return (
                 <div
                   key={day.toISOString()}
                   className={`h-16 md:h-20 rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
                     isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
-                  }`}
-                  onClick={() => dayShifts.length > 0 && setSelectedShift(dayShifts[0])}
+                  } ${isSelected ? "ring-2 ring-primary" : ""}`}
+                  onClick={() => setSelectedDay(day)}
                 >
                   <span className="text-muted-foreground">{format(day, "d")}</span>
                   <div className="mt-1 flex flex-wrap gap-1">
@@ -117,32 +168,82 @@ export default function MyCalendar() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!selectedShift} onOpenChange={() => setSelectedShift(null)}>
-        <DialogContent>
+      {/* Day Detail Dialog */}
+      <Dialog open={!!selectedDay} onOpenChange={() => setSelectedDay(null)}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Shift Details</DialogTitle>
+            <DialogTitle>
+              {selectedDay && format(selectedDay, "EEEE, MMMM d, yyyy")}
+            </DialogTitle>
+            <DialogDescription>
+              Your role: <span className="capitalize font-medium text-foreground">{myRole}</span>
+            </DialogDescription>
           </DialogHeader>
-          {selectedShift && (() => {
-            const Icon = shiftIcons[selectedShift.type];
-            return (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Icon className="h-5 w-5" />
-                  <span className="font-medium capitalize">{selectedShift.type} Shift</span>
-                </div>
-                <div className="text-sm space-y-1">
-                  <p><span className="text-muted-foreground">Date:</span> {format(new Date(selectedShift.date), "EEEE, MMMM d, yyyy")}</p>
-                  <p><span className="text-muted-foreground">Time:</span> {selectedShift.start_time.slice(0, 5)} — {selectedShift.end_time.slice(0, 5)}</p>
-                  {selectedShift.is_responsible_on_shift && (
-                    <Badge className="mt-2">Responsible Nurse</Badge>
-                  )}
-                  {selectedShift.comments && (
-                    <p className="mt-2 text-muted-foreground">{selectedShift.comments}</p>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
+
+          {myDayShifts.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">No shifts scheduled for this day.</p>
+          ) : (
+            <div className="space-y-4">
+              {myDayShifts.map((shift) => {
+                const Icon = shiftIcons[shift.type];
+                const colleagues = getColleaguesByShift(shift.type);
+                return (
+                  <div key={shift.id} className="rounded-lg border p-4 space-y-3">
+                    {/* Shift info */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-5 w-5" />
+                        <span className="font-medium">{shiftLabels[shift.type]} Shift</span>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {shift.start_time.slice(0, 5)} — {shift.end_time.slice(0, 5)}
+                      </span>
+                    </div>
+
+                    {/* My role on this shift */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="capitalize">{myRole}</Badge>
+                      {shift.is_responsible_on_shift && (
+                        <Badge className="gap-1">
+                          <Star className="h-3 w-3 fill-current" />
+                          Responsible Nurse
+                        </Badge>
+                      )}
+                      {shift.is_draft && (
+                        <Badge variant="outline" className="opacity-60">Draft</Badge>
+                      )}
+                    </div>
+
+                    {/* Colleagues */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
+                        <Users className="h-3.5 w-3.5" />
+                        Working with ({colleagues.length})
+                      </div>
+                      {colleagues.length === 0 ? (
+                        <p className="text-xs text-muted-foreground pl-5">No other staff on this shift.</p>
+                      ) : (
+                        <div className="space-y-1 pl-5">
+                          {colleagues.map((c) => (
+                            <div key={c.id} className="flex items-center gap-2 text-sm">
+                              <span>{(c as any).profiles?.full_name || "Unknown"}</span>
+                              {c.is_responsible_on_shift && (
+                                <Star className="h-3 w-3 fill-primary text-primary" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {shift.comments && (
+                      <p className="text-xs text-muted-foreground border-t pt-2">{shift.comments}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
