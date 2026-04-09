@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,11 +42,8 @@ export default function Auth() {
   };
 
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin },
-    });
-    if (error) toast.error(error.message);
+    const result = await lovable.auth.signInWithOAuth("google");
+    if (result?.error) toast.error(String(result.error));
   };
 
   return (
