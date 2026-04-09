@@ -73,9 +73,9 @@ export default function Analytics() {
   ];
 
   // Weekly distribution
-  const weeks = eachWeekOfInterval({ start: monthStart, end: monthEnd }, { weekStartsOn: 1 });
+  const weeks = eachWeekOfInterval({ start: monthStart, end: monthEnd }, { weekStartsOn: 0 });
   const weeklyData = weeks.map((weekStart) => {
-    const we = endOfWeek(weekStart, { weekStartsOn: 1 });
+    const we = endOfWeek(weekStart, { weekStartsOn: 0 });
     const weekShifts = shifts.filter((s) => {
       const d = new Date(s.date);
       return d >= weekStart && d <= we;
