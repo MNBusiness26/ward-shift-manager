@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval } from "date-fns";
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, eachDayOfInterval } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Eye, EyeOff, AlertTriangle, Plus, Pencil, Trash2, Copy, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Pencil, Trash2, Copy, Users, Star } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
@@ -56,9 +56,9 @@ const defaultForm = (date?: string): ShiftFormData => ({
 
 export default function Roster() {
   const queryClient = useQueryClient();
-  const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
-  const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
-  const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const [viewStart, setViewStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
+  const viewEnd = addDays(viewStart, 6);
+  const days = eachDayOfInterval({ start: viewStart, end: viewEnd });
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -66,13 +66,13 @@ export default function Roster() {
   const [form, setForm] = useState<ShiftFormData>(defaultForm());
 
   const { data: shifts = [] } = useQuery({
-    queryKey: ["roster-shifts", format(weekStart, "yyyy-MM-dd")],
+    queryKey: ["roster-shifts", format(viewStart, "yyyy-MM-dd")],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
         .select("*, profiles:assigned_user_id(full_name)")
-        .gte("date", format(weekStart, "yyyy-MM-dd"))
-        .lte("date", format(weekEnd, "yyyy-MM-dd"))
+        .gte("date", format(viewStart, "yyyy-MM-dd"))
+        .lte("date", format(viewEnd, "yyyy-MM-dd"))
         .order("date")
         .order("start_time");
       if (error) throw error;
@@ -85,7 +85,7 @@ export default function Roster() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, is_active")
+        .select("id, full_name, is_active, is_responsible")
         .eq("is_active", true)
         .order("full_name");
       if (error) throw error;
@@ -106,14 +106,14 @@ export default function Roster() {
   });
 
   const { data: blockedDates = [] } = useQuery({
-    queryKey: ["approved-blocks", format(weekStart, "yyyy-MM-dd")],
+    queryKey: ["approved-blocks", format(viewStart, "yyyy-MM-dd")],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("availability_requests")
         .select("user_id, date")
         .eq("status", "approved")
-        .gte("date", format(weekStart, "yyyy-MM-dd"))
-        .lte("date", format(weekEnd, "yyyy-MM-dd"));
+        .gte("date", format(viewStart, "yyyy-MM-dd"))
+        .lte("date", format(viewEnd, "yyyy-MM-dd"));
       if (error) throw error;
       return data;
     },
