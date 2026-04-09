@@ -1,11 +1,22 @@
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Users } from "lucide-react";
+import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
+import { toast } from "sonner";
+import type { Database } from "@/integrations/supabase/types";
+
+type ShiftType = Database["public"]["Enums"]["shift_type"];
 
 const shiftTypes = ["morning", "evening", "night"] as const;
 
@@ -27,10 +38,45 @@ const shiftTextColors: Record<string, string> = {
   night: "text-shift-night",
 };
 
+const shiftTimes: Record<ShiftType, { start: string; end: string }> = {
+  morning: { start: "07:00", end: "15:00" },
+  evening: { start: "15:00", end: "23:00" },
+  night: { start: "23:00", end: "07:00" },
+};
+
+interface ShiftFormData {
+  date: string;
+  type: ShiftType;
+  start_time: string;
+  end_time: string;
+  assigned_user_id: string;
+  is_responsible_on_shift: boolean;
+  manager_on_duty_id: string;
+  comments: string;
+  is_draft: boolean;
+}
+
+const defaultForm = (date?: string, type?: ShiftType): ShiftFormData => ({
+  date: date || format(new Date(), "yyyy-MM-dd"),
+  type: type || "morning",
+  start_time: shiftTimes[type || "morning"].start,
+  end_time: shiftTimes[type || "morning"].end,
+  assigned_user_id: "",
+  is_responsible_on_shift: false,
+  manager_on_duty_id: "",
+  comments: "",
+  is_draft: true,
+});
+
 export default function ManagementCalendar() {
+  const queryClient = useQueryClient();
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [form, setForm] = useState<ShiftFormData>(defaultForm());
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["mgmt-calendar-shifts", format(weekStart, "yyyy-MM-dd")],
@@ -40,7 +86,6 @@ export default function ManagementCalendar() {
         .select("*, profiles:assigned_user_id(full_name)")
         .gte("date", format(weekStart, "yyyy-MM-dd"))
         .lte("date", format(weekEnd, "yyyy-MM-dd"))
-        .eq("is_draft", false)
         .order("date")
         .order("start_time");
       if (error) throw error;
@@ -48,15 +93,103 @@ export default function ManagementCalendar() {
     },
   });
 
+  const { data: staff = [] } = useQuery({
+    queryKey: ["all-staff"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, is_active")
+        .eq("is_active", true)
+        .order("full_name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: managers = [] } = useQuery({
+    queryKey: ["all-managers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "manager");
+      if (error) throw error;
+      return data?.map((r) => r.user_id) ?? [];
+    },
+  });
+
+  const { data: blockedDates = [] } = useQuery({
+    queryKey: ["approved-blocks", format(weekStart, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("availability_requests")
+        .select("user_id, date")
+        .eq("status", "approved")
+        .gte("date", format(weekStart, "yyyy-MM-dd"))
+        .lte("date", format(weekEnd, "yyyy-MM-dd"));
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const saveShift = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        date: form.date,
+        type: form.type,
+        start_time: form.start_time,
+        end_time: form.end_time,
+        assigned_user_id: form.assigned_user_id || null,
+        is_responsible_on_shift: form.is_responsible_on_shift,
+        manager_on_duty_id: form.manager_on_duty_id || null,
+        comments: form.comments || null,
+        is_draft: form.is_draft,
+      };
+      const { error } = await supabase.from("shifts").insert(payload);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mgmt-calendar-shifts"] });
+      queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
+      setDialogOpen(false);
+      toast.success("Shift created");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const handleTypeChange = (t: ShiftType) => {
+    setForm((f) => ({ ...f, type: t, start_time: shiftTimes[t].start, end_time: shiftTimes[t].end }));
+  };
+
+  const openAddShift = (date?: string, type?: ShiftType) => {
+    setForm(defaultForm(date, type));
+    setDialogOpen(true);
+  };
+
   const getFirstName = (shift: any): string => {
     const fullName = shift.profiles?.full_name;
     if (!fullName) return "?";
     return fullName.split(" ")[0];
   };
 
+  const managerStaff = staff.filter((s) => managers.includes(s.id));
+  const nonManagerStaff = staff.filter((s) => !managers.includes(s.id));
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Management Calendar</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Management Calendar</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setBulkOpen(true)}>
+            <Users className="h-4 w-4 mr-2" />
+            Bulk Assign
+          </Button>
+          <Button onClick={() => openAddShift()}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Shift
+          </Button>
+        </div>
+      </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -99,7 +232,8 @@ export default function ManagementCalendar() {
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`p-2 border-l align-top ${shiftColors[type]}`}
+                        className={`p-2 border-l align-top ${shiftColors[type]} cursor-pointer hover:opacity-80`}
+                        onClick={() => openAddShift(dateStr, type)}
                       >
                         {dayShifts.length === 0 ? (
                           <span className="text-xs text-muted-foreground italic">—</span>
@@ -109,11 +243,14 @@ export default function ManagementCalendar() {
                               <Badge
                                 key={s.id}
                                 variant={s.is_responsible_on_shift ? "default" : "secondary"}
-                                className={`text-xs ${s.is_responsible_on_shift ? "font-bold" : "font-normal"}`}
+                                className={`text-xs ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${s.is_draft ? "opacity-60 border-dashed" : ""}`}
                               >
                                 {getFirstName(s)}
                                 {s.is_responsible_on_shift && (
                                   <span className="ml-0.5 text-[9px]">★</span>
+                                )}
+                                {s.is_draft && (
+                                  <span className="ml-0.5 text-[9px]">D</span>
                                 )}
                               </Badge>
                             ))}
@@ -129,7 +266,7 @@ export default function ManagementCalendar() {
         </CardContent>
       </Card>
 
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+      <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
         <div className="flex items-center gap-1">
           <Badge variant="default" className="text-[10px] font-bold">Name ★</Badge>
           <span>Responsible Nurse</span>
@@ -138,7 +275,103 @@ export default function ManagementCalendar() {
           <Badge variant="secondary" className="text-[10px]">Name</Badge>
           <span>Assigned Nurse</span>
         </div>
+        <div className="flex items-center gap-1">
+          <Badge variant="secondary" className="text-[10px] opacity-60 border-dashed">Name D</Badge>
+          <span>Draft</span>
+        </div>
       </div>
+
+      {/* Add Shift Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Shift</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select value={form.type} onValueChange={(v) => handleTypeChange(v as ShiftType)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="morning">Morning</SelectItem>
+                    <SelectItem value="evening">Evening</SelectItem>
+                    <SelectItem value="night">Night</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Start</Label>
+                <Input type="time" value={form.start_time} onChange={(e) => setForm((f) => ({ ...f, start_time: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>End</Label>
+                <Input type="time" value={form.end_time} onChange={(e) => setForm((f) => ({ ...f, end_time: e.target.value }))} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Assign to Staff</Label>
+              <Select value={form.assigned_user_id || "__unassigned__"} onValueChange={(v) => setForm((f) => ({ ...f, assigned_user_id: v === "__unassigned__" ? "" : v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                  {staff.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Manager on Duty</Label>
+              <Select value={form.manager_on_duty_id || "__none__"} onValueChange={(v) => setForm((f) => ({ ...f, manager_on_duty_id: v === "__none__" ? "" : v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None</SelectItem>
+                  {managerStaff.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label>Responsible on Shift</Label>
+              <Switch checked={form.is_responsible_on_shift} onCheckedChange={(v) => setForm((f) => ({ ...f, is_responsible_on_shift: v }))} />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label>Draft</Label>
+              <Switch checked={form.is_draft} onCheckedChange={(v) => setForm((f) => ({ ...f, is_draft: v }))} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Comments</Label>
+              <Textarea value={form.comments} onChange={(e) => setForm((f) => ({ ...f, comments: e.target.value }))} />
+            </div>
+
+            <Button className="w-full" onClick={() => saveShift.mutate()} disabled={saveShift.isPending}>
+              Create Shift
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Assign Dialog */}
+      <BulkAssignDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        staff={staff}
+        blockedDates={blockedDates}
+      />
     </div>
   );
 }
