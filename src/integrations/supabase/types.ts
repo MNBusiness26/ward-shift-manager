@@ -18,8 +18,10 @@ export type Database = {
         Row: {
           created_at: string
           date: string
+          end_date: string | null
           id: string
           reason: string | null
+          request_type: Database["public"]["Enums"]["availability_type"]
           status: Database["public"]["Enums"]["request_status"]
           updated_at: string
           user_id: string
@@ -27,8 +29,10 @@ export type Database = {
         Insert: {
           created_at?: string
           date: string
+          end_date?: string | null
           id?: string
           reason?: string | null
+          request_type?: Database["public"]["Enums"]["availability_type"]
           status?: Database["public"]["Enums"]["request_status"]
           updated_at?: string
           user_id: string
@@ -36,8 +40,10 @@ export type Database = {
         Update: {
           created_at?: string
           date?: string
+          end_date?: string | null
           id?: string
           reason?: string | null
+          request_type?: Database["public"]["Enums"]["availability_type"]
           status?: Database["public"]["Enums"]["request_status"]
           updated_at?: string
           user_id?: string
@@ -243,6 +249,7 @@ export type Database = {
     }
     Enums: {
       app_role: "nurse" | "assistant" | "manager"
+      availability_type: "block" | "vacation"
       request_status: "pending" | "approved" | "declined"
       shift_type: "morning" | "evening" | "night"
       swap_status: "pending" | "peer_accepted" | "manager_approved" | "denied"
@@ -374,6 +381,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["nurse", "assistant", "manager"],
+      availability_type: ["block", "vacation"],
       request_status: ["pending", "approved", "declined"],
       shift_type: ["morning", "evening", "night"],
       swap_status: ["pending", "peer_accepted", "manager_approved", "denied"],
