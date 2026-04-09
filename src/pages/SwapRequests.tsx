@@ -9,7 +9,19 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -20,7 +32,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useState } from "react";
-import { ArrowLeftRight, Users } from "lucide-react";
+import { ArrowLeftRight, Users, X } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -36,8 +48,8 @@ export default function SwapRequests() {
   const [selectedShiftId, setSelectedShiftId] = useState("");
   const [swapType, setSwapType] = useState<"direct" | "pool">("pool");
   const [targetUserId, setTargetUserId] = useState("");
+  const [cancelId, setCancelId] = useState<string | null>(null);
 
-  // Fetch user's shifts for swap initiation
   const { data: myShifts = [] } = useQuery({
     queryKey: ["my-shifts-for-swap", user?.id],
     queryFn: async () => {
@@ -53,13 +65,12 @@ export default function SwapRequests() {
     enabled: !!user,
   });
 
-  // Fetch swap requests involving this user
   const { data: swapRequests = [] } = useQuery({
     queryKey: ["swap-requests", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("swap_requests")
-        .select("*, shifts(*)")
+        .select("*, shifts(*), covering_profile:profiles!swap_requests_covering_user_id_fkey(full_name), requesting_profile:profiles!swap_requests_requesting_user_id_fkey(full_name)")
         .or(`requesting_user_id.eq.${user!.id},covering_user_id.eq.${user!.id},is_pool_request.eq.true`)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -68,7 +79,6 @@ export default function SwapRequests() {
     enabled: !!user,
   });
 
-  // Fetch colleagues for direct swap
   const { data: colleagues = [] } = useQuery({
     queryKey: ["colleagues"],
     queryFn: async () => {
@@ -118,6 +128,30 @@ export default function SwapRequests() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const cancelSwap = useMutation({
+    mutationFn: async (swapId: string) => {
+      const { error } = await supabase
+        .from("swap_requests")
+        .delete()
+        .eq("id", swapId)
+        .eq("requesting_user_id", user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["swap-requests"] });
+      toast.success("Swap request cancelled");
+      setCancelId(null);
+    },
+    onError: (e: any) => {
+      toast.error(e.message);
+      setCancelId(null);
+    },
+  });
+
+  const canCancel = (swap: any) =>
+    swap.requesting_user_id === user?.id &&
+    (swap.status === "pending" || swap.status === "peer_accepted");
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -153,6 +187,9 @@ export default function SwapRequests() {
                         {swap.shifts?.date && format(new Date(swap.shifts.date), "EEE, MMM d")}
                         {swap.shifts && ` · ${swap.shifts.start_time?.slice(0, 5)} — ${swap.shifts.end_time?.slice(0, 5)}`}
                       </p>
+                      <p className="text-xs text-muted-foreground">
+                        From: {(swap as any).requesting_profile?.full_name || "Unknown"}
+                      </p>
                     </div>
                     <Button size="sm" onClick={() => acceptSwap.mutate(swap.id)}>
                       Claim
@@ -181,20 +218,59 @@ export default function SwapRequests() {
                     <div>
                       <p className="text-sm font-medium">
                         {swap.is_pool_request ? "Pool Offer" : "Direct Swap"}
+                        {!swap.is_pool_request && (swap as any).covering_profile?.full_name && (
+                          <span className="font-normal text-muted-foreground">
+                            {" "}with {(swap as any).covering_profile.full_name}
+                          </span>
+                        )}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {swap.shifts?.date && format(new Date(swap.shifts.date), "EEE, MMM d")}
+                        {swap.shifts && ` · ${swap.shifts.type} ${swap.shifts.start_time?.slice(0, 5)} — ${swap.shifts.end_time?.slice(0, 5)}`}
                       </p>
                     </div>
-                    <Badge variant="outline" className={statusColors[swap.status]}>
-                      {swap.status.replace("_", " ")}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={statusColors[swap.status]}>
+                        {swap.status.replace("_", " ")}
+                      </Badge>
+                      {canCancel(swap) && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                          onClick={() => setCancelId(swap.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Cancel confirmation */}
+      <AlertDialog open={!!cancelId} onOpenChange={(open) => !open && setCancelId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel swap request?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this swap request? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, keep it</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => cancelId && cancelSwap.mutate(cancelId)}
+            >
+              Yes, cancel swap
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* New swap dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
