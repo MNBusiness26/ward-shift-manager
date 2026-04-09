@@ -1,9 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Sun, Sunset, Moon, Star, Users } from "lucide-react";
+import { Sun, Sunset, Moon } from "lucide-react";
 import {
   format,
   startOfMonth,
@@ -13,11 +10,15 @@ import {
   isSameDay,
   addMonths,
   subMonths,
+  startOfWeek,
+  endOfWeek,
+  addWeeks,
+  subWeeks,
 } from "date-fns";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { Database } from "@/integrations/supabase/types";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -25,8 +26,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-type Shift = Database["public"]["Tables"]["shifts"]["Row"];
+import { ShiftDetailCard } from "@/components/calendar/ShiftDetailCard";
+import { useMyShifts, useMyRole, useDayShifts, type Shift } from "@/components/calendar/useMyCalendarData";
 
 const shiftDot: Record<string, string> = {
   morning: "bg-shift-morning",
@@ -34,147 +35,163 @@ const shiftDot: Record<string, string> = {
   night: "bg-shift-night",
 };
 
-const shiftIcons = { morning: Sun, evening: Sunset, night: Moon };
-
-const shiftLabels: Record<string, string> = {
-  morning: "Morning",
-  evening: "Evening",
-  night: "Night",
-};
-
 export default function MyCalendar() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+  const [view, setView] = useState<"month" | "week">("month");
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
+  // Compute range based on view
+  const rangeStart = view === "month" ? startOfMonth(currentMonth) : currentWeek;
+  const rangeEnd = view === "month" ? endOfMonth(currentMonth) : endOfWeek(currentWeek, { weekStartsOn: 0 });
 
-  // Fetch my shifts
-  const { data: shifts = [] } = useQuery({
-    queryKey: ["my-shifts-month", user?.id, format(monthStart, "yyyy-MM")],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shifts")
-        .select("*")
-        .eq("assigned_user_id", user!.id)
-        .gte("date", format(monthStart, "yyyy-MM-dd"))
-        .lte("date", format(monthEnd, "yyyy-MM-dd"))
-        .order("date")
-        .order("start_time");
-      if (error) throw error;
-      return data as Shift[];
-    },
-    enabled: !!user,
-  });
-
-  // Fetch my role
-  const { data: myRoles = [] } = useQuery({
-    queryKey: ["my-roles", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user!.id);
-      if (error) throw error;
-      return data.map((r) => r.role);
-    },
-    enabled: !!user,
-  });
-
-  // Fetch all shifts for selected day to find colleagues
+  const { data: shifts = [] } = useMyShifts(rangeStart, rangeEnd);
+  const { data: myRoles = [] } = useMyRole();
   const selectedDateStr = selectedDay ? format(selectedDay, "yyyy-MM-dd") : null;
-  const { data: dayAllShifts = [] } = useQuery({
-    queryKey: ["day-all-shifts", selectedDateStr],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shifts")
-        .select("*, profiles:shifts_assigned_user_id_fkey(full_name, is_responsible)")
-        .eq("date", selectedDateStr!)
-        .not("assigned_user_id", "is", null)
-        .order("start_time");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!selectedDateStr,
-  });
+  const { data: dayAllShifts = [] } = useDayShifts(selectedDateStr);
 
-  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-  const startPad = getDay(monthStart);
+  const myRole = myRoles[0] || "nurse";
 
   const getShiftsForDay = (day: Date) =>
     shifts.filter((s) => isSameDay(new Date(s.date), day));
 
-  // Get my shifts for selected day
-  const myDayShifts = selectedDay ? getShiftsForDay(selectedDay) : [];
-
-  // Group all shifts by type for the selected day
   const getColleaguesByShift = (shiftType: string) =>
     dayAllShifts.filter(
       (s) => s.type === shiftType && s.assigned_user_id !== user?.id
     );
 
-  const myRole = myRoles[0] || "nurse";
+  const myDayShifts = selectedDay ? getShiftsForDay(selectedDay) : [];
+
+  // Month view grid
+  const monthDays = eachDayOfInterval({ start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) });
+  const startPad = getDay(startOfMonth(currentMonth));
+
+  // Week view days
+  const weekDays = eachDayOfInterval({ start: currentWeek, end: endOfWeek(currentWeek, { weekStartsOn: 0 }) });
+
+  const shiftIcons: Record<string, React.ElementType> = { morning: Sun, evening: Sunset, night: Moon };
+  const shiftLabels: Record<string, string> = { morning: "Morning", evening: "Evening", night: "Night" };
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">My Calendar</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">My Calendar</h1>
+        <Tabs value={view} onValueChange={(v) => setView(v as "month" | "week")}>
+          <TabsList>
+            <TabsTrigger value="month">Month</TabsTrigger>
+            <TabsTrigger value="week">Week</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <CardTitle className="text-base">{format(currentMonth, "MMMM yyyy")}</CardTitle>
-          <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-7 gap-px text-center text-xs font-medium text-muted-foreground mb-1">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-              <div key={d} className="py-2">{d}</div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-px">
-            {Array.from({ length: startPad }).map((_, i) => (
-              <div key={`pad-${i}`} className="h-16 md:h-20" />
-            ))}
-            {days.map((day) => {
+      {view === "month" ? (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <CardTitle className="text-base">{format(currentMonth, "MMMM yyyy")}</CardTitle>
+            <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-7 gap-px text-center text-xs font-medium text-muted-foreground mb-1">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                <div key={d} className="py-2">{d}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-px">
+              {Array.from({ length: startPad }).map((_, i) => (
+                <div key={`pad-${i}`} className="h-16 md:h-20" />
+              ))}
+              {monthDays.map((day) => {
+                const dayShifts = getShiftsForDay(day);
+                const isSelected = selectedDay && isSameDay(day, selectedDay);
+                return (
+                  <div
+                    key={day.toISOString()}
+                    className={`h-16 md:h-20 rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
+                      isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
+                    } ${isSelected ? "ring-2 ring-primary" : ""}`}
+                    onClick={() => setSelectedDay(day)}
+                  >
+                    <span className="text-muted-foreground">{format(day, "d")}</span>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {dayShifts.map((s) => (
+                        <div key={s.id} className={`h-2 w-2 rounded-full ${shiftDot[s.type]}`} title={`${s.type} shift`} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        /* Weekly View */
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <Button variant="ghost" size="icon" onClick={() => setCurrentWeek(subWeeks(currentWeek, 1))}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <CardTitle className="text-base">
+              {format(currentWeek, "MMM d")} — {format(endOfWeek(currentWeek, { weekStartsOn: 0 }), "MMM d, yyyy")}
+            </CardTitle>
+            <Button variant="ghost" size="icon" onClick={() => setCurrentWeek(addWeeks(currentWeek, 1))}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {weekDays.map((day) => {
               const dayShifts = getShiftsForDay(day);
-              const isSelected = selectedDay && isSameDay(day, selectedDay);
+              const isToday = isSameDay(day, new Date());
               return (
                 <div
                   key={day.toISOString()}
-                  className={`h-16 md:h-20 rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
-                    isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
-                  } ${isSelected ? "ring-2 ring-primary" : ""}`}
-                  onClick={() => setSelectedDay(day)}
+                  className={`rounded-lg border p-3 space-y-2 ${isToday ? "bg-primary/5 border-primary/30" : ""}`}
                 >
-                  <span className="text-muted-foreground">{format(day, "d")}</span>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {dayShifts.map((s) => (
-                      <div
-                        key={s.id}
-                        className={`h-2 w-2 rounded-full ${shiftDot[s.type]}`}
-                        title={`${s.type} shift`}
-                      />
-                    ))}
+                  <div className="font-medium text-sm">
+                    {format(day, "EEEE, MMM d")}
+                    {isToday && <span className="ml-2 text-xs text-primary font-normal">(Today)</span>}
                   </div>
+                  {dayShifts.length === 0 ? (
+                    <p className="text-xs text-muted-foreground pl-2">No shifts</p>
+                  ) : (
+                    dayShifts.map((shift) => {
+                      const Icon = shiftIcons[shift.type] || Sun;
+                      return (
+                        <div
+                          key={shift.id}
+                          className="flex items-center gap-3 text-sm pl-2 py-1 rounded hover:bg-accent/50 cursor-pointer"
+                          onClick={() => setSelectedDay(day)}
+                        >
+                          <div className={`h-2.5 w-2.5 rounded-full ${shiftDot[shift.type]}`} />
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                          <span>{shiftLabels[shift.type]} Shift</span>
+                          <span className="text-muted-foreground">
+                            {shift.start_time.slice(0, 5)} — {shift.end_time.slice(0, 5)}
+                          </span>
+                          {shift.is_responsible_on_shift && (
+                            <span className="text-xs text-primary font-medium">★ Responsible</span>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               );
             })}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Day Detail Dialog */}
       <Dialog open={!!selectedDay} onOpenChange={() => setSelectedDay(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {selectedDay && format(selectedDay, "EEEE, MMMM d, yyyy")}
-            </DialogTitle>
+            <DialogTitle>{selectedDay && format(selectedDay, "EEEE, MMMM d, yyyy")}</DialogTitle>
             <DialogDescription>
               Your role: <span className="capitalize font-medium text-foreground">{myRole}</span>
             </DialogDescription>
@@ -184,64 +201,14 @@ export default function MyCalendar() {
             <p className="text-sm text-muted-foreground py-4 text-center">No shifts scheduled for this day.</p>
           ) : (
             <div className="space-y-4">
-              {myDayShifts.map((shift) => {
-                const Icon = shiftIcons[shift.type];
-                const colleagues = getColleaguesByShift(shift.type);
-                return (
-                  <div key={shift.id} className="rounded-lg border p-4 space-y-3">
-                    {/* Shift info */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-5 w-5" />
-                        <span className="font-medium">{shiftLabels[shift.type]} Shift</span>
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {shift.start_time.slice(0, 5)} — {shift.end_time.slice(0, 5)}
-                      </span>
-                    </div>
-
-                    {/* My role on this shift */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="outline" className="capitalize">{myRole}</Badge>
-                      {shift.is_responsible_on_shift && (
-                        <Badge className="gap-1">
-                          <Star className="h-3 w-3 fill-current" />
-                          Responsible Nurse
-                        </Badge>
-                      )}
-                      {shift.is_draft && (
-                        <Badge variant="outline" className="opacity-60">Draft</Badge>
-                      )}
-                    </div>
-
-                    {/* Colleagues */}
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
-                        <Users className="h-3.5 w-3.5" />
-                        Working with ({colleagues.length})
-                      </div>
-                      {colleagues.length === 0 ? (
-                        <p className="text-xs text-muted-foreground pl-5">No other staff on this shift.</p>
-                      ) : (
-                        <div className="space-y-1 pl-5">
-                          {colleagues.map((c) => (
-                            <div key={c.id} className="flex items-center gap-2 text-sm">
-                              <span>{(c as any).profiles?.full_name || "Unknown"}</span>
-                              {c.is_responsible_on_shift && (
-                                <Star className="h-3 w-3 fill-primary text-primary" />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {shift.comments && (
-                      <p className="text-xs text-muted-foreground border-t pt-2">{shift.comments}</p>
-                    )}
-                  </div>
-                );
-              })}
+              {myDayShifts.map((shift) => (
+                <ShiftDetailCard
+                  key={shift.id}
+                  shift={shift}
+                  myRole={myRole}
+                  colleagues={getColleaguesByShift(shift.type)}
+                />
+              ))}
             </div>
           )}
         </DialogContent>
