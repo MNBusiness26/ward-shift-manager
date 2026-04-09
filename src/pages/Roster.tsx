@@ -178,7 +178,7 @@ export default function Roster() {
 
   const copyWeek = useMutation({
     mutationFn: async () => {
-      const nextWeekStart = addWeeks(weekStart, 1);
+      const nextWeekStart = addWeeks(viewStart, 1);
       const inserts = shifts.map((s) => {
         const dayOffset = days.findIndex((d) => format(d, "yyyy-MM-dd") === s.date);
         const newDate = format(addWeeks(new Date(s.date), 1), "yyyy-MM-dd");
@@ -197,7 +197,7 @@ export default function Roster() {
       if (inserts.length === 0) return;
       const { error } = await supabase.from("shifts").insert(inserts);
       if (error) throw error;
-      setWeekStart(nextWeekStart);
+      setViewStart(nextWeekStart);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
@@ -275,15 +275,25 @@ export default function Roster() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <Button variant="ghost" size="icon" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={() => setViewStart(subWeeks(viewStart, 1))} title="Previous week">
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setViewStart(subDays(viewStart, 1))} title="Previous day">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
           <CardTitle className="text-base">
-            {format(weekStart, "MMM d")} — {format(weekEnd, "MMM d, yyyy")}
+            {format(viewStart, "MMM d")} — {format(viewEnd, "MMM d, yyyy")}
           </CardTitle>
-          <Button variant="ghost" size="icon" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={() => setViewStart(addDays(viewStart, 1))} title="Next day">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setViewStart(addWeeks(viewStart, 1))} title="Next week">
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-sm">
