@@ -365,15 +365,28 @@ export default function ManagementCalendar() {
                     )}
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      title={s.is_responsible_on_shift ? "Remove responsible" : "Set as responsible"}
-                      onClick={() => toggleResponsible.mutate({ shiftId: s.id, value: !s.is_responsible_on_shift })}
-                    >
-                      <Star className={`h-4 w-4 ${s.is_responsible_on_shift ? "fill-primary text-primary" : "text-muted-foreground"}`} />
-                    </Button>
+                    {(() => {
+                      const profile = staff.find((p) => p.id === s.assigned_user_id);
+                      const canBeResponsible = profile?.is_responsible === true;
+                      return (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          title={
+                            !canBeResponsible
+                              ? "Not qualified as Responsible Nurse"
+                              : s.is_responsible_on_shift
+                              ? "Remove responsible"
+                              : "Set as responsible"
+                          }
+                          disabled={!canBeResponsible && !s.is_responsible_on_shift}
+                          onClick={() => toggleResponsible.mutate({ shiftId: s.id, value: !s.is_responsible_on_shift })}
+                        >
+                          <Star className={`h-4 w-4 ${s.is_responsible_on_shift ? "fill-primary text-primary" : canBeResponsible ? "text-muted-foreground" : "text-muted-foreground/30"}`} />
+                        </Button>
+                      );
+                    })()}
                     <Button
                       variant="ghost"
                       size="icon"
