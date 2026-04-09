@@ -12,12 +12,17 @@ export default function Staff() {
   const { data: staff = [] } = useQuery({
     queryKey: ["staff-management"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("*, user_roles(role)")
+        .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+
+      const { data: roles } = await supabase.from("user_roles").select("user_id, role");
+      return (profiles ?? []).map((p) => ({
+        ...p,
+        roles: (roles ?? []).filter((r) => r.user_id === p.id).map((r) => r.role),
+      }));
     },
   });
 
