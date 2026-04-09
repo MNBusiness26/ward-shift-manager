@@ -312,7 +312,10 @@ export default function Roster() {
               {staff.map((member) => (
                 <tr key={member.id} className="border-t">
                   <td className="sticky left-0 z-10 bg-card p-2 font-medium">
-                    <span className="truncate block max-w-[130px]">{member.full_name}</span>
+                    <div className="flex items-center gap-1 max-w-[130px]">
+                      <span className="truncate">{member.full_name}</span>
+                      {member.is_responsible && <Star className="h-3 w-3 fill-primary text-primary flex-shrink-0" />}
+                    </div>
                   </td>
                   {days.map((d) => {
                     const dateStr = format(d, "yyyy-MM-dd");
