@@ -6,32 +6,38 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Check, X } from "lucide-react";
+import { Check, X, CalendarOff, ArrowLeftRight, Clock, Filter } from "lucide-react";
+import { useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Requests() {
   const queryClient = useQueryClient();
+  const [availFilter, setAvailFilter] = useState<"pending" | "all">("pending");
+  const [swapFilter, setSwapFilter] = useState<"peer_accepted" | "all">("peer_accepted");
 
   const { data: availRequests = [] } = useQuery({
-    queryKey: ["manager-avail-requests"],
+    queryKey: ["manager-avail-requests", availFilter],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("availability_requests")
         .select("*, profiles:user_id(full_name)")
-        .eq("status", "pending")
         .order("date");
+      if (availFilter === "pending") q = q.eq("status", "pending");
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
   });
 
   const { data: swapRequests = [] } = useQuery({
-    queryKey: ["manager-swap-requests"],
+    queryKey: ["manager-swap-requests", swapFilter],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("swap_requests")
         .select("*, shifts(*), requester:requesting_user_id(full_name), coverer:covering_user_id(full_name)")
-        .eq("status", "peer_accepted")
         .order("created_at", { ascending: false });
+      if (swapFilter === "peer_accepted") q = q.eq("status", "peer_accepted");
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
@@ -39,10 +45,7 @@ export default function Requests() {
 
   const handleAvailability = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: "approved" | "declined" }) => {
-      const { error } = await supabase
-        .from("availability_requests")
-        .update({ status })
-        .eq("id", id);
+      const { error } = await supabase.from("availability_requests").update({ status }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -53,19 +56,12 @@ export default function Requests() {
 
   const handleSwap = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: "manager_approved" | "denied" }) => {
-      const { error } = await supabase
-        .from("swap_requests")
-        .update({ status })
-        .eq("id", id);
+      const { error } = await supabase.from("swap_requests").update({ status }).eq("id", id);
       if (error) throw error;
-      // If approved, update the shift assignment
       if (status === "manager_approved") {
         const swap = swapRequests.find((s) => s.id === id);
         if (swap?.covering_user_id && swap?.shift_id) {
-          await supabase
-            .from("shifts")
-            .update({ assigned_user_id: swap.covering_user_id })
-            .eq("id", swap.shift_id);
+          await supabase.from("shifts").update({ assigned_user_id: swap.covering_user_id }).eq("id", swap.shift_id);
         }
       }
     },
@@ -76,54 +72,108 @@ export default function Requests() {
     },
   });
 
+  const pendingAvail = availRequests.filter((r) => r.status === "pending").length;
+  const pendingSwaps = swapRequests.filter((r) => r.status === "peer_accepted").length;
+
+  const statusBadge = (status: string) => {
+    const map: Record<string, string> = {
+      pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      approved: "bg-green-100 text-green-800 border-green-200",
+      declined: "bg-destructive/10 text-destructive border-destructive/20",
+      peer_accepted: "bg-blue-100 text-blue-800 border-blue-200",
+      manager_approved: "bg-green-100 text-green-800 border-green-200",
+      denied: "bg-destructive/10 text-destructive border-destructive/20",
+    };
+    return map[status] || "";
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Request Management</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Request Management</h1>
+        <div className="flex gap-2">
+          {pendingAvail > 0 && (
+            <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+              <CalendarOff className="mr-1 h-3 w-3" />
+              {pendingAvail} availability
+            </Badge>
+          )}
+          {pendingSwaps > 0 && (
+            <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+              <ArrowLeftRight className="mr-1 h-3 w-3" />
+              {pendingSwaps} swap{pendingSwaps > 1 ? "s" : ""}
+            </Badge>
+          )}
+        </div>
+      </div>
 
       <Tabs defaultValue="availability">
         <TabsList>
           <TabsTrigger value="availability">
+            <CalendarOff className="mr-1 h-4 w-4" />
             Availability ({availRequests.length})
           </TabsTrigger>
           <TabsTrigger value="swaps">
+            <ArrowLeftRight className="mr-1 h-4 w-4" />
             Swaps ({swapRequests.length})
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="availability" className="mt-4">
+        <TabsContent value="availability" className="mt-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={availFilter} onValueChange={(v: any) => setAvailFilter(v)}>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending Only</SelectItem>
+                <SelectItem value="all">All Requests</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Card>
             <CardContent className="p-4">
               {availRequests.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No pending availability requests.</p>
+                <div className="flex flex-col items-center py-8 text-muted-foreground">
+                  <CalendarOff className="h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-sm">No availability requests.</p>
+                </div>
               ) : (
                 <div className="space-y-2">
                   {availRequests.map((req) => (
-                    <div key={req.id} className="flex items-center justify-between rounded-lg border p-3">
-                      <div>
-                        <p className="text-sm font-medium">{(req.profiles as any)?.full_name}</p>
-                        <p className="text-xs text-muted-foreground">
+                    <div key={req.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/30 transition-colors">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium">{(req.profiles as any)?.full_name}</p>
+                          <Badge variant="outline" className={`text-[10px] ${statusBadge(req.status)}`}>
+                            {req.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          <Clock className="inline mr-1 h-3 w-3" />
                           {format(new Date(req.date), "EEE, MMM d, yyyy")}
-                          {req.reason && ` — ${req.reason}`}
+                          {req.reason && ` — "${req.reason}"`}
                         </p>
                       </div>
-                      <div className="flex gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-green-600 hover:bg-green-50"
-                          onClick={() => handleAvailability.mutate({ id: req.id, status: "approved" })}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                          onClick={() => handleAvailability.mutate({ id: req.id, status: "declined" })}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {req.status === "pending" && (
+                        <div className="flex gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-green-600 hover:bg-green-50"
+                            onClick={() => handleAvailability.mutate({ id: req.id, status: "approved" })}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => handleAvailability.mutate({ id: req.id, status: "declined" })}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -132,42 +182,67 @@ export default function Requests() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="swaps" className="mt-4">
+        <TabsContent value="swaps" className="mt-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={swapFilter} onValueChange={(v: any) => setSwapFilter(v)}>
+              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="peer_accepted">Awaiting Approval</SelectItem>
+                <SelectItem value="all">All Requests</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Card>
             <CardContent className="p-4">
               {swapRequests.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No swaps awaiting approval.</p>
+                <div className="flex flex-col items-center py-8 text-muted-foreground">
+                  <ArrowLeftRight className="h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-sm">No swap requests.</p>
+                </div>
               ) : (
                 <div className="space-y-2">
                   {swapRequests.map((swap) => (
-                    <div key={swap.id} className="flex items-center justify-between rounded-lg border p-3">
-                      <div>
-                        <p className="text-sm font-medium">
-                          {(swap.requester as any)?.full_name} → {(swap.coverer as any)?.full_name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
+                    <div key={swap.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/30 transition-colors">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium">
+                            {(swap.requester as any)?.full_name} → {(swap.coverer as any)?.full_name || "Pool"}
+                          </p>
+                          <Badge variant="outline" className={`text-[10px] ${statusBadge(swap.status)}`}>
+                            {swap.status.replace("_", " ")}
+                          </Badge>
+                          {swap.is_pool_request && (
+                            <Badge variant="outline" className="text-[10px]">Pool</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          <Clock className="inline mr-1 h-3 w-3" />
                           {swap.shifts?.date && format(new Date(swap.shifts.date), "EEE, MMM d")}
                           {` · ${swap.shifts?.type} shift`}
+                          {` · ${swap.shifts?.start_time?.slice(0, 5)}–${swap.shifts?.end_time?.slice(0, 5)}`}
                         </p>
                       </div>
-                      <div className="flex gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-green-600 hover:bg-green-50"
-                          onClick={() => handleSwap.mutate({ id: swap.id, status: "manager_approved" })}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                          onClick={() => handleSwap.mutate({ id: swap.id, status: "denied" })}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {swap.status === "peer_accepted" && (
+                        <div className="flex gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-green-600 hover:bg-green-50"
+                            onClick={() => handleSwap.mutate({ id: swap.id, status: "manager_approved" })}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => handleSwap.mutate({ id: swap.id, status: "denied" })}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
