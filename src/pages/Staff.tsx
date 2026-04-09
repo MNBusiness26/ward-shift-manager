@@ -62,7 +62,7 @@ export default function Staff() {
                   <div>
                     <p className="text-sm font-medium">{member.full_name || "Unnamed"}</p>
                     <p className="text-xs text-muted-foreground">
-                      {(member.user_roles as any[])?.map((r: any) => r.role).join(", ") || "nurse"}
+                      {member.roles?.join(", ") || "nurse"}
                     </p>
                   </div>
                   <Button
@@ -93,9 +93,9 @@ export default function Staff() {
                   <div>
                     <p className="text-sm font-medium">{member.full_name}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      {(member.user_roles as any[])?.map((r: any) => (
-                        <Badge key={r.role} variant="outline" className="text-xs capitalize">
-                          {r.role}
+                      {member.roles?.map((role) => (
+                        <Badge key={role} variant="outline" className="text-xs capitalize">
+                          {role}
                         </Badge>
                       ))}
                       <span className="text-xs text-muted-foreground">
