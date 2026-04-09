@@ -7,7 +7,7 @@ const shiftLabels: Record<string, string> = { morning: "Morning", evening: "Even
 interface Colleague {
   id: string;
   is_responsible_on_shift: boolean;
-  profiles?: { full_name: string; is_responsible: boolean | null } | null;
+  profiles?: any;
 }
 
 interface ShiftDetailCardProps {

@@ -48,7 +48,7 @@ export function useDayShifts(dateStr: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
-        .select("*, profiles:shifts_assigned_user_id_fkey(full_name, is_responsible)")
+        .select("*, profiles:assigned_user_id(full_name, is_responsible)")
         .eq("date", dateStr!)
         .not("assigned_user_id", "is", null)
         .order("start_time");
