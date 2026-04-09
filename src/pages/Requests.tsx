@@ -148,11 +148,17 @@ export default function Requests() {
                             {req.status}
                           </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          <Clock className="inline mr-1 h-3 w-3" />
-                          {format(new Date(req.date), "EEE, MMM d, yyyy")}
-                          {req.reason && ` — "${req.reason}"`}
-                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-xs text-muted-foreground">
+                            <Clock className="inline mr-1 h-3 w-3" />
+                            {format(new Date(req.date), "EEE, MMM d, yyyy")}
+                            {(req as any).end_date && (req as any).end_date !== req.date && ` → ${format(new Date((req as any).end_date), "EEE, MMM d, yyyy")}`}
+                            {req.reason && ` — "${req.reason}"`}
+                          </p>
+                          <Badge variant="outline" className="text-[10px] capitalize">
+                            {(req as any).request_type === "vacation" ? "🌴 Vacation" : "🚫 Block"}
+                          </Badge>
+                        </div>
                       </div>
                       {req.status === "pending" && (
                         <div className="flex gap-1">
