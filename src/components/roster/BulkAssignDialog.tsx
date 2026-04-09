@@ -46,15 +46,17 @@ export function BulkAssignDialog({ open, onOpenChange, staff, blockedDates, init
   const [endTime, setEndTime] = useState(shiftTimes[initialType || "morning"].end);
   const [isDraft, setIsDraft] = useState(true);
 
-  // Sync when props change (dialog reopens with new pre-selection)
-  useState(() => {
-    if (initialDate) setDate(initialDate);
-    if (initialType) {
-      setType(initialType);
-      setStartTime(shiftTimes[initialType].start);
-      setEndTime(shiftTimes[initialType].end);
+  useEffect(() => {
+    if (open) {
+      if (initialDate) setDate(initialDate);
+      if (initialType) {
+        setType(initialType);
+        setStartTime(shiftTimes[initialType].start);
+        setEndTime(shiftTimes[initialType].end);
+      }
+      setSelectedStaff([]);
     }
-  });
+  }, [open, initialDate, initialType]);
 
   const isBlocked = (userId: string) =>
     blockedDates.some((b) => b.user_id === userId && b.date === date);
