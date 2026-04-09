@@ -14,16 +14,229 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      availability_requests: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          reason: string | null
+          status: Database["public"]["Enums"]["request_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          reason?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          reason?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "availability_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          constraints: Json
+          created_at: string
+          full_name: string
+          id: string
+          is_active: boolean
+          target_fte_percent: number
+          updated_at: string
+        }
+        Insert: {
+          constraints?: Json
+          created_at?: string
+          full_name?: string
+          id: string
+          is_active?: boolean
+          target_fte_percent?: number
+          updated_at?: string
+        }
+        Update: {
+          constraints?: Json
+          created_at?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          target_fte_percent?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shifts: {
+        Row: {
+          assigned_user_id: string | null
+          color_code: string | null
+          comments: string | null
+          created_at: string
+          date: string
+          end_time: string
+          id: string
+          is_draft: boolean
+          is_responsible_on_shift: boolean
+          manager_on_duty_id: string | null
+          start_time: string
+          type: Database["public"]["Enums"]["shift_type"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_user_id?: string | null
+          color_code?: string | null
+          comments?: string | null
+          created_at?: string
+          date: string
+          end_time: string
+          id?: string
+          is_draft?: boolean
+          is_responsible_on_shift?: boolean
+          manager_on_duty_id?: string | null
+          start_time: string
+          type: Database["public"]["Enums"]["shift_type"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_user_id?: string | null
+          color_code?: string | null
+          comments?: string | null
+          created_at?: string
+          date?: string
+          end_time?: string
+          id?: string
+          is_draft?: boolean
+          is_responsible_on_shift?: boolean
+          manager_on_duty_id?: string | null
+          start_time?: string
+          type?: Database["public"]["Enums"]["shift_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shifts_assigned_user_id_fkey"
+            columns: ["assigned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shifts_manager_on_duty_id_fkey"
+            columns: ["manager_on_duty_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      swap_requests: {
+        Row: {
+          covering_user_id: string | null
+          created_at: string
+          id: string
+          is_pool_request: boolean
+          requesting_user_id: string
+          shift_id: string
+          status: Database["public"]["Enums"]["swap_status"]
+          updated_at: string
+        }
+        Insert: {
+          covering_user_id?: string | null
+          created_at?: string
+          id?: string
+          is_pool_request?: boolean
+          requesting_user_id: string
+          shift_id: string
+          status?: Database["public"]["Enums"]["swap_status"]
+          updated_at?: string
+        }
+        Update: {
+          covering_user_id?: string | null
+          created_at?: string
+          id?: string
+          is_pool_request?: boolean
+          requesting_user_id?: string
+          shift_id?: string
+          status?: Database["public"]["Enums"]["swap_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "swap_requests_covering_user_id_fkey"
+            columns: ["covering_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "swap_requests_requesting_user_id_fkey"
+            columns: ["requesting_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "swap_requests_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_active_user: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "nurse" | "assistant" | "manager"
+      request_status: "pending" | "approved" | "declined"
+      shift_type: "morning" | "evening" | "night"
+      swap_status: "pending" | "peer_accepted" | "manager_approved" | "denied"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +363,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["nurse", "assistant", "manager"],
+      request_status: ["pending", "approved", "declined"],
+      shift_type: ["morning", "evening", "night"],
+      swap_status: ["pending", "peer_accepted", "manager_approved", "denied"],
+    },
   },
 } as const
