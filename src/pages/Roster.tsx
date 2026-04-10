@@ -274,45 +274,40 @@ export default function Roster() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Save (quick save current week as version)
+  // Save (overwrite current version, or create first version)
   const handleSave = async () => {
     const weekStr = format(viewStart, "yyyy-MM-dd");
-    // Find existing versions for this week to get next version number
-    const { data: existing } = await supabase
-      .from("roster_versions")
-      .select("version_name")
-      .eq("week_start_date", weekStr)
-      .order("created_at", { ascending: false })
-      .limit(1);
-
-    let versionNum = 1;
-    if (existing && existing.length > 0) {
-      const match = existing[0].version_name.match(/_v(\d+)$/);
-      if (match) versionNum = parseInt(match[1]) + 1;
-    }
-
-    const versionName = `draft_${weekStr}_v${versionNum}`;
     const shiftsData = shifts.map((s) => ({
-      date: s.date,
-      type: s.type,
-      start_time: s.start_time,
-      end_time: s.end_time,
-      assigned_user_id: s.assigned_user_id,
-      is_responsible_on_shift: s.is_responsible_on_shift,
-      manager_on_duty_id: s.manager_on_duty_id,
-      comments: s.comments,
-      is_draft: s.is_draft,
+      date: s.date, type: s.type, start_time: s.start_time, end_time: s.end_time,
+      assigned_user_id: s.assigned_user_id, is_responsible_on_shift: s.is_responsible_on_shift,
+      manager_on_duty_id: s.manager_on_duty_id, comments: s.comments, is_draft: s.is_draft,
     }));
 
-    const { error } = await supabase.from("roster_versions").insert({
-      version_name: versionName,
-      week_start_date: weekStr,
-      shifts_data: shiftsData,
-      created_by: user?.id || "",
-    });
-    if (error) {
-      toast.error(error.message);
+    if (currentVersionId) {
+      // Overwrite existing version
+      const { error } = await supabase.from("roster_versions")
+        .update({ shifts_data: shiftsData })
+        .eq("id", currentVersionId);
+      if (error) { toast.error(error.message); return; }
+      toast.success(`Saved "${currentVersionName}"`);
     } else {
+      // Create first version for this week
+      const { data: existing } = await supabase
+        .from("roster_versions").select("version_name")
+        .eq("week_start_date", weekStr).order("created_at", { ascending: false }).limit(1);
+      let versionNum = 1;
+      if (existing && existing.length > 0) {
+        const match = existing[0].version_name.match(/_v(\d+)$/);
+        if (match) versionNum = parseInt(match[1]) + 1;
+      }
+      const versionName = `draft_${weekStr}_v${versionNum}`;
+      const { data, error } = await supabase.from("roster_versions").insert({
+        version_name: versionName, week_start_date: weekStr,
+        shifts_data: shiftsData, created_by: user?.id || "",
+      }).select("id").single();
+      if (error) { toast.error(error.message); return; }
+      setCurrentVersionId(data.id);
+      setCurrentVersionName(versionName);
       toast.success(`Saved as ${versionName}`);
     }
   };
