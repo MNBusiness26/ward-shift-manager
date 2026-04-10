@@ -84,7 +84,7 @@ export default function StaffStats() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("swap_requests")
-        .select("*, shift:shifts(date, type, start_time, end_time)")
+        .select("*, shift:shifts(date, type, start_time, end_time), covering_profile:profiles!swap_requests_covering_user_id_fkey(full_name)")
         .or(`requesting_user_id.eq.${selectedId},covering_user_id.eq.${selectedId}`)
         .order("created_at", { ascending: false })
         .limit(20);
@@ -315,6 +315,7 @@ export default function StaffStats() {
                 <div className="space-y-2">
                   {swapRequests.map((sr) => {
                     const shift = sr.shift as any;
+                    const coveringProfile = sr.covering_profile as any;
                     return (
                       <div key={sr.id} className="flex items-center justify-between rounded-lg border p-3">
                         <div className="text-sm">
@@ -325,6 +326,14 @@ export default function StaffStats() {
                             <span className="ml-2 text-muted-foreground capitalize">
                               {shiftLabel[shift.type] || shift.type} {shift.start_time?.slice(0, 5)}–{shift.end_time?.slice(0, 5)}
                             </span>
+                          )}
+                          {!sr.is_pool_request && coveringProfile?.full_name && (
+                            <span className="ml-2 text-muted-foreground">
+                              with {coveringProfile.full_name}
+                            </span>
+                          )}
+                          {sr.is_pool_request && (
+                            <span className="ml-2 text-muted-foreground italic">Pool</span>
                           )}
                         </div>
                         <Badge variant="outline" className={statusColor[sr.status] || ""}>
