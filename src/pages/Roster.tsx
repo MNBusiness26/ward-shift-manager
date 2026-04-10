@@ -593,7 +593,9 @@ export default function Roster() {
 
       {/* Draft version management — bottom toolbar */}
       <div className="flex items-center gap-2 flex-wrap rounded-lg border bg-muted/30 p-3">
-        <span className="text-sm font-medium text-muted-foreground mr-2">Versions:</span>
+        <span className="text-sm font-medium text-muted-foreground mr-2">
+          Versions{currentVersionName ? `: ${currentVersionName}` : ""}
+        </span>
         <Button variant="outline" size="sm" onClick={handleSave} disabled={shifts.length === 0}>
           <Save className="mr-1 h-4 w-4" />
           Save
