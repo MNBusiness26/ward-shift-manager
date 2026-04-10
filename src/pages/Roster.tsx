@@ -386,6 +386,9 @@ export default function Roster() {
 
       // Navigate to the loaded week
       setViewStart(startOfWeek(weekStartDate, { weekStartsOn: 0 }));
+      // Track this as the current version
+      setCurrentVersionId(version.id);
+      setCurrentVersionName(version.version_name);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
