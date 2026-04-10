@@ -3,17 +3,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays, eachDayOfInterval } from "date-fns";
+import { format, startOfWeek, addWeeks, subWeeks, addDays, subDays, eachDayOfInterval } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Pencil, Trash2, Copy, Users, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Trash2, Copy, ClipboardPaste, Users, Star, Save, FolderOpen } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Database } from "@/integrations/supabase/types";
 
 type ShiftType = Database["public"]["Enums"]["shift_type"];
@@ -54,7 +56,21 @@ const defaultForm = (date?: string): ShiftFormData => ({
   is_draft: true,
 });
 
+interface CopiedWeek {
+  shifts: Array<{
+    dayIndex: number;
+    type: ShiftType;
+    start_time: string;
+    end_time: string;
+    assigned_user_id: string | null;
+    is_responsible_on_shift: boolean;
+    manager_on_duty_id: string | null;
+    comments: string | null;
+  }>;
+}
+
 export default function Roster() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [viewStart, setViewStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
   const viewEnd = addDays(viewStart, 6);
@@ -64,6 +80,16 @@ export default function Roster() {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [editingShift, setEditingShift] = useState<string | null>(null);
   const [form, setForm] = useState<ShiftFormData>(defaultForm());
+
+  // Copy/Paste state
+  const [copiedWeek, setCopiedWeek] = useState<CopiedWeek | null>(null);
+
+  // Save As dialog
+  const [saveAsOpen, setSaveAsOpen] = useState(false);
+  const [saveAsName, setSaveAsName] = useState("");
+
+  // Load version dialog
+  const [loadOpen, setLoadOpen] = useState(false);
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["roster-shifts", format(viewStart, "yyyy-MM-dd")],
@@ -119,6 +145,21 @@ export default function Roster() {
     },
   });
 
+  // Saved versions for Load dialog
+  const { data: savedVersions = [], refetch: refetchVersions } = useQuery({
+    queryKey: ["roster-versions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("roster_versions")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data;
+    },
+    enabled: loadOpen,
+  });
+
   const saveShift = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -132,7 +173,6 @@ export default function Roster() {
         comments: form.comments || null,
         is_draft: form.is_draft,
       };
-
       if (editingShift) {
         const { error } = await supabase.from("shifts").update(payload).eq("id", editingShift);
         if (error) throw error;
@@ -176,14 +216,39 @@ export default function Roster() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const copyWeek = useMutation({
-    mutationFn: async () => {
-      const nextWeekStart = addWeeks(viewStart, 1);
-      const inserts = shifts.map((s) => {
-        const dayOffset = days.findIndex((d) => format(d, "yyyy-MM-dd") === s.date);
-        const newDate = format(addWeeks(new Date(s.date), 1), "yyyy-MM-dd");
+  // Copy current week to clipboard
+  const handleCopyWeek = () => {
+    if (shifts.length === 0) {
+      toast.error("No shifts to copy");
+      return;
+    }
+    const copied: CopiedWeek = {
+      shifts: shifts.map((s) => {
+        const dayIndex = days.findIndex((d) => format(d, "yyyy-MM-dd") === s.date);
         return {
-          date: newDate,
+          dayIndex,
+          type: s.type,
+          start_time: s.start_time,
+          end_time: s.end_time,
+          assigned_user_id: s.assigned_user_id,
+          is_responsible_on_shift: s.is_responsible_on_shift,
+          manager_on_duty_id: s.manager_on_duty_id,
+          comments: s.comments,
+        };
+      }),
+    };
+    setCopiedWeek(copied);
+    toast.success("Week copied! Navigate to target week and paste.");
+  };
+
+  // Paste copied week
+  const pasteWeek = useMutation({
+    mutationFn: async () => {
+      if (!copiedWeek) return;
+      const inserts = copiedWeek.shifts
+        .filter((s) => s.dayIndex >= 0 && s.dayIndex <= 6)
+        .map((s) => ({
+          date: format(days[s.dayIndex], "yyyy-MM-dd"),
           type: s.type,
           start_time: s.start_time,
           end_time: s.end_time,
@@ -192,16 +257,132 @@ export default function Roster() {
           manager_on_duty_id: s.manager_on_duty_id,
           comments: s.comments,
           is_draft: true,
-        };
-      });
+        }));
       if (inserts.length === 0) return;
       const { error } = await supabase.from("shifts").insert(inserts);
       if (error) throw error;
-      setViewStart(nextWeekStart);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
-      toast.success("Week copied as drafts to next week");
+      setCopiedWeek(null);
+      toast.success("Week pasted as drafts");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Save (quick save current week as version)
+  const handleSave = async () => {
+    const weekStr = format(viewStart, "yyyy-MM-dd");
+    // Find existing versions for this week to get next version number
+    const { data: existing } = await supabase
+      .from("roster_versions")
+      .select("version_name")
+      .eq("week_start_date", weekStr)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    let versionNum = 1;
+    if (existing && existing.length > 0) {
+      const match = existing[0].version_name.match(/_v(\d+)$/);
+      if (match) versionNum = parseInt(match[1]) + 1;
+    }
+
+    const versionName = `draft_${weekStr}_v${versionNum}`;
+    const shiftsData = shifts.map((s) => ({
+      date: s.date,
+      type: s.type,
+      start_time: s.start_time,
+      end_time: s.end_time,
+      assigned_user_id: s.assigned_user_id,
+      is_responsible_on_shift: s.is_responsible_on_shift,
+      manager_on_duty_id: s.manager_on_duty_id,
+      comments: s.comments,
+      is_draft: s.is_draft,
+    }));
+
+    const { error } = await supabase.from("roster_versions").insert({
+      version_name: versionName,
+      week_start_date: weekStr,
+      shifts_data: shiftsData,
+      created_by: user?.id || "",
+    });
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success(`Saved as ${versionName}`);
+    }
+  };
+
+  // Save As
+  const handleSaveAs = async () => {
+    const weekStr = format(viewStart, "yyyy-MM-dd");
+    const name = saveAsName.trim() || `draft_${weekStr}_custom`;
+    const shiftsData = shifts.map((s) => ({
+      date: s.date,
+      type: s.type,
+      start_time: s.start_time,
+      end_time: s.end_time,
+      assigned_user_id: s.assigned_user_id,
+      is_responsible_on_shift: s.is_responsible_on_shift,
+      manager_on_duty_id: s.manager_on_duty_id,
+      comments: s.comments,
+      is_draft: s.is_draft,
+    }));
+
+    const { error } = await supabase.from("roster_versions").insert({
+      version_name: name,
+      week_start_date: weekStr,
+      shifts_data: shiftsData,
+      created_by: user?.id || "",
+    });
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success(`Saved as "${name}"`);
+      setSaveAsOpen(false);
+      setSaveAsName("");
+    }
+  };
+
+  // Load a saved version
+  const loadVersion = useMutation({
+    mutationFn: async (version: any) => {
+      const weekStr = version.week_start_date;
+      const weekStartDate = new Date(weekStr + "T00:00:00");
+      const weekEndDate = addDays(weekStartDate, 6);
+
+      // Delete existing shifts for that week
+      const { error: delError } = await supabase
+        .from("shifts")
+        .delete()
+        .gte("date", weekStr)
+        .lte("date", format(weekEndDate, "yyyy-MM-dd"));
+      if (delError) throw delError;
+
+      // Insert saved shifts
+      const savedShifts = (version.shifts_data as any[]).map((s: any) => ({
+        date: s.date,
+        type: s.type,
+        start_time: s.start_time,
+        end_time: s.end_time,
+        assigned_user_id: s.assigned_user_id,
+        is_responsible_on_shift: s.is_responsible_on_shift,
+        manager_on_duty_id: s.manager_on_duty_id,
+        comments: s.comments,
+        is_draft: s.is_draft ?? true,
+      }));
+      if (savedShifts.length > 0) {
+        const { error: insError } = await supabase.from("shifts").insert(savedShifts);
+        if (insError) throw insError;
+      }
+
+      // Navigate to the loaded week
+      setViewStart(startOfWeek(weekStartDate, { weekStartsOn: 0 }));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
+      setLoadOpen(false);
+      toast.success("Version loaded");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -237,32 +418,23 @@ export default function Roster() {
 
   const draftCount = shifts.filter((s) => s.is_draft).length;
   const missingResponsible = shifts.filter((s) => !s.is_responsible_on_shift && !s.is_draft);
-
   const managerStaff = staff.filter((s) => managers.includes(s.id));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Master Roster</h1>
         <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => copyWeek.mutate()} disabled={copyWeek.isPending || shifts.length === 0}>
-            <Copy className="mr-1 h-4 w-4" />
-            Copy Week
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
-            <Users className="mr-1 h-4 w-4" />
-            Bulk Assign
-          </Button>
-          <Button size="sm" onClick={() => openCreate()}>
-            <Plus className="mr-1 h-4 w-4" />
-            Add Shift
-          </Button>
           {draftCount > 0 && (
             <Button size="sm" onClick={() => publishDrafts.mutate()} disabled={publishDrafts.isPending}>
               <Eye className="mr-1 h-4 w-4" />
               Publish {draftCount} Draft{draftCount > 1 ? "s" : ""}
             </Button>
           )}
+          <Button size="sm" onClick={() => openCreate()}>
+            <Plus className="mr-1 h-4 w-4" />
+            Add Shift
+          </Button>
         </div>
       </div>
 
@@ -272,6 +444,25 @@ export default function Roster() {
           <span>{missingResponsible.length} published shift(s) missing a Responsible Nurse</span>
         </div>
       )}
+
+      {/* Shift management toolbar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
+          <Users className="mr-1 h-4 w-4" />
+          Bulk Assign
+        </Button>
+        {!copiedWeek ? (
+          <Button variant="outline" size="sm" onClick={handleCopyWeek} disabled={shifts.length === 0}>
+            <Copy className="mr-1 h-4 w-4" />
+            Copy Week
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" onClick={() => pasteWeek.mutate()} disabled={pasteWeek.isPending}>
+            <ClipboardPaste className="mr-1 h-4 w-4" />
+            Paste Week
+          </Button>
+        )}
+      </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -388,7 +579,73 @@ export default function Roster() {
         </CardContent>
       </Card>
 
+      {/* Draft version management — bottom toolbar */}
+      <div className="flex items-center gap-2 flex-wrap rounded-lg border bg-muted/30 p-3">
+        <span className="text-sm font-medium text-muted-foreground mr-2">Versions:</span>
+        <Button variant="outline" size="sm" onClick={handleSave} disabled={shifts.length === 0}>
+          <Save className="mr-1 h-4 w-4" />
+          Save
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => {
+          setSaveAsName(`draft_${format(viewStart, "yyyy-MM-dd")}_`);
+          setSaveAsOpen(true);
+        }} disabled={shifts.length === 0}>
+          <Save className="mr-1 h-4 w-4" />
+          Save As…
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => { setLoadOpen(true); refetchVersions(); }}>
+          <FolderOpen className="mr-1 h-4 w-4" />
+          Load Version
+        </Button>
+      </div>
+
       <BulkAssignDialog open={bulkOpen} onOpenChange={setBulkOpen} staff={staff} blockedDates={blockedDates} />
+
+      {/* Save As dialog */}
+      <Dialog open={saveAsOpen} onOpenChange={setSaveAsOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Save Version As</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Version Name</Label>
+              <Input value={saveAsName} onChange={(e) => setSaveAsName(e.target.value)} placeholder="draft_2026-04-06_v1" />
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={handleSaveAs} disabled={!saveAsName.trim()}>Save</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Load Version dialog */}
+      <Dialog open={loadOpen} onOpenChange={setLoadOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Load Saved Version</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            {savedVersions.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">No saved versions yet.</p>
+            ) : (
+              savedVersions.map((v: any) => (
+                <div key={v.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/30 transition-colors">
+                  <div>
+                    <p className="text-sm font-medium">{v.version_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Week of {v.week_start_date} · {(v.shifts_data as any[]).length} shifts · {format(new Date(v.created_at), "MMM d, HH:mm")}
+                    </p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => loadVersion.mutate(v)} disabled={loadVersion.isPending}>
+                    Load
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Shift create/edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
