@@ -597,10 +597,7 @@ export default function Roster() {
           <Save className="mr-1 h-4 w-4" />
           Save
         </Button>
-        <Button variant="outline" size="sm" onClick={() => {
-          setSaveAsName(`draft_${format(viewStart, "yyyy-MM-dd")}_`);
-          setSaveAsOpen(true);
-        }} disabled={shifts.length === 0}>
+        <Button variant="outline" size="sm" onClick={handleOpenSaveAs} disabled={shifts.length === 0}>
           <Save className="mr-1 h-4 w-4" />
           Save As…
         </Button>
