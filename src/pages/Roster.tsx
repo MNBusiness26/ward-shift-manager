@@ -91,6 +91,10 @@ export default function Roster() {
   // Load version dialog
   const [loadOpen, setLoadOpen] = useState(false);
 
+  // Track current version for "Save" (overwrite)
+  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
+  const [currentVersionName, setCurrentVersionName] = useState<string | null>(null);
+
   const { data: shifts = [] } = useQuery({
     queryKey: ["roster-shifts", format(viewStart, "yyyy-MM-dd")],
     queryFn: async () => {
