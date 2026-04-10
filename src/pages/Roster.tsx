@@ -514,8 +514,9 @@ export default function Roster() {
               {staff.map((member) => (
                 <tr key={member.id} className="border-t">
                   <td className="sticky left-0 z-10 bg-card p-2 font-medium">
-                    <div className="flex items-center gap-1 max-w-[130px]">
+                    <div className="flex items-center gap-1 max-w-[160px]">
                       <span className="truncate">{member.full_name}</span>
+                      <span className="text-xs text-muted-foreground flex-shrink-0">{Math.round(Number(member.target_fte_percent) * 100)}%</span>
                       {member.is_responsible && <Star className="h-3 w-3 fill-primary text-primary flex-shrink-0" />}
                     </div>
                   </td>
