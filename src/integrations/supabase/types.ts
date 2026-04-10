@@ -97,6 +97,33 @@ export type Database = {
         }
         Relationships: []
       }
+      roster_versions: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          shifts_data: Json
+          version_name: string
+          week_start_date: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          shifts_data?: Json
+          version_name: string
+          week_start_date: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          shifts_data?: Json
+          version_name?: string
+          week_start_date?: string
+        }
+        Relationships: []
+      }
       shifts: {
         Row: {
           assigned_user_id: string | null
