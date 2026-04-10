@@ -91,6 +91,10 @@ export default function Roster() {
   // Load version dialog
   const [loadOpen, setLoadOpen] = useState(false);
 
+  // Track current version for "Save" (overwrite)
+  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
+  const [currentVersionName, setCurrentVersionName] = useState<string | null>(null);
+
   const { data: shifts = [] } = useQuery({
     queryKey: ["roster-shifts", format(viewStart, "yyyy-MM-dd")],
     queryFn: async () => {
@@ -111,7 +115,7 @@ export default function Roster() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, is_active, is_responsible")
+        .select("id, full_name, is_active, is_responsible, target_fte_percent")
         .eq("is_active", true)
         .order("full_name");
       if (error) throw error;
@@ -270,47 +274,60 @@ export default function Roster() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Save (quick save current week as version)
+  // Save (overwrite current version, or create first version)
   const handleSave = async () => {
     const weekStr = format(viewStart, "yyyy-MM-dd");
-    // Find existing versions for this week to get next version number
-    const { data: existing } = await supabase
-      .from("roster_versions")
-      .select("version_name")
-      .eq("week_start_date", weekStr)
-      .order("created_at", { ascending: false })
-      .limit(1);
-
-    let versionNum = 1;
-    if (existing && existing.length > 0) {
-      const match = existing[0].version_name.match(/_v(\d+)$/);
-      if (match) versionNum = parseInt(match[1]) + 1;
-    }
-
-    const versionName = `draft_${weekStr}_v${versionNum}`;
     const shiftsData = shifts.map((s) => ({
-      date: s.date,
-      type: s.type,
-      start_time: s.start_time,
-      end_time: s.end_time,
-      assigned_user_id: s.assigned_user_id,
-      is_responsible_on_shift: s.is_responsible_on_shift,
-      manager_on_duty_id: s.manager_on_duty_id,
-      comments: s.comments,
-      is_draft: s.is_draft,
+      date: s.date, type: s.type, start_time: s.start_time, end_time: s.end_time,
+      assigned_user_id: s.assigned_user_id, is_responsible_on_shift: s.is_responsible_on_shift,
+      manager_on_duty_id: s.manager_on_duty_id, comments: s.comments, is_draft: s.is_draft,
     }));
 
-    const { error } = await supabase.from("roster_versions").insert({
-      version_name: versionName,
-      week_start_date: weekStr,
-      shifts_data: shiftsData,
-      created_by: user?.id || "",
-    });
-    if (error) {
-      toast.error(error.message);
+    if (currentVersionId) {
+      // Overwrite existing version
+      const { error } = await supabase.from("roster_versions")
+        .update({ shifts_data: shiftsData })
+        .eq("id", currentVersionId);
+      if (error) { toast.error(error.message); return; }
+      toast.success(`Saved "${currentVersionName}"`);
     } else {
+      // Create first version for this week
+      const { data: existing } = await supabase
+        .from("roster_versions").select("version_name")
+        .eq("week_start_date", weekStr).order("created_at", { ascending: false }).limit(1);
+      let versionNum = 1;
+      if (existing && existing.length > 0) {
+        const match = existing[0].version_name.match(/_v(\d+)$/);
+        if (match) versionNum = parseInt(match[1]) + 1;
+      }
+      const versionName = `draft_${weekStr}_v${versionNum}`;
+      const { data, error } = await supabase.from("roster_versions").insert({
+        version_name: versionName, week_start_date: weekStr,
+        shifts_data: shiftsData, created_by: user?.id || "",
+      }).select("id").single();
+      if (error) { toast.error(error.message); return; }
+      setCurrentVersionId(data.id);
+      setCurrentVersionName(versionName);
       toast.success(`Saved as ${versionName}`);
     }
+  };
+
+  // Save As — auto-suggest name
+  const handleOpenSaveAs = () => {
+    const weekStr = format(viewStart, "yyyy-MM-dd");
+    // Auto-generate suggested name
+    (async () => {
+      const { data: existing } = await supabase
+        .from("roster_versions").select("version_name")
+        .eq("week_start_date", weekStr).order("created_at", { ascending: false }).limit(1);
+      let versionNum = 1;
+      if (existing && existing.length > 0) {
+        const match = existing[0].version_name.match(/_v(\d+)$/);
+        if (match) versionNum = parseInt(match[1]) + 1;
+      }
+      setSaveAsName(`draft_${weekStr}_v${versionNum}`);
+      setSaveAsOpen(true);
+    })();
   };
 
   // Save As
@@ -318,30 +335,21 @@ export default function Roster() {
     const weekStr = format(viewStart, "yyyy-MM-dd");
     const name = saveAsName.trim() || `draft_${weekStr}_custom`;
     const shiftsData = shifts.map((s) => ({
-      date: s.date,
-      type: s.type,
-      start_time: s.start_time,
-      end_time: s.end_time,
-      assigned_user_id: s.assigned_user_id,
-      is_responsible_on_shift: s.is_responsible_on_shift,
-      manager_on_duty_id: s.manager_on_duty_id,
-      comments: s.comments,
-      is_draft: s.is_draft,
+      date: s.date, type: s.type, start_time: s.start_time, end_time: s.end_time,
+      assigned_user_id: s.assigned_user_id, is_responsible_on_shift: s.is_responsible_on_shift,
+      manager_on_duty_id: s.manager_on_duty_id, comments: s.comments, is_draft: s.is_draft,
     }));
 
-    const { error } = await supabase.from("roster_versions").insert({
-      version_name: name,
-      week_start_date: weekStr,
-      shifts_data: shiftsData,
-      created_by: user?.id || "",
-    });
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(`Saved as "${name}"`);
-      setSaveAsOpen(false);
-      setSaveAsName("");
-    }
+    const { data, error } = await supabase.from("roster_versions").insert({
+      version_name: name, week_start_date: weekStr,
+      shifts_data: shiftsData, created_by: user?.id || "",
+    }).select("id").single();
+    if (error) { toast.error(error.message); return; }
+    setCurrentVersionId(data.id);
+    setCurrentVersionName(name);
+    toast.success(`Saved as "${name}"`);
+    setSaveAsOpen(false);
+    setSaveAsName("");
   };
 
   // Load a saved version
@@ -378,6 +386,9 @@ export default function Roster() {
 
       // Navigate to the loaded week
       setViewStart(startOfWeek(weekStartDate, { weekStartsOn: 0 }));
+      // Track this as the current version
+      setCurrentVersionId(version.id);
+      setCurrentVersionName(version.version_name);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
@@ -503,8 +514,9 @@ export default function Roster() {
               {staff.map((member) => (
                 <tr key={member.id} className="border-t">
                   <td className="sticky left-0 z-10 bg-card p-2 font-medium">
-                    <div className="flex items-center gap-1 max-w-[130px]">
+                    <div className="flex items-center gap-1 max-w-[160px]">
                       <span className="truncate">{member.full_name}</span>
+                      <span className="text-xs text-muted-foreground flex-shrink-0">{Math.round(Number(member.target_fte_percent) * 100)}%</span>
                       {member.is_responsible && <Star className="h-3 w-3 fill-primary text-primary flex-shrink-0" />}
                     </div>
                   </td>
@@ -581,15 +593,14 @@ export default function Roster() {
 
       {/* Draft version management — bottom toolbar */}
       <div className="flex items-center gap-2 flex-wrap rounded-lg border bg-muted/30 p-3">
-        <span className="text-sm font-medium text-muted-foreground mr-2">Versions:</span>
+        <span className="text-sm font-medium text-muted-foreground mr-2">
+          Versions{currentVersionName ? `: ${currentVersionName}` : ""}
+        </span>
         <Button variant="outline" size="sm" onClick={handleSave} disabled={shifts.length === 0}>
           <Save className="mr-1 h-4 w-4" />
           Save
         </Button>
-        <Button variant="outline" size="sm" onClick={() => {
-          setSaveAsName(`draft_${format(viewStart, "yyyy-MM-dd")}_`);
-          setSaveAsOpen(true);
-        }} disabled={shifts.length === 0}>
+        <Button variant="outline" size="sm" onClick={handleOpenSaveAs} disabled={shifts.length === 0}>
           <Save className="mr-1 h-4 w-4" />
           Save As…
         </Button>
