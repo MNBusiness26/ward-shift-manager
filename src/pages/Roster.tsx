@@ -312,35 +312,44 @@ export default function Roster() {
     }
   };
 
+  // Save As — auto-suggest name
+  const handleOpenSaveAs = () => {
+    const weekStr = format(viewStart, "yyyy-MM-dd");
+    // Auto-generate suggested name
+    (async () => {
+      const { data: existing } = await supabase
+        .from("roster_versions").select("version_name")
+        .eq("week_start_date", weekStr).order("created_at", { ascending: false }).limit(1);
+      let versionNum = 1;
+      if (existing && existing.length > 0) {
+        const match = existing[0].version_name.match(/_v(\d+)$/);
+        if (match) versionNum = parseInt(match[1]) + 1;
+      }
+      setSaveAsName(`draft_${weekStr}_v${versionNum}`);
+      setSaveAsOpen(true);
+    })();
+  };
+
   // Save As
   const handleSaveAs = async () => {
     const weekStr = format(viewStart, "yyyy-MM-dd");
     const name = saveAsName.trim() || `draft_${weekStr}_custom`;
     const shiftsData = shifts.map((s) => ({
-      date: s.date,
-      type: s.type,
-      start_time: s.start_time,
-      end_time: s.end_time,
-      assigned_user_id: s.assigned_user_id,
-      is_responsible_on_shift: s.is_responsible_on_shift,
-      manager_on_duty_id: s.manager_on_duty_id,
-      comments: s.comments,
-      is_draft: s.is_draft,
+      date: s.date, type: s.type, start_time: s.start_time, end_time: s.end_time,
+      assigned_user_id: s.assigned_user_id, is_responsible_on_shift: s.is_responsible_on_shift,
+      manager_on_duty_id: s.manager_on_duty_id, comments: s.comments, is_draft: s.is_draft,
     }));
 
-    const { error } = await supabase.from("roster_versions").insert({
-      version_name: name,
-      week_start_date: weekStr,
-      shifts_data: shiftsData,
-      created_by: user?.id || "",
-    });
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(`Saved as "${name}"`);
-      setSaveAsOpen(false);
-      setSaveAsName("");
-    }
+    const { data, error } = await supabase.from("roster_versions").insert({
+      version_name: name, week_start_date: weekStr,
+      shifts_data: shiftsData, created_by: user?.id || "",
+    }).select("id").single();
+    if (error) { toast.error(error.message); return; }
+    setCurrentVersionId(data.id);
+    setCurrentVersionName(name);
+    toast.success(`Saved as "${name}"`);
+    setSaveAsOpen(false);
+    setSaveAsName("");
   };
 
   // Load a saved version
