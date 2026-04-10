@@ -202,6 +202,9 @@ export default function StaffStats() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <TrendingUp className="h-4 w-4" /> Weekly Fulfillment
+                <span className="ml-auto text-xs font-normal text-muted-foreground">
+                  {format(weekStart, "MMM d")} — {format(weekEnd, "MMM d")}
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
