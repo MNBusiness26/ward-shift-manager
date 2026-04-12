@@ -220,9 +220,11 @@ export type Database = {
           created_at: string
           id: string
           is_pool_request: boolean
+          is_take_only: boolean
           requesting_user_id: string
           shift_id: string
           status: Database["public"]["Enums"]["swap_status"]
+          target_shift_id: string | null
           updated_at: string
         }
         Insert: {
@@ -230,9 +232,11 @@ export type Database = {
           created_at?: string
           id?: string
           is_pool_request?: boolean
+          is_take_only?: boolean
           requesting_user_id: string
           shift_id: string
           status?: Database["public"]["Enums"]["swap_status"]
+          target_shift_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -240,9 +244,11 @@ export type Database = {
           created_at?: string
           id?: string
           is_pool_request?: boolean
+          is_take_only?: boolean
           requesting_user_id?: string
           shift_id?: string
           status?: Database["public"]["Enums"]["swap_status"]
+          target_shift_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -263,6 +269,13 @@ export type Database = {
           {
             foreignKeyName: "swap_requests_shift_id_fkey"
             columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "swap_requests_target_shift_id_fkey"
+            columns: ["target_shift_id"]
             isOneToOne: false
             referencedRelation: "shifts"
             referencedColumns: ["id"]
