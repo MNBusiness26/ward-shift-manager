@@ -15,7 +15,10 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Trash2, Copy, ClipboardPaste, Users, Star, Save, FolderOpen, Lock, Settings } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { PublishConfirmDialog } from "@/components/roster/PublishConfirmDialog";
+import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
+import { validateShiftFriction, isOverHeadcount, HEADCOUNT_LIMITS } from "@/components/roster/frictionValidation";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -90,6 +93,8 @@ export default function Roster() {
   const [editingShift, setEditingShift] = useState<string | null>(null);
   const [form, setForm] = useState<ShiftFormData>(defaultForm());
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [frictionWarnings, setFrictionWarnings] = useState<FrictionWarning[]>([]);
+  const [frictionOpen, setFrictionOpen] = useState(false);
 
   // Copy/Paste state
   const [copiedWeek, setCopiedWeek] = useState<CopiedWeek | null>(null);
@@ -131,7 +136,7 @@ export default function Roster() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, is_active, is_responsible, target_fte_percent")
+        .select("id, full_name, is_active, is_responsible, target_fte_percent, constraints")
         .eq("is_active", true)
         .order("full_name");
       if (error) throw error;
