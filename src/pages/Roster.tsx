@@ -89,6 +89,7 @@ export default function Roster() {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [editingShift, setEditingShift] = useState<string | null>(null);
   const [form, setForm] = useState<ShiftFormData>(defaultForm());
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Copy/Paste state
   const [copiedWeek, setCopiedWeek] = useState<CopiedWeek | null>(null);
