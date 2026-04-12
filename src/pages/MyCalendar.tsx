@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sun, Sunset, Moon } from "lucide-react";
+import { Sun, Sunset, Moon, Users } from "lucide-react";
 import {
   format,
   startOfMonth,
