@@ -14,6 +14,7 @@ import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval }
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Users, Star, X, Trash2, Eye, Lock } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
+import { PublishConfirmDialog } from "@/components/roster/PublishConfirmDialog";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -86,6 +87,7 @@ export default function ManagementCalendar() {
   const [detailDate, setDetailDate] = useState("");
   const [detailType, setDetailType] = useState<ShiftType>("morning");
   const [clearWeekConfirmOpen, setClearWeekConfirmOpen] = useState(false);
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["mgmt-calendar-shifts", format(weekStart, "yyyy-MM-dd")],
@@ -273,7 +275,7 @@ export default function ManagementCalendar() {
         <h1 className="text-2xl font-bold">Management Calendar</h1>
         <div className="flex gap-2 flex-wrap">
           {draftCount > 0 && (
-            <Button size="sm" onClick={() => publishDrafts.mutate()} disabled={publishDrafts.isPending}>
+            <Button size="sm" onClick={() => setPublishConfirmOpen(true)} disabled={publishDrafts.isPending}>
               <Eye className="mr-1 h-4 w-4" />
               Publish {draftCount} Draft{draftCount > 1 ? "s" : ""}
             </Button>
@@ -575,6 +577,18 @@ export default function ManagementCalendar() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PublishConfirmDialog
+        open={publishConfirmOpen}
+        onOpenChange={setPublishConfirmOpen}
+        drafts={shifts.filter((s) => s.is_draft)}
+        allShifts={shifts}
+        onConfirm={() => {
+          publishDrafts.mutate();
+          setPublishConfirmOpen(false);
+        }}
+        isPending={publishDrafts.isPending}
+      />
     </div>
   );
 }

@@ -14,6 +14,7 @@ import { format, startOfWeek, addWeeks, subWeeks, addDays, subDays, eachDayOfInt
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Trash2, Copy, ClipboardPaste, Users, Star, Save, FolderOpen, Lock, Settings } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
+import { PublishConfirmDialog } from "@/components/roster/PublishConfirmDialog";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Database } from "@/integrations/supabase/types";
@@ -105,6 +106,7 @@ export default function Roster() {
   const [enforceFullWeek, setEnforceFullWeek] = useState(true);
   const isFullWeek = getDay(viewStart) === 0; // Sunday start
   const [clearWeekConfirmOpen, setClearWeekConfirmOpen] = useState(false);
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["roster-shifts", format(viewStart, "yyyy-MM-dd")],
@@ -467,7 +469,7 @@ export default function Roster() {
           {draftCount > 0 && (
             <Button
               size="sm"
-              onClick={() => publishDrafts.mutate()}
+              onClick={() => setPublishConfirmOpen(true)}
               disabled={publishDrafts.isPending || (enforceFullWeek && !isFullWeek)}
               title={enforceFullWeek && !isFullWeek ? "Navigate to a full Sun–Sat week to publish" : undefined}
             >
@@ -830,6 +832,18 @@ export default function Roster() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PublishConfirmDialog
+        open={publishConfirmOpen}
+        onOpenChange={setPublishConfirmOpen}
+        drafts={shifts.filter((s) => s.is_draft)}
+        allShifts={shifts}
+        onConfirm={() => {
+          publishDrafts.mutate();
+          setPublishConfirmOpen(false);
+        }}
+        isPending={publishDrafts.isPending}
+      />
     </div>
   );
 }
