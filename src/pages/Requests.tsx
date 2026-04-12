@@ -41,7 +41,8 @@ export default function Requests() {
         .from("swap_requests")
         .select("*, requesting_shift:shifts!swap_requests_shift_id_fkey(*), target_shift:shifts!swap_requests_target_shift_id_fkey(*), requester:requesting_user_id(full_name), coverer:covering_user_id(full_name)")
         .order("created_at", { ascending: false });
-      if (swapFilter === "peer_accepted") q = q.eq("status", "peer_accepted");
+      if (swapFilter === "pending_all") q = q.in("status", ["pending", "peer_accepted"]);
+      else if (swapFilter === "peer_accepted") q = q.eq("status", "peer_accepted");
       const { data, error } = await q;
       if (error) throw error;
       return data;
@@ -202,9 +203,10 @@ export default function Requests() {
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={swapFilter} onValueChange={(v: any) => setSwapFilter(v)}>
-              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="peer_accepted">Awaiting Approval</SelectItem>
+                <SelectItem value="pending_all">All Pending</SelectItem>
+                <SelectItem value="peer_accepted">Awaiting Manager</SelectItem>
                 <SelectItem value="all">All Requests</SelectItem>
               </SelectContent>
             </Select>
