@@ -373,12 +373,19 @@ export default function ManagementCalendar() {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const blocked = isDateBlocked(dateStr);
                     const dayShifts = shifts.filter((s) => s.date === dateStr && s.type === type && s.assigned_user_id);
+                    const overHeadcount = isOverHeadcount(shifts as any[], dateStr, type);
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`p-2 border-l align-top ${blocked ? "bg-gray-200/50 cursor-not-allowed" : `${shiftColors[type]} cursor-pointer hover:opacity-80`}`}
+                        className={`p-2 border-l align-top ${blocked ? "bg-gray-200/50 cursor-not-allowed" : `${shiftColors[type]} cursor-pointer hover:opacity-80`} ${overHeadcount ? "ring-2 ring-inset ring-amber-400/60" : ""}`}
                         onClick={() => !blocked && handleCellClick(dateStr, type)}
                       >
+                        {overHeadcount && (
+                          <div className="flex items-center gap-0.5 mb-1">
+                            <AlertTriangle className="h-3 w-3 text-amber-500" />
+                            <span className="text-[9px] text-amber-600 font-medium">{dayShifts.filter(s => !(s as any).is_standby).length}/{HEADCOUNT_LIMITS[type]}</span>
+                          </div>
+                        )}
                         {dayShifts.length === 0 ? (
                           <span className="text-xs text-muted-foreground italic">{blocked ? "🔒" : "—"}</span>
                         ) : (
