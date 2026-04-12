@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,9 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Users, Star, X, Trash2, Eye, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
-import { PublishConfirmDialog } from "@/components/roster/PublishConfirmDialog";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -56,6 +54,7 @@ interface ShiftFormData {
   manager_on_duty_id: string;
   comments: string;
   is_draft: boolean;
+  is_standby: boolean;
 }
 
 const defaultForm = (date?: string, type?: ShiftType): ShiftFormData => ({
@@ -68,6 +67,7 @@ const defaultForm = (date?: string, type?: ShiftType): ShiftFormData => ({
   manager_on_duty_id: "",
   comments: "",
   is_draft: true,
+  is_standby: false,
 });
 
 export default function ManagementCalendar() {
@@ -77,17 +77,15 @@ export default function ManagementCalendar() {
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingShift, setEditingShift] = useState<string | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkDate, setBulkDate] = useState<string | undefined>();
   const [bulkType, setBulkType] = useState<ShiftType | undefined>();
   const [form, setForm] = useState<ShiftFormData>(defaultForm());
 
-  // Shift detail panel state
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailDate, setDetailDate] = useState("");
   const [detailType, setDetailType] = useState<ShiftType>("morning");
-  const [clearWeekConfirmOpen, setClearWeekConfirmOpen] = useState(false);
-  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["mgmt-calendar-shifts", format(weekStart, "yyyy-MM-dd")],
@@ -143,14 +141,40 @@ export default function ManagementCalendar() {
     },
   });
 
+  // Fetch hard-locked dates
+  const { data: hardBlockedDates = [] } = useQuery({
+    queryKey: ["blocked-dates", format(weekStart, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blocked_dates")
+        .select("date")
+        .gte("date", format(weekStart, "yyyy-MM-dd"))
+        .lte("date", format(weekEnd, "yyyy-MM-dd"));
+      if (error) throw error;
+      return data?.map((d) => d.date) ?? [];
+    },
+  });
+
+  // Fetch user_roles for standby filtering
+  const { data: allUserRoles = [] } = useQuery({
+    queryKey: ["all-user-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_roles").select("user_id, role");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["mgmt-calendar-shifts"] });
     queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
   };
 
+  const isDateBlocked = (dateStr: string) => hardBlockedDates.includes(dateStr);
+
   const saveShift = useMutation({
     mutationFn: async () => {
-      const payload = {
+      const payload: any = {
         date: form.date,
         type: form.type,
         start_time: form.start_time,
@@ -160,30 +184,31 @@ export default function ManagementCalendar() {
         manager_on_duty_id: form.manager_on_duty_id || null,
         comments: form.comments || null,
         is_draft: form.is_draft,
+        is_standby: form.is_standby,
       };
-      const { error } = await supabase.from("shifts").insert(payload);
-      if (error) throw error;
+      if (editingShift) {
+        const { error } = await supabase.from("shifts").update(payload).eq("id", editingShift);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("shifts").insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       invalidateAll();
       setDialogOpen(false);
-      toast.success("Shift created");
+      setEditingShift(null);
+      toast.success(editingShift ? "Shift updated" : "Shift created");
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   const toggleResponsible = useMutation({
     mutationFn: async ({ shiftId, value }: { shiftId: string; value: boolean }) => {
-      const { error } = await supabase
-        .from("shifts")
-        .update({ is_responsible_on_shift: value })
-        .eq("id", shiftId);
+      const { error } = await supabase.from("shifts").update({ is_responsible_on_shift: value }).eq("id", shiftId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      invalidateAll();
-      toast.success("Updated responsible status");
-    },
+    onSuccess: () => { invalidateAll(); toast.success("Updated responsible status"); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -192,41 +217,7 @@ export default function ManagementCalendar() {
       const { error } = await supabase.from("shifts").delete().eq("id", shiftId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      invalidateAll();
-      toast.success("Staff removed from shift");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const publishDrafts = useMutation({
-    mutationFn: async () => {
-      const draftIds = shifts.filter((s) => s.is_draft).map((s) => s.id);
-      if (draftIds.length === 0) return;
-      const { error } = await supabase.from("shifts").update({ is_draft: false }).in("id", draftIds);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      invalidateAll();
-      toast.success("Schedule published!");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const clearWeek = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase
-        .from("shifts")
-        .delete()
-        .gte("date", format(weekStart, "yyyy-MM-dd"))
-        .lte("date", format(weekEnd, "yyyy-MM-dd"));
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      invalidateAll();
-      toast.success("Week cleared");
-      setClearWeekConfirmOpen(false);
-    },
+    onSuccess: () => { invalidateAll(); toast.success("Shift deleted"); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -235,7 +226,30 @@ export default function ManagementCalendar() {
   };
 
   const openAddShift = (date?: string, type?: ShiftType) => {
+    if (date && isDateBlocked(date)) return;
+    setEditingShift(null);
     setForm(defaultForm(date, type));
+    setDialogOpen(true);
+  };
+
+  const openEditShift = (shift: any) => {
+    if (isDateBlocked(shift.date)) {
+      toast.error("This date is locked. No modifications allowed.");
+      return;
+    }
+    setEditingShift(shift.id);
+    setForm({
+      date: shift.date,
+      type: shift.type,
+      start_time: shift.start_time?.slice(0, 5),
+      end_time: shift.end_time?.slice(0, 5),
+      assigned_user_id: shift.assigned_user_id || "",
+      is_responsible_on_shift: shift.is_responsible_on_shift,
+      manager_on_duty_id: shift.manager_on_duty_id || "",
+      comments: shift.comments || "",
+      is_draft: shift.is_draft,
+      is_standby: (shift as any).is_standby ?? false,
+    });
     setDialogOpen(true);
   };
 
@@ -246,44 +260,38 @@ export default function ManagementCalendar() {
   };
 
   const handleCellClick = (dateStr: string, type: ShiftType) => {
-    const dayShifts = shifts.filter(
-      (s) => s.date === dateStr && s.type === type && s.assigned_user_id
-    );
+    if (isDateBlocked(dateStr)) return;
+    const dayShifts = shifts.filter((s) => s.date === dateStr && s.type === type && s.assigned_user_id);
     if (dayShifts.length === 0) {
-      // Empty → open bulk assign pre-filled
       setBulkDate(dateStr);
       setBulkType(type);
       setBulkOpen(true);
     } else {
-      // Populated → open detail panel
       setDetailDate(dateStr);
       setDetailType(type);
       setDetailOpen(true);
     }
   };
 
-  const detailShifts = shifts.filter(
-    (s) => s.date === detailDate && s.type === detailType && s.assigned_user_id
-  );
-
+  const detailShifts = shifts.filter((s) => s.date === detailDate && s.type === detailType && s.assigned_user_id);
   const managerStaff = staff.filter((s) => managers.includes(s.id));
-  const draftCount = shifts.filter((s) => s.is_draft).length;
+
+  // Standby-eligible staff: managers, assistant_managers, or is_responsible
+  const getStaffForDropdown = () => {
+    if (form.is_standby) {
+      return staff.filter((s) => {
+        const roles = allUserRoles.filter((r) => r.user_id === s.id).map((r) => r.role);
+        return roles.includes("manager") || roles.includes("assistant_manager" as any) || s.is_responsible;
+      });
+    }
+    return staff;
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Management Calendar</h1>
         <div className="flex gap-2 flex-wrap">
-          {draftCount > 0 && (
-            <Button size="sm" onClick={() => setPublishConfirmOpen(true)} disabled={publishDrafts.isPending}>
-              <Eye className="mr-1 h-4 w-4" />
-              Publish {draftCount} Draft{draftCount > 1 ? "s" : ""}
-            </Button>
-          )}
-          <Button variant="destructive" size="sm" onClick={() => setClearWeekConfirmOpen(true)} disabled={shifts.length === 0}>
-            <Trash2 className="mr-1 h-4 w-4" />
-            Clear Week
-          </Button>
           <Button variant="outline" onClick={() => { setBulkDate(undefined); setBulkType(undefined); setBulkOpen(true); }}>
             <Users className="h-4 w-4 mr-2" />
             Bulk Assign
@@ -311,36 +319,38 @@ export default function ManagementCalendar() {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr>
-                <th className="sticky left-0 z-10 bg-card p-2 text-left font-medium text-muted-foreground min-w-[90px] border-b">
-                  Shift
-                </th>
-                {days.map((d) => (
-                  <th key={d.toISOString()} className="min-w-[140px] p-2 text-center font-medium text-muted-foreground border-b">
-                    <div>{format(d, "EEE")}</div>
-                    <div className="text-xs">{format(d, "MMM d")}</div>
-                  </th>
-                ))}
+                <th className="sticky left-0 z-10 bg-card p-2 text-left font-medium text-muted-foreground min-w-[90px] border-b">Shift</th>
+                {days.map((d) => {
+                  const dateStr = format(d, "yyyy-MM-dd");
+                  const blocked = isDateBlocked(dateStr);
+                  return (
+                    <th key={d.toISOString()} className={`min-w-[140px] p-2 text-center font-medium text-muted-foreground border-b ${blocked ? "bg-gray-200/50" : ""}`}>
+                      <div className="flex items-center justify-center gap-1">
+                        {format(d, "EEE")}
+                        {blocked && <Lock className="h-3 w-3 text-muted-foreground" />}
+                      </div>
+                      <div className="text-xs">{format(d, "MMM d")}</div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
               {shiftTypes.map((type) => (
                 <tr key={type} className="border-t">
-                  <td className={`sticky left-0 z-10 bg-card p-2 font-semibold ${shiftTextColors[type]}`}>
-                    {shiftLabels[type]}
-                  </td>
+                  <td className={`sticky left-0 z-10 bg-card p-2 font-semibold ${shiftTextColors[type]}`}>{shiftLabels[type]}</td>
                   {days.map((d) => {
                     const dateStr = format(d, "yyyy-MM-dd");
-                    const dayShifts = shifts.filter(
-                      (s) => s.date === dateStr && s.type === type && s.assigned_user_id
-                    );
+                    const blocked = isDateBlocked(dateStr);
+                    const dayShifts = shifts.filter((s) => s.date === dateStr && s.type === type && s.assigned_user_id);
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`p-2 border-l align-top ${shiftColors[type]} cursor-pointer hover:opacity-80`}
-                        onClick={() => handleCellClick(dateStr, type)}
+                        className={`p-2 border-l align-top ${blocked ? "bg-gray-200/50 cursor-not-allowed" : `${shiftColors[type]} cursor-pointer hover:opacity-80`}`}
+                        onClick={() => !blocked && handleCellClick(dateStr, type)}
                       >
                         {dayShifts.length === 0 ? (
-                          <span className="text-xs text-muted-foreground italic">—</span>
+                          <span className="text-xs text-muted-foreground italic">{blocked ? "🔒" : "—"}</span>
                         ) : (
                           <div className="flex flex-wrap gap-1">
                             {dayShifts.map((s) => (
@@ -351,6 +361,7 @@ export default function ManagementCalendar() {
                               >
                                 {getFirstName(s)}
                                 {s.is_responsible_on_shift && <span className="ml-0.5 text-[9px]">★</span>}
+                                {(s as any).is_standby && <span className="ml-0.5 text-[9px] font-bold bg-amber-500/20 text-amber-700 rounded px-0.5">S</span>}
                                 {s.is_draft ? <span className="ml-0.5 text-[9px]">D</span> : <Lock className="ml-0.5 h-2.5 w-2.5 opacity-40" />}
                               </Badge>
                             ))}
@@ -373,11 +384,21 @@ export default function ManagementCalendar() {
         </div>
         <div className="flex items-center gap-1">
           <Badge variant="secondary" className="text-[10px]">Name</Badge>
-          <span>Assigned Nurse</span>
+          <span>Assigned</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Badge variant="secondary" className="text-[10px]">
+            Name <span className="bg-amber-500/20 text-amber-700 rounded px-0.5">S</span>
+          </Badge>
+          <span>Stand-by</span>
         </div>
         <div className="flex items-center gap-1">
           <Badge variant="secondary" className="text-[10px] opacity-60 border-dashed">Name D</Badge>
           <span>Draft</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Lock className="h-3 w-3" />
+          <span>Blocked Date</span>
         </div>
       </div>
 
@@ -397,18 +418,12 @@ export default function ManagementCalendar() {
               <p className="text-sm text-muted-foreground">No staff assigned.</p>
             ) : (
               detailShifts.map((s) => (
-                <div
-                  key={s.id}
-                  className="flex items-center justify-between rounded-md border px-3 py-2"
-                >
+                <div key={s.id} className="flex items-center justify-between rounded-md border px-3 py-2">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{(s as any).profiles?.full_name || "Unknown"}</span>
-                    {s.is_responsible_on_shift && (
-                      <Badge variant="default" className="text-[10px] px-1 py-0">★ Responsible</Badge>
-                    )}
-                    {s.is_draft && (
-                      <Badge variant="outline" className="text-[10px] px-1 py-0 opacity-60">Draft</Badge>
-                    )}
+                    {s.is_responsible_on_shift && <Badge variant="default" className="text-[10px] px-1 py-0">★ Responsible</Badge>}
+                    {(s as any).is_standby && <Badge variant="outline" className="text-[10px] px-1 py-0 bg-amber-500/10 text-amber-700">S Stand-by</Badge>}
+                    {s.is_draft && <Badge variant="outline" className="text-[10px] px-1 py-0 opacity-60">Draft</Badge>}
                   </div>
                   <div className="flex items-center gap-1">
                     {(() => {
@@ -416,17 +431,9 @@ export default function ManagementCalendar() {
                       const canBeResponsible = profile?.is_responsible === true;
                       return (
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          title={
-                            !canBeResponsible
-                              ? "Not qualified as Responsible Nurse"
-                              : s.is_responsible_on_shift
-                              ? "Remove responsible"
-                              : "Set as responsible"
-                          }
-                          disabled={!canBeResponsible && !s.is_responsible_on_shift}
+                          variant="ghost" size="icon" className="h-7 w-7"
+                          title={!canBeResponsible ? "Not qualified" : s.is_responsible_on_shift ? "Remove responsible" : "Set as responsible"}
+                          disabled={(!canBeResponsible && !s.is_responsible_on_shift) || isDateBlocked(detailDate)}
                           onClick={() => toggleResponsible.mutate({ shiftId: s.id, value: !s.is_responsible_on_shift })}
                         >
                           <Star className={`h-4 w-4 ${s.is_responsible_on_shift ? "fill-primary text-primary" : canBeResponsible ? "text-muted-foreground" : "text-muted-foreground/30"}`} />
@@ -434,10 +441,9 @@ export default function ManagementCalendar() {
                       );
                     })()}
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
                       title="Remove from shift"
+                      disabled={isDateBlocked(detailDate)}
                       onClick={() => removeShift.mutate(s.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -447,27 +453,20 @@ export default function ManagementCalendar() {
               ))
             )}
           </div>
-          <Button
-            variant="outline"
-            className="w-full mt-2"
-            onClick={() => {
-              setDetailOpen(false);
-              setBulkDate(detailDate);
-              setBulkType(detailType);
-              setBulkOpen(true);
-            }}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Add More Staff
-          </Button>
+          {!isDateBlocked(detailDate) && (
+            <Button variant="outline" className="w-full mt-2" onClick={() => { setDetailOpen(false); setBulkDate(detailDate); setBulkType(detailType); setBulkOpen(true); }}>
+              <Users className="h-4 w-4 mr-2" />
+              Add More Staff
+            </Button>
+          )}
         </DialogContent>
       </Dialog>
 
-      {/* Add Shift Dialog */}
+      {/* Add/Edit Shift Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Shift</DialogTitle>
+            <DialogTitle>{editingShift ? "Edit Shift" : "Add Shift"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -499,17 +498,23 @@ export default function ManagementCalendar() {
               </div>
             </div>
 
+            <div className="flex items-center justify-between">
+              <Label>Stand-by Shift</Label>
+              <Switch checked={form.is_standby} onCheckedChange={(v) => setForm((f) => ({ ...f, is_standby: v, assigned_user_id: "" }))} />
+            </div>
+
             <div className="space-y-2">
               <Label>Assign to Staff</Label>
               <Select value={form.assigned_user_id || "__unassigned__"} onValueChange={(v) => setForm((f) => ({ ...f, assigned_user_id: v === "__unassigned__" ? "" : v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__unassigned__">Unassigned</SelectItem>
-                  {staff.map((s) => (
+                  {getStaffForDropdown().map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {form.is_standby && <p className="text-xs text-muted-foreground">Only managers and responsible nurses shown for stand-by shifts.</p>}
             </div>
 
             <div className="space-y-2">
@@ -540,55 +545,22 @@ export default function ManagementCalendar() {
               <Textarea value={form.comments} onChange={(e) => setForm((f) => ({ ...f, comments: e.target.value }))} />
             </div>
 
-            <Button className="w-full" onClick={() => saveShift.mutate()} disabled={saveShift.isPending}>
-              Create Shift
-            </Button>
+            <div className="flex gap-2 justify-end">
+              {editingShift && (
+                <Button variant="destructive" size="sm" onClick={() => { removeShift.mutate(editingShift); setDialogOpen(false); setEditingShift(null); }}>
+                  <Trash2 className="mr-1 h-4 w-4" />
+                  Delete
+                </Button>
+              )}
+              <Button className="flex-1" onClick={() => saveShift.mutate()} disabled={saveShift.isPending}>
+                {editingShift ? "Update" : "Create"} Shift
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Bulk Assign Dialog */}
-      <BulkAssignDialog
-        open={bulkOpen}
-        onOpenChange={setBulkOpen}
-        staff={staff}
-        blockedDates={blockedDates}
-        initialDate={bulkDate}
-        initialType={bulkType}
-      />
-
-      {/* Clear Week Confirmation */}
-      <AlertDialog open={clearWeekConfirmOpen} onOpenChange={setClearWeekConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Clear entire week?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete all shifts from {format(weekStart, "MMM d")} to {format(weekEnd, "MMM d, yyyy")}. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => clearWeek.mutate()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete All Shifts
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <PublishConfirmDialog
-        open={publishConfirmOpen}
-        onOpenChange={setPublishConfirmOpen}
-        drafts={shifts.filter((s) => s.is_draft)}
-        allShifts={shifts}
-        onConfirm={() => {
-          publishDrafts.mutate();
-          setPublishConfirmOpen(false);
-        }}
-        isPending={publishDrafts.isPending}
-      />
+      <BulkAssignDialog open={bulkOpen} onOpenChange={setBulkOpen} staff={staff} blockedDates={blockedDates} initialDate={bulkDate} initialType={bulkType} />
     </div>
   );
 }
