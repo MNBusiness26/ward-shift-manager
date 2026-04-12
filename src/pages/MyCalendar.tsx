@@ -43,11 +43,13 @@ const shiftBadgeColors: Record<string, string> = {
 };
 
 export default function MyCalendar() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [view, setView] = useState<"month" | "week">("month");
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [syncOpen, setSyncOpen] = useState(false);
+  const hasSyncLink = !!(profile as any)?.calendar_token;
 
   // Compute range based on view
   const rangeStart = view === "month" ? startOfMonth(currentMonth) : currentWeek;
