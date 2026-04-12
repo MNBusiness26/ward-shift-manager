@@ -914,7 +914,7 @@ export default function Roster() {
                   Delete
                 </Button>
               )}
-              <Button onClick={() => saveShift.mutate()} disabled={saveShift.isPending}>
+              <Button onClick={handleSaveWithFriction} disabled={saveShift.isPending}>
                 {editingShift ? "Update" : "Create"} Shift
               </Button>
             </div>
