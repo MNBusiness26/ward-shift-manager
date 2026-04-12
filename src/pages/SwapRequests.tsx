@@ -9,8 +9,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -29,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useState } from "react";
@@ -41,6 +40,11 @@ const statusColors: Record<string, string> = {
   denied: "bg-red-100 text-red-800",
 };
 
+function formatShift(shift: any) {
+  if (!shift) return "";
+  return `${format(new Date(shift.date), "EEE, MMM d")} · ${shift.type} (${shift.start_time?.slice(0, 5)}–${shift.end_time?.slice(0, 5)})`;
+}
+
 export default function SwapRequests() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -48,7 +52,13 @@ export default function SwapRequests() {
   const [selectedShiftId, setSelectedShiftId] = useState("");
   const [swapType, setSwapType] = useState<"direct" | "pool">("pool");
   const [targetUserId, setTargetUserId] = useState("");
+  const [targetShiftId, setTargetShiftId] = useState("");
   const [cancelId, setCancelId] = useState<string | null>(null);
+
+  // Pool response state
+  const [poolRespondId, setPoolRespondId] = useState<string | null>(null);
+  const [poolOfferShiftId, setPoolOfferShiftId] = useState("");
+  const [poolTakeOnly, setPoolTakeOnly] = useState(false);
 
   const { data: myShifts = [] } = useQuery({
     queryKey: ["my-shifts-for-swap", user?.id],
@@ -71,7 +81,7 @@ export default function SwapRequests() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("swap_requests")
-        .select("*, shifts(*), covering_profile:profiles!swap_requests_covering_user_id_fkey(full_name), requesting_profile:profiles!swap_requests_requesting_user_id_fkey(full_name)")
+        .select("*, requesting_shift:shifts!swap_requests_shift_id_fkey(*), target_shift:shifts!swap_requests_target_shift_id_fkey(*), covering_profile:profiles!swap_requests_covering_user_id_fkey(full_name), requesting_profile:profiles!swap_requests_requesting_user_id_fkey(full_name)")
         .or(`requesting_user_id.eq.${user!.id},covering_user_id.eq.${user!.id},is_pool_request.eq.true`)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -94,6 +104,23 @@ export default function SwapRequests() {
     enabled: !!user,
   });
 
+  // Fetch target colleague's shifts for direct swap
+  const { data: targetUserShifts = [] } = useQuery({
+    queryKey: ["target-user-shifts", targetUserId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shifts")
+        .select("*")
+        .eq("assigned_user_id", targetUserId)
+        .eq("is_draft", false)
+        .gte("date", format(new Date(), "yyyy-MM-dd"))
+        .order("date");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!targetUserId,
+  });
+
   const createSwap = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("swap_requests").insert({
@@ -101,6 +128,7 @@ export default function SwapRequests() {
         shift_id: selectedShiftId,
         is_pool_request: swapType === "pool",
         covering_user_id: swapType === "direct" ? targetUserId : null,
+        target_shift_id: swapType === "direct" && targetShiftId ? targetShiftId : null,
       });
       if (error) throw error;
     },
@@ -108,8 +136,7 @@ export default function SwapRequests() {
       queryClient.invalidateQueries({ queryKey: ["swap-requests"] });
       toast.success(swapType === "pool" ? "Posted to swap pool" : "Swap request sent");
       setDialogOpen(false);
-      setSelectedShiftId("");
-      setTargetUserId("");
+      resetForm();
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -125,6 +152,30 @@ export default function SwapRequests() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["swap-requests"] });
       toast.success("Swap accepted — waiting for manager approval");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Pool response: offer own shift or take-only
+  const respondToPool = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("swap_requests")
+        .update({
+          covering_user_id: user!.id,
+          status: "peer_accepted",
+          target_shift_id: poolTakeOnly ? null : poolOfferShiftId || null,
+          is_take_only: poolTakeOnly,
+        })
+        .eq("id", poolRespondId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["swap-requests"] });
+      toast.success(poolTakeOnly ? "Offered to cover — waiting for manager approval" : "Swap offer sent — waiting for manager approval");
+      setPoolRespondId(null);
+      setPoolOfferShiftId("");
+      setPoolTakeOnly(false);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -148,6 +199,12 @@ export default function SwapRequests() {
       setCancelId(null);
     },
   });
+
+  const resetForm = () => {
+    setSelectedShiftId("");
+    setTargetUserId("");
+    setTargetShiftId("");
+  };
 
   const canCancel = (swap: any) =>
     swap.requesting_user_id === user?.id &&
@@ -182,18 +239,17 @@ export default function SwapRequests() {
                   <div key={swap.id} className="flex items-center justify-between rounded-lg border p-3">
                     <div>
                       <p className="text-sm font-medium">
-                        {swap.shifts?.type && `${swap.shifts.type.charAt(0).toUpperCase() + swap.shifts.type.slice(1)} Shift`}
+                        {(swap as any).requesting_shift?.type && `${(swap as any).requesting_shift.type.charAt(0).toUpperCase() + (swap as any).requesting_shift.type.slice(1)} Shift`}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {swap.shifts?.date && format(new Date(swap.shifts.date), "EEE, MMM d")}
-                        {swap.shifts && ` · ${swap.shifts.start_time?.slice(0, 5)} — ${swap.shifts.end_time?.slice(0, 5)}`}
+                        {formatShift((swap as any).requesting_shift)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         From: {(swap as any).requesting_profile?.full_name || "Unknown"}
                       </p>
                     </div>
-                    <Button size="sm" onClick={() => acceptSwap.mutate(swap.id)}>
-                      Claim
+                    <Button size="sm" onClick={() => setPoolRespondId(swap.id)}>
+                      Respond
                     </Button>
                   </div>
                 ))}
@@ -224,16 +280,29 @@ export default function SwapRequests() {
                             {" "}with {(swap as any).covering_profile.full_name}
                           </span>
                         )}
+                        {swap.is_take_only && (
+                          <Badge variant="outline" className="ml-2 text-[10px]">Take Only</Badge>
+                        )}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {swap.shifts?.date && format(new Date(swap.shifts.date), "EEE, MMM d")}
-                        {swap.shifts && ` · ${swap.shifts.type} ${swap.shifts.start_time?.slice(0, 5)} — ${swap.shifts.end_time?.slice(0, 5)}`}
+                        Offering: {formatShift((swap as any).requesting_shift)}
                       </p>
+                      {(swap as any).target_shift && (
+                        <p className="text-xs text-muted-foreground">
+                          In return: {formatShift((swap as any).target_shift)}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className={statusColors[swap.status]}>
                         {swap.status.replace("_", " ")}
                       </Badge>
+                      {/* Peer accept for direct swaps targeting current user */}
+                      {swap.covering_user_id === user?.id && swap.status === "pending" && !swap.is_pool_request && (
+                        <Button size="sm" variant="outline" onClick={() => acceptSwap.mutate(swap.id)}>
+                          Accept
+                        </Button>
+                      )}
                       {canCancel(swap) && (
                         <Button
                           size="icon"
@@ -273,8 +342,69 @@ export default function SwapRequests() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Pool response dialog */}
+      <Dialog open={!!poolRespondId} onOpenChange={(open) => {
+        if (!open) {
+          setPoolRespondId(null);
+          setPoolOfferShiftId("");
+          setPoolTakeOnly(false);
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Respond to Pool Offer</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="take-only"
+                checked={poolTakeOnly}
+                onCheckedChange={(v) => {
+                  setPoolTakeOnly(!!v);
+                  if (v) setPoolOfferShiftId("");
+                }}
+              />
+              <label htmlFor="take-only" className="text-sm font-medium">
+                Take without swap (cover the shift only)
+              </label>
+            </div>
+
+            {!poolTakeOnly && (
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Or offer one of your shifts in exchange:</p>
+                <Select value={poolOfferShiftId} onValueChange={setPoolOfferShiftId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your shift to offer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {myShifts.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {formatShift(s)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setPoolRespondId(null)}>Cancel</Button>
+              <Button
+                onClick={() => respondToPool.mutate()}
+                disabled={(!poolTakeOnly && !poolOfferShiftId) || respondToPool.isPending}
+              >
+                Submit
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* New swap dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) resetForm();
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Request a Swap</DialogTitle>
@@ -282,12 +412,12 @@ export default function SwapRequests() {
           <div className="space-y-4">
             <Select value={selectedShiftId} onValueChange={setSelectedShiftId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select shift to swap" />
+                <SelectValue placeholder="Select your shift to swap" />
               </SelectTrigger>
               <SelectContent>
                 {myShifts.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
-                    {format(new Date(s.date), "EEE, MMM d")} · {s.type} ({s.start_time.slice(0, 5)})
+                    {formatShift(s)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -297,7 +427,7 @@ export default function SwapRequests() {
               <Button
                 variant={swapType === "pool" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setSwapType("pool")}
+                onClick={() => { setSwapType("pool"); setTargetUserId(""); setTargetShiftId(""); }}
               >
                 Pool Offer
               </Button>
@@ -311,25 +441,46 @@ export default function SwapRequests() {
             </div>
 
             {swapType === "direct" && (
-              <Select value={targetUserId} onValueChange={setTargetUserId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select colleague" />
-                </SelectTrigger>
-                <SelectContent>
-                  {colleagues.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.full_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <>
+                <Select value={targetUserId} onValueChange={(v) => { setTargetUserId(v); setTargetShiftId(""); }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select colleague" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {colleagues.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {targetUserId && (
+                  <Select value={targetShiftId} onValueChange={setTargetShiftId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select their shift you want" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {targetUserShifts.length === 0 ? (
+                        <SelectItem value="__none" disabled>No upcoming shifts</SelectItem>
+                      ) : (
+                        targetUserShifts.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {formatShift(s)}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+              </>
             )}
 
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
               <Button
                 onClick={() => createSwap.mutate()}
-                disabled={!selectedShiftId || (swapType === "direct" && !targetUserId) || createSwap.isPending}
+                disabled={!selectedShiftId || (swapType === "direct" && (!targetUserId || !targetShiftId)) || createSwap.isPending}
               >
                 Submit
               </Button>

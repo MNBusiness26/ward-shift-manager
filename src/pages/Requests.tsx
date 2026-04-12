@@ -10,6 +10,11 @@ import { Check, X, CalendarOff, ArrowLeftRight, Clock, Filter } from "lucide-rea
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+function formatShift(shift: any) {
+  if (!shift) return "—";
+  return `${format(new Date(shift.date), "EEE, MMM d")} · ${shift.type} (${shift.start_time?.slice(0, 5)}–${shift.end_time?.slice(0, 5)})`;
+}
+
 export default function Requests() {
   const queryClient = useQueryClient();
   const [availFilter, setAvailFilter] = useState<"pending" | "all">("pending");
@@ -34,7 +39,7 @@ export default function Requests() {
     queryFn: async () => {
       let q = supabase
         .from("swap_requests")
-        .select("*, shifts(*), requester:requesting_user_id(full_name), coverer:covering_user_id(full_name)")
+        .select("*, requesting_shift:shifts!swap_requests_shift_id_fkey(*), target_shift:shifts!swap_requests_target_shift_id_fkey(*), requester:requesting_user_id(full_name), coverer:covering_user_id(full_name)")
         .order("created_at", { ascending: false });
       if (swapFilter === "peer_accepted") q = q.eq("status", "peer_accepted");
       const { data, error } = await q;
@@ -61,7 +66,12 @@ export default function Requests() {
       if (status === "manager_approved") {
         const swap = swapRequests.find((s) => s.id === id);
         if (swap?.covering_user_id && swap?.shift_id) {
+          // Flip the requesting shift to covering user
           await supabase.from("shifts").update({ assigned_user_id: swap.covering_user_id }).eq("id", swap.shift_id);
+          // If there's a target shift, flip it to requesting user (true swap)
+          if (swap.target_shift_id && swap.requesting_user_id) {
+            await supabase.from("shifts").update({ assigned_user_id: swap.requesting_user_id }).eq("id", swap.target_shift_id);
+          }
         }
       }
     },
@@ -221,13 +231,19 @@ export default function Requests() {
                           {swap.is_pool_request && (
                             <Badge variant="outline" className="text-[10px]">Pool</Badge>
                           )}
+                          {swap.is_take_only && (
+                            <Badge variant="outline" className="text-[10px]">Take Only</Badge>
+                          )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           <Clock className="inline mr-1 h-3 w-3" />
-                          {swap.shifts?.date && format(new Date(swap.shifts.date), "EEE, MMM d")}
-                          {` · ${swap.shifts?.type} shift`}
-                          {` · ${swap.shifts?.start_time?.slice(0, 5)}–${swap.shifts?.end_time?.slice(0, 5)}`}
+                          Offering: {formatShift((swap as any).requesting_shift)}
                         </p>
+                        {(swap as any).target_shift && (
+                          <p className="text-xs text-muted-foreground">
+                            In return: {formatShift((swap as any).target_shift)}
+                          </p>
+                        )}
                       </div>
                       {swap.status === "peer_accepted" && (
                         <div className="flex gap-1">
