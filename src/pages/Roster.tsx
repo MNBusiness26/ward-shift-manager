@@ -619,7 +619,7 @@ export default function Roster() {
                           <div
                             key={s.id}
                             onClick={() => openEdit(s)}
-                            className={`mb-1 rounded border px-1.5 py-1 text-xs cursor-pointer hover:ring-1 hover:ring-primary/50 ${shiftBg[s.type]} border-dashed`}
+                            className={`mb-1 rounded border px-1.5 py-1 text-xs cursor-pointer hover:ring-1 hover:ring-primary/50 ${shiftBgDraft[s.type]} opacity-60`}
                           >
                             <span className="capitalize font-medium">{s.type.charAt(0)}</span>
                           </div>
