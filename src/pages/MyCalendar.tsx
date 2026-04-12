@@ -126,18 +126,18 @@ export default function MyCalendar() {
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`min-h-[5rem] md:min-h-[6rem] rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
+                    className={`min-h-[5rem] md:min-h-[7rem] rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
                       isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
                     } ${isSelected ? "ring-2 ring-primary" : ""}`}
                     onClick={() => setSelectedDay(day)}
                   >
                     <span className="text-muted-foreground">{format(day, "d")}</span>
-                    <div className="mt-0.5 flex flex-col gap-0.5 overflow-hidden">
+                    <div className="mt-0.5 flex flex-col gap-1 overflow-hidden">
                       {dayShifts.map((s) => {
                         const Icon = shiftIcons[s.type] || Sun;
                         const colleagues = getColleaguesForShift(day, s.type);
                         return (
-                          <div key={s.id} className="space-y-0">
+                          <div key={s.id}>
                             <div
                               className={`flex items-center gap-0.5 rounded px-0.5 py-px text-[9px] leading-tight border ${shiftBadgeColors[s.type]}`}
                               title={`${shiftLabels[s.type]} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${s.is_responsible_on_shift ? " ★ Responsible" : ""}`}
@@ -151,9 +151,12 @@ export default function MyCalendar() {
                               )}
                             </div>
                             {colleagues.length > 0 && (
-                              <div className="pl-0.5 text-[8px] leading-tight text-muted-foreground truncate hidden md:block">
-                                {colleagues.slice(0, 2).map((c) => (c.profiles as any)?.full_name?.split(" ")[0] || "?").join(", ")}
-                                {colleagues.length > 2 && ` +${colleagues.length - 2}`}
+                              <div className="hidden md:flex flex-col pl-0.5 mt-px">
+                                {colleagues.map((c) => (
+                                  <span key={c.id} className="text-[8px] leading-[1.3] text-muted-foreground truncate">
+                                    {(c.profiles as any)?.full_name || "Unknown"}
+                                  </span>
+                                ))}
                               </div>
                             )}
                           </div>
