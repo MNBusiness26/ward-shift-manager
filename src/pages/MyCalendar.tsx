@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sun, Sunset, Moon } from "lucide-react";
+import { Sun, Sunset, Moon, Users } from "lucide-react";
 import {
   format,
   startOfMonth,
@@ -27,7 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ShiftDetailCard } from "@/components/calendar/ShiftDetailCard";
-import { useMyShifts, useMyRole, useDayShifts, type Shift } from "@/components/calendar/useMyCalendarData";
+import { useMyShifts, useMyRole, useDayShifts, useAllShiftsInRange, type Shift } from "@/components/calendar/useMyCalendarData";
 
 const shiftDot: Record<string, string> = {
   morning: "bg-shift-morning",
@@ -53,6 +53,7 @@ export default function MyCalendar() {
   const rangeEnd = view === "month" ? endOfMonth(currentMonth) : endOfWeek(currentWeek, { weekStartsOn: 0 });
 
   const { data: shifts = [] } = useMyShifts(rangeStart, rangeEnd);
+  const { data: allShifts = [] } = useAllShiftsInRange(rangeStart, rangeEnd);
   const { data: myRoles = [] } = useMyRole();
   const selectedDateStr = selectedDay ? format(selectedDay, "yyyy-MM-dd") : null;
   const { data: dayAllShifts = [] } = useDayShifts(selectedDateStr);
@@ -61,6 +62,13 @@ export default function MyCalendar() {
 
   const getShiftsForDay = (day: Date) =>
     shifts.filter((s) => isSameDay(new Date(s.date), day));
+
+  const getColleaguesForShift = (day: Date, shiftType: string) => {
+    const dateStr = format(day, "yyyy-MM-dd");
+    return allShifts.filter(
+      (s) => s.date === dateStr && s.type === shiftType && s.assigned_user_id !== user?.id
+    );
+  };
 
   const getColleaguesByShift = (shiftType: string) =>
     dayAllShifts.filter(
@@ -110,7 +118,7 @@ export default function MyCalendar() {
             </div>
             <div className="grid grid-cols-7 gap-px">
               {Array.from({ length: startPad }).map((_, i) => (
-                <div key={`pad-${i}`} className="h-16 md:h-20" />
+                <div key={`pad-${i}`} className="h-20 md:h-24" />
               ))}
               {monthDays.map((day) => {
                 const dayShifts = getShiftsForDay(day);
@@ -118,7 +126,7 @@ export default function MyCalendar() {
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`min-h-[4rem] md:min-h-[5rem] rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
+                    className={`min-h-[5rem] md:min-h-[6rem] rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
                       isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
                     } ${isSelected ? "ring-2 ring-primary" : ""}`}
                     onClick={() => setSelectedDay(day)}
@@ -127,18 +135,26 @@ export default function MyCalendar() {
                     <div className="mt-0.5 flex flex-col gap-0.5 overflow-hidden">
                       {dayShifts.map((s) => {
                         const Icon = shiftIcons[s.type] || Sun;
+                        const colleagues = getColleaguesForShift(day, s.type);
                         return (
-                          <div
-                            key={s.id}
-                            className={`flex items-center gap-0.5 rounded px-0.5 py-px text-[9px] leading-tight border ${shiftBadgeColors[s.type]}`}
-                            title={`${shiftLabels[s.type]} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${s.is_responsible_on_shift ? " ★ Responsible" : ""}`}
-                          >
-                            <Icon className="h-2.5 w-2.5 flex-shrink-0" />
-                            <span className="truncate hidden md:inline">
-                              {s.start_time.slice(0, 5)}
-                            </span>
-                            {s.is_responsible_on_shift && (
-                              <span className="text-primary font-bold flex-shrink-0">★</span>
+                          <div key={s.id} className="space-y-0">
+                            <div
+                              className={`flex items-center gap-0.5 rounded px-0.5 py-px text-[9px] leading-tight border ${shiftBadgeColors[s.type]}`}
+                              title={`${shiftLabels[s.type]} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${s.is_responsible_on_shift ? " ★ Responsible" : ""}`}
+                            >
+                              <Icon className="h-2.5 w-2.5 flex-shrink-0" />
+                              <span className="truncate hidden md:inline">
+                                {s.start_time.slice(0, 5)}
+                              </span>
+                              {s.is_responsible_on_shift && (
+                                <span className="text-primary font-bold flex-shrink-0">★</span>
+                              )}
+                            </div>
+                            {colleagues.length > 0 && (
+                              <div className="pl-0.5 text-[8px] leading-tight text-muted-foreground truncate hidden md:block">
+                                {colleagues.slice(0, 2).map((c) => (c.profiles as any)?.full_name?.split(" ")[0] || "?").join(", ")}
+                                {colleagues.length > 2 && ` +${colleagues.length - 2}`}
+                              </div>
                             )}
                           </div>
                         );
@@ -182,20 +198,31 @@ export default function MyCalendar() {
                   ) : (
                     dayShifts.map((shift) => {
                       const Icon = shiftIcons[shift.type] || Sun;
+                      const colleagues = getColleaguesForShift(day, shift.type);
                       return (
                         <div
                           key={shift.id}
-                          className="flex items-center gap-3 text-sm pl-2 py-1 rounded hover:bg-accent/50 cursor-pointer"
+                          className="pl-2 py-1.5 rounded hover:bg-accent/50 cursor-pointer space-y-1"
                           onClick={() => setSelectedDay(day)}
                         >
-                          <div className={`h-2.5 w-2.5 rounded-full ${shiftDot[shift.type]}`} />
-                          <Icon className="h-4 w-4 text-muted-foreground" />
-                          <span>{shiftLabels[shift.type]} Shift</span>
-                          <span className="text-muted-foreground">
-                            {shift.start_time.slice(0, 5)} — {shift.end_time.slice(0, 5)}
-                          </span>
-                          {shift.is_responsible_on_shift && (
-                            <span className="text-xs text-primary font-medium">★ Responsible</span>
+                          <div className="flex items-center gap-3 text-sm">
+                            <div className={`h-2.5 w-2.5 rounded-full ${shiftDot[shift.type]}`} />
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            <span>{shiftLabels[shift.type]} Shift</span>
+                            <span className="text-muted-foreground">
+                              {shift.start_time.slice(0, 5)} — {shift.end_time.slice(0, 5)}
+                            </span>
+                            {shift.is_responsible_on_shift && (
+                              <span className="text-xs text-primary font-medium">★ Responsible</span>
+                            )}
+                          </div>
+                          {colleagues.length > 0 && (
+                            <div className="flex items-center gap-1.5 pl-7 text-xs text-muted-foreground">
+                              <Users className="h-3 w-3 flex-shrink-0" />
+                              <span>
+                                {colleagues.map((c) => (c.profiles as any)?.full_name || "Unknown").join(", ")}
+                              </span>
+                            </div>
                           )}
                         </div>
                       );
