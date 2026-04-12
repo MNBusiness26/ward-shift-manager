@@ -141,14 +141,20 @@ export default function MyCalendar() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">My Calendar</h1>
-        <Tabs value={view} onValueChange={(v) => setView(v as "month" | "week")}>
-          <TabsList>
-            <TabsTrigger value="month">Month</TabsTrigger>
-            <TabsTrigger value="week">Week</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={generateIcs}>
+            <Download className="h-4 w-4" />
+            Export .ics
+          </Button>
+          <Tabs value={view} onValueChange={(v) => setView(v as "month" | "week")}>
+            <TabsList>
+              <TabsTrigger value="month">Month</TabsTrigger>
+              <TabsTrigger value="week">Week</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       {view === "month" ? (
