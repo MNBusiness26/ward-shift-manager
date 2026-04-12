@@ -147,6 +147,10 @@ export default function MyCalendar() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">My Calendar</h1>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setSyncOpen(true)}>
+            <RefreshCw className="h-4 w-4" />
+            {hasSyncLink ? "Manage Sync" : "Sync Calendar"}
+          </Button>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={generateIcs}>
             <Download className="h-4 w-4" />
             Export .ics
