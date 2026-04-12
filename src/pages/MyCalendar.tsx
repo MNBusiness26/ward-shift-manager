@@ -118,7 +118,7 @@ export default function MyCalendar() {
             </div>
             <div className="grid grid-cols-7 gap-px">
               {Array.from({ length: startPad }).map((_, i) => (
-                <div key={`pad-${i}`} className="h-16 md:h-20" />
+                <div key={`pad-${i}`} className="h-20 md:h-24" />
               ))}
               {monthDays.map((day) => {
                 const dayShifts = getShiftsForDay(day);
@@ -126,7 +126,7 @@ export default function MyCalendar() {
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`min-h-[4rem] md:min-h-[5rem] rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
+                    className={`min-h-[5rem] md:min-h-[6rem] rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
                       isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
                     } ${isSelected ? "ring-2 ring-primary" : ""}`}
                     onClick={() => setSelectedDay(day)}
@@ -135,18 +135,26 @@ export default function MyCalendar() {
                     <div className="mt-0.5 flex flex-col gap-0.5 overflow-hidden">
                       {dayShifts.map((s) => {
                         const Icon = shiftIcons[s.type] || Sun;
+                        const colleagues = getColleaguesForShift(day, s.type);
                         return (
-                          <div
-                            key={s.id}
-                            className={`flex items-center gap-0.5 rounded px-0.5 py-px text-[9px] leading-tight border ${shiftBadgeColors[s.type]}`}
-                            title={`${shiftLabels[s.type]} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${s.is_responsible_on_shift ? " ★ Responsible" : ""}`}
-                          >
-                            <Icon className="h-2.5 w-2.5 flex-shrink-0" />
-                            <span className="truncate hidden md:inline">
-                              {s.start_time.slice(0, 5)}
-                            </span>
-                            {s.is_responsible_on_shift && (
-                              <span className="text-primary font-bold flex-shrink-0">★</span>
+                          <div key={s.id} className="space-y-0">
+                            <div
+                              className={`flex items-center gap-0.5 rounded px-0.5 py-px text-[9px] leading-tight border ${shiftBadgeColors[s.type]}`}
+                              title={`${shiftLabels[s.type]} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${s.is_responsible_on_shift ? " ★ Responsible" : ""}`}
+                            >
+                              <Icon className="h-2.5 w-2.5 flex-shrink-0" />
+                              <span className="truncate hidden md:inline">
+                                {s.start_time.slice(0, 5)}
+                              </span>
+                              {s.is_responsible_on_shift && (
+                                <span className="text-primary font-bold flex-shrink-0">★</span>
+                              )}
+                            </div>
+                            {colleagues.length > 0 && (
+                              <div className="pl-0.5 text-[8px] leading-tight text-muted-foreground truncate hidden md:block">
+                                {colleagues.slice(0, 2).map((c) => (c.profiles as any)?.full_name?.split(" ")[0] || "?").join(", ")}
+                                {colleagues.length > 2 && ` +${colleagues.length - 2}`}
+                              </div>
                             )}
                           </div>
                         );
