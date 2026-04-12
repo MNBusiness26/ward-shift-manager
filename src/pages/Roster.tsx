@@ -231,6 +231,23 @@ export default function Roster() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const clearWeek = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("shifts")
+        .delete()
+        .gte("date", format(viewStart, "yyyy-MM-dd"))
+        .lte("date", format(viewEnd, "yyyy-MM-dd"));
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
+      toast.success("Week cleared");
+      setClearWeekConfirmOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   // Copy current week to clipboard
   const handleCopyWeek = () => {
     if (shifts.length === 0) {
@@ -448,11 +465,26 @@ export default function Roster() {
         <h1 className="text-2xl font-bold">Master Roster</h1>
         <div className="flex items-center gap-2 flex-wrap">
           {draftCount > 0 && (
-            <Button size="sm" onClick={() => publishDrafts.mutate()} disabled={publishDrafts.isPending}>
+            <Button
+              size="sm"
+              onClick={() => publishDrafts.mutate()}
+              disabled={publishDrafts.isPending || (enforceFullWeek && !isFullWeek)}
+              title={enforceFullWeek && !isFullWeek ? "Navigate to a full Sun–Sat week to publish" : undefined}
+            >
               <Eye className="mr-1 h-4 w-4" />
               Publish {draftCount} Draft{draftCount > 1 ? "s" : ""}
             </Button>
           )}
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setClearWeekConfirmOpen(true)}
+            disabled={shifts.length === 0 || (enforceFullWeek && !isFullWeek)}
+            title={enforceFullWeek && !isFullWeek ? "Navigate to a full Sun–Sat week to clear" : undefined}
+          >
+            <Trash2 className="mr-1 h-4 w-4" />
+            Clear Week
+          </Button>
           <Button size="sm" onClick={() => openCreate()}>
             <Plus className="mr-1 h-4 w-4" />
             Add Shift
@@ -556,8 +588,8 @@ export default function Roster() {
                           <div
                             key={s.id}
                             onClick={(e) => { e.stopPropagation(); openEdit(s); }}
-                            className={`mb-1 rounded border px-1.5 py-1 text-xs cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all ${shiftBg[s.type]} ${
-                              s.is_draft ? "opacity-60 border-dashed" : ""
+                            className={`mb-1 rounded border px-1.5 py-1 text-xs cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all ${
+                              s.is_draft ? shiftBgDraft[s.type] + " opacity-60" : shiftBgPublished[s.type]
                             }`}
                           >
                             <div className="flex items-center justify-center gap-0.5">
