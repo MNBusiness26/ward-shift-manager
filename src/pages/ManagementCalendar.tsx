@@ -14,7 +14,8 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
-import { validateShiftFriction, isOverHeadcount, HEADCOUNT_LIMITS } from "@/components/roster/frictionValidation";
+import { validateShiftFriction, isOverHeadcount } from "@/components/roster/frictionValidation";
+import { useAppSettings } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 

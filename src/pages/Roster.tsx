@@ -656,7 +656,7 @@ export default function Roster() {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
                   const headcountIssues = (["morning", "evening", "night"] as const).filter(
-                    (t) => isOverHeadcount(shifts as any[], dateStr, t)
+                    (t) => isOverHeadcount(shifts as any[], dateStr, t, headcountLimits)
                   );
                   return (
                     <th key={d.toISOString()} className={`min-w-[120px] p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-gray-200/50" : ""}`}>
