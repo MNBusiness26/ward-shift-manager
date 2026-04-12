@@ -35,6 +35,12 @@ const shiftDot: Record<string, string> = {
   night: "bg-shift-night",
 };
 
+const shiftBadgeColors: Record<string, string> = {
+  morning: "bg-shift-morning/15 text-shift-morning border-shift-morning/30",
+  evening: "bg-shift-evening/15 text-shift-evening border-shift-evening/30",
+  night: "bg-shift-night/15 text-shift-night border-shift-night/30",
+};
+
 export default function MyCalendar() {
   const { user } = useAuth();
   const [view, setView] = useState<"month" | "week">("month");
@@ -112,16 +118,31 @@ export default function MyCalendar() {
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`h-16 md:h-20 rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
+                    className={`min-h-[4rem] md:min-h-[5rem] rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
                       isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
                     } ${isSelected ? "ring-2 ring-primary" : ""}`}
                     onClick={() => setSelectedDay(day)}
                   >
                     <span className="text-muted-foreground">{format(day, "d")}</span>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {dayShifts.map((s) => (
-                        <div key={s.id} className={`h-2 w-2 rounded-full ${shiftDot[s.type]}`} title={`${s.type} shift`} />
-                      ))}
+                    <div className="mt-0.5 flex flex-col gap-0.5 overflow-hidden">
+                      {dayShifts.map((s) => {
+                        const Icon = shiftIcons[s.type] || Sun;
+                        return (
+                          <div
+                            key={s.id}
+                            className={`flex items-center gap-0.5 rounded px-0.5 py-px text-[9px] leading-tight border ${shiftBadgeColors[s.type]}`}
+                            title={`${shiftLabels[s.type]} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${s.is_responsible_on_shift ? " ★ Responsible" : ""}`}
+                          >
+                            <Icon className="h-2.5 w-2.5 flex-shrink-0" />
+                            <span className="truncate hidden md:inline">
+                              {s.start_time.slice(0, 5)}
+                            </span>
+                            {s.is_responsible_on_shift && (
+                              <span className="text-primary font-bold flex-shrink-0">★</span>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
