@@ -513,6 +513,30 @@ export default function Roster() {
     return staff;
   };
 
+  // Friction pre-save check
+  const handleSaveWithFriction = () => {
+    if (!form.assigned_user_id) {
+      saveShift.mutate();
+      return;
+    }
+    const weekShiftsForUser = shifts.filter(
+      (s) => s.assigned_user_id === form.assigned_user_id && (editingShift ? s.id !== editingShift : true)
+    ).length;
+    const warnings = validateShiftFriction({
+      assignedUserId: form.assigned_user_id,
+      shiftType: form.type,
+      shiftDate: form.date,
+      weekShiftsForUser,
+      staffProfiles: staff as any[],
+    });
+    if (warnings.length > 0) {
+      setFrictionWarnings(warnings);
+      setFrictionOpen(true);
+    } else {
+      saveShift.mutate();
+    }
+  };
+
   const draftCount = shifts.filter((s) => s.is_draft).length;
   const missingResponsible = shifts.filter((s) => !s.is_responsible_on_shift && !s.is_draft);
   const managerStaff = staff.filter((s) => managers.includes(s.id));
