@@ -600,12 +600,19 @@ export default function Roster() {
             <thead>
               <tr>
                 <th className="sticky left-0 z-10 bg-card p-2 text-left font-medium text-muted-foreground min-w-[140px]">Staff</th>
-                {days.map((d) => (
-                  <th key={d.toISOString()} className="min-w-[120px] p-2 text-center font-medium text-muted-foreground">
-                    <div>{format(d, "EEE")}</div>
-                    <div className="text-xs">{format(d, "MMM d")}</div>
-                  </th>
-                ))}
+                {days.map((d) => {
+                  const dateStr = format(d, "yyyy-MM-dd");
+                  const dateBlocked = isDateBlocked(dateStr);
+                  return (
+                    <th key={d.toISOString()} className={`min-w-[120px] p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-gray-200/50" : ""}`}>
+                      <div className="flex items-center justify-center gap-1">
+                        {format(d, "EEE")}
+                        {dateBlocked && <Lock className="h-3 w-3" />}
+                      </div>
+                      <div className="text-xs">{format(d, "MMM d")}</div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -624,11 +631,13 @@ export default function Roster() {
                       (s) => s.assigned_user_id === member.id && s.date === dateStr
                     );
                     const blocked = isBlocked(member.id, dateStr);
+                    const dateBlocked = isDateBlocked(dateStr);
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`p-1 text-center cursor-pointer hover:bg-accent/30 transition-colors ${blocked ? "bg-destructive/5" : ""}`}
+                        className={`p-1 text-center transition-colors ${dateBlocked ? "bg-gray-200/50 cursor-not-allowed" : "cursor-pointer hover:bg-accent/30"} ${blocked ? "bg-destructive/5" : ""}`}
                         onClick={() => {
+                          if (dateBlocked) return;
                           if (dayShifts.length === 0) {
                             setEditingShift(null);
                             setForm({ ...defaultForm(dateStr), assigned_user_id: member.id });
@@ -636,6 +645,9 @@ export default function Roster() {
                           }
                         }}
                       >
+                        {dateBlocked && dayShifts.length === 0 && !blocked && (
+                          <span className="text-[10px] text-muted-foreground">🔒</span>
+                        )}
                         {blocked && dayShifts.length === 0 && (
                           <span className="text-[10px] text-destructive">Blocked</span>
                         )}
@@ -643,7 +655,7 @@ export default function Roster() {
                           <div
                             key={s.id}
                             onClick={(e) => { e.stopPropagation(); openEdit(s); }}
-                            className={`mb-1 rounded border px-1.5 py-1 text-xs cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all ${
+                            className={`mb-1 rounded border px-1.5 py-1 text-xs ${dateBlocked ? "cursor-not-allowed" : "cursor-pointer hover:ring-1 hover:ring-primary/50"} transition-all ${
                               s.is_draft ? shiftBgDraft[s.type] + " opacity-60" : shiftBgPublished[s.type]
                             }`}
                           >
@@ -651,6 +663,9 @@ export default function Roster() {
                               <span className="capitalize font-medium">{s.type.charAt(0)}</span>
                               {s.is_responsible_on_shift && (
                                 <span className="text-[9px] font-bold bg-primary/20 text-primary rounded px-0.5">RN</span>
+                              )}
+                              {(s as any).is_standby && (
+                                <span className="text-[9px] font-bold bg-amber-500/20 text-amber-700 rounded px-0.5">S</span>
                               )}
                               {s.is_draft ? <EyeOff className="h-2.5 w-2.5 opacity-60" /> : <Lock className="h-2.5 w-2.5 opacity-40" />}
                             </div>
