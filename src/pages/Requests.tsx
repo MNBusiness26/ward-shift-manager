@@ -18,7 +18,7 @@ function formatShift(shift: any) {
 export default function Requests() {
   const queryClient = useQueryClient();
   const [availFilter, setAvailFilter] = useState<"pending" | "all">("pending");
-  const [swapFilter, setSwapFilter] = useState<"peer_accepted" | "all">("peer_accepted");
+  const [swapFilter, setSwapFilter] = useState<"pending_all" | "peer_accepted" | "all">("pending_all");
 
   const { data: availRequests = [] } = useQuery({
     queryKey: ["manager-avail-requests", availFilter],
@@ -41,7 +41,8 @@ export default function Requests() {
         .from("swap_requests")
         .select("*, requesting_shift:shifts!swap_requests_shift_id_fkey(*), target_shift:shifts!swap_requests_target_shift_id_fkey(*), requester:requesting_user_id(full_name), coverer:covering_user_id(full_name)")
         .order("created_at", { ascending: false });
-      if (swapFilter === "peer_accepted") q = q.eq("status", "peer_accepted");
+      if (swapFilter === "pending_all") q = q.in("status", ["pending", "peer_accepted"]);
+      else if (swapFilter === "peer_accepted") q = q.eq("status", "peer_accepted");
       const { data, error } = await q;
       if (error) throw error;
       return data;
@@ -83,7 +84,7 @@ export default function Requests() {
   });
 
   const pendingAvail = availRequests.filter((r) => r.status === "pending").length;
-  const pendingSwaps = swapRequests.filter((r) => r.status === "peer_accepted").length;
+  const pendingSwaps = swapRequests.filter((r) => r.status === "pending" || r.status === "peer_accepted").length;
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
@@ -202,9 +203,10 @@ export default function Requests() {
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={swapFilter} onValueChange={(v: any) => setSwapFilter(v)}>
-              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="peer_accepted">Awaiting Approval</SelectItem>
+                <SelectItem value="pending_all">All Pending</SelectItem>
+                <SelectItem value="peer_accepted">Awaiting Manager</SelectItem>
                 <SelectItem value="all">All Requests</SelectItem>
               </SelectContent>
             </Select>
@@ -245,16 +247,18 @@ export default function Requests() {
                           </p>
                         )}
                       </div>
-                      {swap.status === "peer_accepted" && (
+                      {(swap.status === "peer_accepted" || swap.status === "pending") && (
                         <div className="flex gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-green-600 hover:bg-green-50"
-                            onClick={() => handleSwap.mutate({ id: swap.id, status: "manager_approved" })}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
+                          {swap.status === "peer_accepted" && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-green-600 hover:bg-green-50"
+                              onClick={() => handleSwap.mutate({ id: swap.id, status: "manager_approved" })}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             size="icon"
                             variant="ghost"

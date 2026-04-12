@@ -3,32 +3,67 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { format, addDays, startOfWeek, endOfWeek } from "date-fns";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  addMonths,
+  subMonths,
+  isToday,
+  isSameMonth,
+} from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, Star } from "lucide-react";
 
-const shiftTypeColors: Record<string, string> = {
-  morning: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  evening: "bg-orange-100 text-orange-800 border-orange-200",
-  night: "bg-indigo-100 text-indigo-800 border-indigo-200",
+const shiftTypes = ["morning", "evening", "night"] as const;
+
+const shiftLabels: Record<string, string> = {
+  morning: "Morning",
+  evening: "Evening",
+  night: "Night",
+};
+
+const shiftColors: Record<string, string> = {
+  morning: "bg-shift-morning/10 border-shift-morning/30",
+  evening: "bg-shift-evening/10 border-shift-evening/30",
+  night: "bg-shift-night/10 border-shift-night/30",
+};
+
+const shiftTextColors: Record<string, string> = {
+  morning: "text-shift-morning",
+  evening: "text-shift-evening",
+  night: "text-shift-night",
+};
+
+const shiftDotColors: Record<string, string> = {
+  morning: "bg-shift-morning",
+  evening: "bg-shift-evening",
+  night: "bg-shift-night",
 };
 
 export default function GlobalTeamCalendar() {
-  const [weekOffset, setWeekOffset] = useState(0);
-  const today = new Date();
-  const weekStart = startOfWeek(addDays(today, weekOffset * 7), { weekStartsOn: 0 });
-  const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+  const allDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const { data: shifts = [] } = useQuery({
-    queryKey: ["global-team-shifts", format(weekStart, "yyyy-MM-dd")],
+    queryKey: ["global-team-shifts", format(calendarStart, "yyyy-MM-dd"), format(calendarEnd, "yyyy-MM-dd")],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
-        .select("*, assigned_profile:assigned_user_id(full_name, is_responsible), manager_profile:manager_on_duty_id(full_name)")
+        .select(
+          "*, assigned_profile:assigned_user_id(full_name, is_responsible), manager_profile:manager_on_duty_id(full_name)"
+        )
         .eq("is_draft", false)
-        .gte("date", format(weekStart, "yyyy-MM-dd"))
-        .lte("date", format(weekEnd, "yyyy-MM-dd"))
+        .gte("date", format(calendarStart, "yyyy-MM-dd"))
+        .lte("date", format(calendarEnd, "yyyy-MM-dd"))
         .order("date")
         .order("start_time");
       if (error) throw error;
@@ -36,88 +71,136 @@ export default function GlobalTeamCalendar() {
     },
   });
 
-  const shiftsByDate = (dateStr: string) =>
-    shifts.filter((s) => s.date === dateStr);
+  const getShifts = (dateStr: string, type: string) =>
+    shifts.filter((s) => s.date === dateStr && s.type === type);
+
+  const weeks: Date[][] = [];
+  for (let i = 0; i < allDays.length; i += 7) {
+    weeks.push(allDays.slice(i, i + 7));
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Users className="h-6 w-6" />
           Team Calendar
         </h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => setWeekOffset((o) => o - 1)}>
+          <Button variant="outline" size="icon" onClick={() => setCurrentMonth((m) => subMonths(m, 1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setWeekOffset(0)}>
-            This Week
+          <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>
+            This Month
           </Button>
-          <Button variant="outline" size="icon" onClick={() => setWeekOffset((o) => o + 1)}>
+          <Button variant="outline" size="icon" onClick={() => setCurrentMonth((m) => addMonths(m, 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        {format(weekStart, "MMM d")} — {format(weekEnd, "MMM d, yyyy")}
-      </p>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base text-center">
+            {format(currentMonth, "MMMM yyyy")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="overflow-x-auto p-2">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr>
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                  <th key={d} className="p-1.5 text-center font-medium text-muted-foreground text-xs border-b min-w-[140px]">
+                    {d}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {weeks.map((week, wi) => (
+                <tr key={wi} className="border-t">
+                  {week.map((day) => {
+                    const dateStr = format(day, "yyyy-MM-dd");
+                    const inMonth = isSameMonth(day, currentMonth);
+                    const today = isToday(day);
 
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
-        {days.map((day) => {
-          const dateStr = format(day, "yyyy-MM-dd");
-          const dayShifts = shiftsByDate(dateStr);
-          const isToday = format(day, "yyyy-MM-dd") === format(today, "yyyy-MM-dd");
-
-          return (
-            <Card key={dateStr} className={isToday ? "border-primary" : ""}>
-              <CardHeader className="py-2 px-3">
-                <CardTitle className={`text-xs font-medium ${isToday ? "text-primary" : "text-muted-foreground"}`}>
-                  {format(day, "EEE, MMM d")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0 space-y-1.5">
-                {dayShifts.length === 0 ? (
-                  <p className="text-[11px] text-muted-foreground italic">No shifts</p>
-                ) : (
-                  dayShifts.map((shift) => {
-                    const profile = shift.assigned_profile as any;
-                    const manager = shift.manager_profile as any;
                     return (
-                      <div
-                        key={shift.id}
-                        className={`rounded border p-1.5 text-[11px] ${shift.is_standby ? "border-dashed bg-transparent" : shiftTypeColors[shift.type] || ""}`}
+                      <td
+                        key={dateStr}
+                        className={`p-1 border-l align-top h-[130px] ${
+                          !inMonth ? "bg-muted/30" : ""
+                        } ${today ? "ring-2 ring-inset ring-primary/40" : ""}`}
                       >
-                        <div className="flex items-center gap-1 font-medium">
-                          {shift.is_standby && <span className="text-[10px] font-bold">S</span>}
-                          <span>{profile?.full_name || "Unassigned"}</span>
+                        <div className={`text-xs font-medium mb-1 ${!inMonth ? "text-muted-foreground/50" : today ? "text-primary font-bold" : "text-muted-foreground"}`}>
+                          {format(day, "d")}
                         </div>
-                        <div className="text-[10px] opacity-80">
-                          {shift.type} · {shift.start_time?.slice(0, 5)}–{shift.end_time?.slice(0, 5)}
-                        </div>
-                        {profile?.is_responsible && (
-                          <Badge variant="outline" className="text-[9px] h-4 px-1 mt-0.5">
-                            Responsible
-                          </Badge>
-                        )}
-                        {shift.is_responsible_on_shift && !profile?.is_responsible && (
-                          <Badge variant="outline" className="text-[9px] h-4 px-1 mt-0.5">
-                            Resp. on shift
-                          </Badge>
-                        )}
-                        {manager?.full_name && (
-                          <div className="text-[10px] opacity-70 mt-0.5">
-                            MOD: {manager.full_name}
+                        {inMonth && (
+                          <div className="space-y-0.5">
+                            {shiftTypes.map((type) => {
+                              const typeShifts = getShifts(dateStr, type);
+                              if (typeShifts.length === 0) return null;
+
+                              return (
+                                <div
+                                  key={type}
+                                  className={`rounded border px-1 py-0.5 ${shiftColors[type]}`}
+                                >
+                                  <div className={`text-[9px] font-semibold ${shiftTextColors[type]} flex items-center gap-0.5`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${shiftDotColors[type]}`} />
+                                    {shiftLabels[type]}
+                                  </div>
+                                  <div className="flex flex-wrap gap-x-1">
+                                    {typeShifts.map((s) => {
+                                      const profile = s.assigned_profile as any;
+                                      const isStandby = s.is_standby;
+                                      const isResp = s.is_responsible_on_shift || profile?.is_responsible;
+                                      const firstName = profile?.full_name?.split(" ")[0] || "?";
+
+                                      return (
+                                        <span
+                                          key={s.id}
+                                          className={`text-[10px] leading-tight ${
+                                            isStandby ? "opacity-50 italic" : ""
+                                          } ${isResp ? "font-bold" : ""}`}
+                                        >
+                                          {firstName}
+                                          {isResp && <Star className="inline h-2 w-2 ml-0.5 -mt-0.5" />}
+                                          {isStandby && <span className="text-[8px] ml-0.5">S</span>}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
-                      </div>
+                      </td>
                     );
-                  })
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+        {shiftTypes.map((type) => (
+          <div key={type} className="flex items-center gap-1">
+            <span className={`w-2.5 h-2.5 rounded-full ${shiftDotColors[type]}`} />
+            <span>{shiftLabels[type]}</span>
+          </div>
+        ))}
+        <div className="flex items-center gap-1">
+          <span className="font-bold text-foreground text-[11px]">Name</span>
+          <Star className="h-2.5 w-2.5" />
+          <span>Responsible</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="italic opacity-50 text-[11px]">Name S</span>
+          <span>Stand-by</span>
+        </div>
       </div>
     </div>
   );
