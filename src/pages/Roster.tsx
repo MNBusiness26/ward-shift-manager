@@ -215,6 +215,7 @@ export default function Roster() {
         manager_on_duty_id: form.manager_on_duty_id || null,
         comments: form.comments || null,
         is_draft: form.is_draft,
+        is_standby: form.is_standby,
       };
       if (editingShift) {
         const { error } = await supabase.from("shifts").update(payload).eq("id", editingShift);
@@ -461,6 +462,10 @@ export default function Roster() {
   };
 
   const openEdit = (shift: any) => {
+    if (isDateBlocked(shift.date)) {
+      toast.error("This date is locked. No modifications allowed.");
+      return;
+    }
     setEditingShift(shift.id);
     setForm({
       date: shift.date,
@@ -472,6 +477,7 @@ export default function Roster() {
       manager_on_duty_id: shift.manager_on_duty_id || "",
       comments: shift.comments || "",
       is_draft: shift.is_draft,
+      is_standby: shift.is_standby ?? false,
     });
     setDialogOpen(true);
   };
@@ -482,6 +488,18 @@ export default function Roster() {
 
   const isBlocked = (userId: string, date: string) =>
     blockedDates.some((b) => b.user_id === userId && b.date === date);
+
+  const isDateBlocked = (dateStr: string) => hardBlockedDates.includes(dateStr);
+
+  const getStaffForDropdown = () => {
+    if (form.is_standby) {
+      return staff.filter((s) => {
+        const roles = allUserRoles.filter((r) => r.user_id === s.id).map((r) => r.role);
+        return roles.includes("manager") || roles.includes("assistant_manager" as any) || s.is_responsible;
+      });
+    }
+    return staff;
+  };
 
   const draftCount = shifts.filter((s) => s.is_draft).length;
   const missingResponsible = shifts.filter((s) => !s.is_responsible_on_shift && !s.is_draft);
