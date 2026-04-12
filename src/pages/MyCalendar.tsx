@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sun, Sunset, Moon, Users, Download } from "lucide-react";
+import { Sun, Sunset, Moon, Users, Download, RefreshCw } from "lucide-react";
+import { CalendarSyncDialog } from "@/components/calendar/CalendarSyncDialog";
 import {
   format,
   startOfMonth,
@@ -42,11 +43,13 @@ const shiftBadgeColors: Record<string, string> = {
 };
 
 export default function MyCalendar() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [view, setView] = useState<"month" | "week">("month");
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [syncOpen, setSyncOpen] = useState(false);
+  const hasSyncLink = !!(profile as any)?.calendar_token;
 
   // Compute range based on view
   const rangeStart = view === "month" ? startOfMonth(currentMonth) : currentWeek;
@@ -144,6 +147,10 @@ export default function MyCalendar() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">My Calendar</h1>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setSyncOpen(true)}>
+            <RefreshCw className="h-4 w-4" />
+            {hasSyncLink ? "Manage Sync" : "Sync Calendar"}
+          </Button>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={generateIcs}>
             <Download className="h-4 w-4" />
             Export .ics
@@ -322,6 +329,8 @@ export default function MyCalendar() {
           )}
         </DialogContent>
       </Dialog>
+
+      <CalendarSyncDialog open={syncOpen} onOpenChange={setSyncOpen} />
     </div>
   );
 }

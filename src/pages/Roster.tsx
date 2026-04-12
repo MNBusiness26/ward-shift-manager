@@ -16,6 +16,7 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, Al
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { PublishConfirmDialog } from "@/components/roster/PublishConfirmDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
+import { VersionCompareDialog, type VersionDiff } from "@/components/roster/VersionCompareDialog";
 import { validateShiftFriction, isOverHeadcount } from "@/components/roster/frictionValidation";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
@@ -106,6 +107,11 @@ export default function Roster() {
 
   // Load version dialog
   const [loadOpen, setLoadOpen] = useState(false);
+
+  // Version comparison
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [compareVersion, setCompareVersion] = useState<any>(null);
+  const [compareDiffs, setCompareDiffs] = useState<VersionDiff[]>([]);
 
   // Track current version for "Save" (overwrite)
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
@@ -256,14 +262,22 @@ export default function Roster() {
 
   const publishDrafts = useMutation({
     mutationFn: async () => {
-      const draftIds = shifts.filter((s) => s.is_draft).map((s) => s.id);
-      if (draftIds.length === 0) return;
+      const drafts = shifts.filter((s) => s.is_draft);
+      const draftIds = drafts.map((s) => s.id);
+      if (draftIds.length === 0) return [];
       const { error } = await supabase.from("shifts").update({ is_draft: false }).in("id", draftIds);
       if (error) throw error;
+      // Return affected staff names
+      const affectedUserIds = [...new Set(drafts.map((s) => s.assigned_user_id).filter(Boolean))];
+      return affectedUserIds.map((uid) => staff.find((s) => s.id === uid)?.full_name || "Unknown");
     },
-    onSuccess: () => {
+    onSuccess: (staffNames) => {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
-      toast.success("Schedule published!");
+      if (staffNames && staffNames.length > 0) {
+        toast.success(`Schedule published! Notified: ${staffNames.join(", ")}`);
+      } else {
+        toast.success("Schedule published!");
+      }
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -417,7 +431,75 @@ export default function Roster() {
     setSaveAsName("");
   };
 
-  // Load a saved version
+  // Compute diffs between current shifts and a saved version
+  const computeVersionDiffs = (version: any): VersionDiff[] => {
+    const savedShifts = version.shifts_data as any[];
+    const diffs: VersionDiff[] = [];
+    const staffMap = new Map(staff.map((s) => [s.id, s.full_name]));
+
+    // Current shifts keyed by date+type+user
+    const currentKeys = new Set(
+      shifts.map((s) => `${s.date}|${s.type}|${s.assigned_user_id}`)
+    );
+    const savedKeys = new Set(
+      savedShifts.map((s: any) => `${s.date}|${s.type}|${s.assigned_user_id}`)
+    );
+
+    // Added in saved version (not in current)
+    for (const s of savedShifts) {
+      const key = `${s.date}|${s.type}|${s.assigned_user_id}`;
+      if (!currentKeys.has(key)) {
+        const name = staffMap.get(s.assigned_user_id) || "Unassigned";
+        // Check if same date+type exists with different user (changed)
+        const currentSameSlot = shifts.find(
+          (c) => c.date === s.date && c.type === s.type && c.assigned_user_id !== s.assigned_user_id
+        );
+        if (currentSameSlot) {
+          const oldName = staffMap.get(currentSameSlot.assigned_user_id || "") || "Unassigned";
+          diffs.push({
+            staffName: name,
+            type: "changed",
+            detail: `${s.date} ${s.type}: ${oldName} → ${name}`,
+          });
+        } else {
+          diffs.push({
+            staffName: name,
+            type: "added",
+            detail: `${s.date} ${s.type}`,
+          });
+        }
+      }
+    }
+
+    // Removed (in current but not in saved)
+    for (const s of shifts) {
+      const key = `${s.date}|${s.type}|${s.assigned_user_id}`;
+      if (!savedKeys.has(key)) {
+        const alreadyCovered = diffs.some(
+          (d) => d.detail.includes(s.date) && d.detail.includes(s.type) && d.type === "changed"
+        );
+        if (!alreadyCovered) {
+          const name = staffMap.get(s.assigned_user_id || "") || "Unassigned";
+          diffs.push({
+            staffName: name,
+            type: "removed",
+            detail: `${s.date} ${s.type}`,
+          });
+        }
+      }
+    }
+
+    return diffs;
+  };
+
+  const handleLoadVersionClick = (version: any) => {
+    const diffs = computeVersionDiffs(version);
+    setCompareVersion(version);
+    setCompareDiffs(diffs);
+    setCompareOpen(true);
+  };
+
+  // Load a saved version (after comparison confirmation)
   const loadVersion = useMutation({
     mutationFn: async (version: any) => {
       const weekStr = version.week_start_date;
@@ -458,6 +540,7 @@ export default function Roster() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
       setLoadOpen(false);
+      setCompareOpen(false);
       toast.success("Version loaded");
     },
     onError: (e: any) => toast.error(e.message),
@@ -826,7 +909,7 @@ export default function Roster() {
                       Week of {v.week_start_date} · {(v.shifts_data as any[]).length} shifts · {format(new Date(v.created_at), "MMM d, HH:mm")}
                     </p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => loadVersion.mutate(v)} disabled={loadVersion.isPending}>
+                  <Button size="sm" variant="outline" onClick={() => handleLoadVersionClick(v)} disabled={loadVersion.isPending}>
                     Load
                   </Button>
                 </div>
@@ -992,6 +1075,17 @@ export default function Roster() {
           setPublishConfirmOpen(false);
         }}
         isPending={publishDrafts.isPending}
+      />
+
+      <VersionCompareDialog
+        open={compareOpen}
+        onOpenChange={setCompareOpen}
+        versionName={compareVersion?.version_name || ""}
+        diffs={compareDiffs}
+        onConfirm={() => {
+          if (compareVersion) loadVersion.mutate(compareVersion);
+        }}
+        isPending={loadVersion.isPending}
       />
     </div>
   );

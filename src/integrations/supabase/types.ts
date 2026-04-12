@@ -108,6 +108,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          calendar_token: string | null
           constraints: Json
           created_at: string
           email: string | null
@@ -115,11 +116,13 @@ export type Database = {
           id: string
           is_active: boolean
           is_responsible: boolean | null
+          last_sync_generated_at: string | null
           role: string | null
           target_fte_percent: number
           updated_at: string
         }
         Insert: {
+          calendar_token?: string | null
           constraints?: Json
           created_at?: string
           email?: string | null
@@ -127,11 +130,13 @@ export type Database = {
           id: string
           is_active?: boolean
           is_responsible?: boolean | null
+          last_sync_generated_at?: string | null
           role?: string | null
           target_fte_percent?: number
           updated_at?: string
         }
         Update: {
+          calendar_token?: string | null
           constraints?: Json
           created_at?: string
           email?: string | null
@@ -139,6 +144,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_responsible?: boolean | null
+          last_sync_generated_at?: string | null
           role?: string | null
           target_fte_percent?: number
           updated_at?: string
