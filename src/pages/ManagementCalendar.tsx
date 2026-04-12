@@ -13,6 +13,8 @@ import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval }
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
+import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
+import { validateShiftFriction, isOverHeadcount, HEADCOUNT_LIMITS } from "@/components/roster/frictionValidation";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -83,6 +85,8 @@ export default function ManagementCalendar() {
   const [bulkType, setBulkType] = useState<ShiftType | undefined>();
   const [form, setForm] = useState<ShiftFormData>(defaultForm());
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [frictionWarnings, setFrictionWarnings] = useState<FrictionWarning[]>([]);
+  const [frictionOpen, setFrictionOpen] = useState(false);
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailDate, setDetailDate] = useState("");
@@ -289,6 +293,30 @@ export default function ManagementCalendar() {
     return staff;
   };
 
+  // Friction pre-save check
+  const handleSaveWithFriction = () => {
+    if (!form.assigned_user_id) {
+      saveShift.mutate();
+      return;
+    }
+    const weekShiftsForUser = shifts.filter(
+      (s) => s.assigned_user_id === form.assigned_user_id && (editingShift ? s.id !== editingShift : true)
+    ).length;
+    const warnings = validateShiftFriction({
+      assignedUserId: form.assigned_user_id,
+      shiftType: form.type,
+      shiftDate: form.date,
+      weekShiftsForUser,
+      staffProfiles: staff as any[],
+    });
+    if (warnings.length > 0) {
+      setFrictionWarnings(warnings);
+      setFrictionOpen(true);
+    } else {
+      saveShift.mutate();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -345,12 +373,19 @@ export default function ManagementCalendar() {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const blocked = isDateBlocked(dateStr);
                     const dayShifts = shifts.filter((s) => s.date === dateStr && s.type === type && s.assigned_user_id);
+                    const overHeadcount = isOverHeadcount(shifts as any[], dateStr, type);
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`p-2 border-l align-top ${blocked ? "bg-gray-200/50 cursor-not-allowed" : `${shiftColors[type]} cursor-pointer hover:opacity-80`}`}
+                        className={`p-2 border-l align-top ${blocked ? "bg-gray-200/50 cursor-not-allowed" : `${shiftColors[type]} cursor-pointer hover:opacity-80`} ${overHeadcount ? "ring-2 ring-inset ring-amber-400/60" : ""}`}
                         onClick={() => !blocked && handleCellClick(dateStr, type)}
                       >
+                        {overHeadcount && (
+                          <div className="flex items-center gap-0.5 mb-1">
+                            <AlertTriangle className="h-3 w-3 text-amber-500" />
+                            <span className="text-[9px] text-amber-600 font-medium">{dayShifts.filter(s => !(s as any).is_standby).length}/{HEADCOUNT_LIMITS[type]}</span>
+                          </div>
+                        )}
                         {dayShifts.length === 0 ? (
                           <span className="text-xs text-muted-foreground italic">{blocked ? "🔒" : "—"}</span>
                         ) : (
@@ -574,7 +609,7 @@ export default function ManagementCalendar() {
                   Delete
                 </Button>
               )}
-              <Button className="flex-1" onClick={() => saveShift.mutate()} disabled={saveShift.isPending}>
+              <Button className="flex-1" onClick={handleSaveWithFriction} disabled={saveShift.isPending}>
                 {editingShift ? "Update" : "Create"} Shift
               </Button>
             </div>
@@ -583,6 +618,13 @@ export default function ManagementCalendar() {
       </Dialog>
 
       <BulkAssignDialog open={bulkOpen} onOpenChange={setBulkOpen} staff={staff} blockedDates={blockedDates} initialDate={bulkDate} initialType={bulkType} />
+      <FrictionDialog
+        open={frictionOpen}
+        onOpenChange={setFrictionOpen}
+        warnings={frictionWarnings}
+        onConfirm={() => { setFrictionOpen(false); saveShift.mutate(); }}
+        isPending={saveShift.isPending}
+      />
     </div>
   );
 }

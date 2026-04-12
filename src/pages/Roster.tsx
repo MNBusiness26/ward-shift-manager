@@ -15,7 +15,10 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Trash2, Copy, ClipboardPaste, Users, Star, Save, FolderOpen, Lock, Settings } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { PublishConfirmDialog } from "@/components/roster/PublishConfirmDialog";
+import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
+import { validateShiftFriction, isOverHeadcount, HEADCOUNT_LIMITS } from "@/components/roster/frictionValidation";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -90,6 +93,8 @@ export default function Roster() {
   const [editingShift, setEditingShift] = useState<string | null>(null);
   const [form, setForm] = useState<ShiftFormData>(defaultForm());
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [frictionWarnings, setFrictionWarnings] = useState<FrictionWarning[]>([]);
+  const [frictionOpen, setFrictionOpen] = useState(false);
 
   // Copy/Paste state
   const [copiedWeek, setCopiedWeek] = useState<CopiedWeek | null>(null);
@@ -131,7 +136,7 @@ export default function Roster() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, is_active, is_responsible, target_fte_percent")
+        .select("id, full_name, is_active, is_responsible, target_fte_percent, constraints")
         .eq("is_active", true)
         .order("full_name");
       if (error) throw error;
@@ -508,6 +513,30 @@ export default function Roster() {
     return staff;
   };
 
+  // Friction pre-save check
+  const handleSaveWithFriction = () => {
+    if (!form.assigned_user_id) {
+      saveShift.mutate();
+      return;
+    }
+    const weekShiftsForUser = shifts.filter(
+      (s) => s.assigned_user_id === form.assigned_user_id && (editingShift ? s.id !== editingShift : true)
+    ).length;
+    const warnings = validateShiftFriction({
+      assignedUserId: form.assigned_user_id,
+      shiftType: form.type,
+      shiftDate: form.date,
+      weekShiftsForUser,
+      staffProfiles: staff as any[],
+    });
+    if (warnings.length > 0) {
+      setFrictionWarnings(warnings);
+      setFrictionOpen(true);
+    } else {
+      saveShift.mutate();
+    }
+  };
+
   const draftCount = shifts.filter((s) => s.is_draft).length;
   const missingResponsible = shifts.filter((s) => !s.is_responsible_on_shift && !s.is_draft);
   const managerStaff = staff.filter((s) => managers.includes(s.id));
@@ -517,27 +546,45 @@ export default function Roster() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Master Roster</h1>
         <div className="flex items-center gap-2 flex-wrap">
-          {draftCount > 0 && (
-            <Button
-              size="sm"
-              onClick={() => setPublishConfirmOpen(true)}
-              disabled={publishDrafts.isPending || (enforceFullWeek && !isFullWeek)}
-              title={enforceFullWeek && !isFullWeek ? "Navigate to a full Sun–Sat week to publish" : undefined}
-            >
-              <Eye className="mr-1 h-4 w-4" />
-              Publish {draftCount} Draft{draftCount > 1 ? "s" : ""}
-            </Button>
-          )}
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setClearWeekConfirmOpen(true)}
-            disabled={shifts.length === 0 || (enforceFullWeek && !isFullWeek)}
-            title={enforceFullWeek && !isFullWeek ? "Navigate to a full Sun–Sat week to clear" : undefined}
-          >
-            <Trash2 className="mr-1 h-4 w-4" />
-            Clear Week
-          </Button>
+          <TooltipProvider>
+            {draftCount > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      size="sm"
+                      onClick={() => setPublishConfirmOpen(true)}
+                      disabled={publishDrafts.isPending || (enforceFullWeek && !isFullWeek)}
+                    >
+                      <Eye className="mr-1 h-4 w-4" />
+                      Publish {draftCount} Draft{draftCount > 1 ? "s" : ""}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {enforceFullWeek && !isFullWeek && (
+                  <TooltipContent>Navigate to a full Sun–Sat week to publish</TooltipContent>
+                )}
+              </Tooltip>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setClearWeekConfirmOpen(true)}
+                    disabled={shifts.length === 0 || (enforceFullWeek && !isFullWeek)}
+                  >
+                    <Trash2 className="mr-1 h-4 w-4" />
+                    Clear Week
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {enforceFullWeek && !isFullWeek && (
+                <TooltipContent>Navigate to a full Sun–Sat week to clear</TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
           <Button size="sm" onClick={() => openCreate()}>
             <Plus className="mr-1 h-4 w-4" />
             Add Shift
@@ -609,6 +656,9 @@ export default function Roster() {
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
+                  const headcountIssues = (["morning", "evening", "night"] as const).filter(
+                    (t) => isOverHeadcount(shifts as any[], dateStr, t)
+                  );
                   return (
                     <th key={d.toISOString()} className={`min-w-[120px] p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-gray-200/50" : ""}`}>
                       <div className="flex items-center justify-center gap-1">
@@ -616,6 +666,14 @@ export default function Roster() {
                         {dateBlocked && <Lock className="h-3 w-3" />}
                       </div>
                       <div className="text-xs">{format(d, "MMM d")}</div>
+                      {headcountIssues.length > 0 && (
+                        <div className="flex items-center justify-center gap-0.5 mt-0.5">
+                          <AlertTriangle className="h-3 w-3 text-amber-500" />
+                          <span className="text-[9px] text-amber-600 font-medium">
+                            {headcountIssues.map((t) => t.charAt(0).toUpperCase()).join("/")} over
+                          </span>
+                        </div>
+                      )}
                     </th>
                   );
                 })}
@@ -885,7 +943,7 @@ export default function Roster() {
                   Delete
                 </Button>
               )}
-              <Button onClick={() => saveShift.mutate()} disabled={saveShift.isPending}>
+              <Button onClick={handleSaveWithFriction} disabled={saveShift.isPending}>
                 {editingShift ? "Update" : "Create"} Shift
               </Button>
             </div>
@@ -897,9 +955,12 @@ export default function Roster() {
       <AlertDialog open={clearWeekConfirmOpen} onOpenChange={setClearWeekConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Clear entire week?</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Clear entire week?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete all shifts from {format(viewStart, "MMM d")} to {format(viewEnd, "MMM d, yyyy")}. This action cannot be undone.
+              This will permanently delete <strong>{shifts.length}</strong> shift{shifts.length !== 1 ? "s" : ""} from {format(viewStart, "MMM d")} to {format(viewEnd, "MMM d, yyyy")}. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -908,11 +969,19 @@ export default function Roster() {
               onClick={() => clearWeek.mutate()}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete All Shifts
+              Delete {shifts.length} Shift{shifts.length !== 1 ? "s" : ""}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <FrictionDialog
+        open={frictionOpen}
+        onOpenChange={setFrictionOpen}
+        warnings={frictionWarnings}
+        onConfirm={() => { setFrictionOpen(false); saveShift.mutate(); }}
+        isPending={saveShift.isPending}
+      />
 
       <PublishConfirmDialog
         open={publishConfirmOpen}

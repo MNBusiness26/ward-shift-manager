@@ -57,6 +57,7 @@ export default function SwapRequests() {
         .from("shifts")
         .select("*")
         .eq("assigned_user_id", user!.id)
+        .eq("is_draft", false)
         .gte("date", format(new Date(), "yyyy-MM-dd"))
         .order("date");
       if (error) throw error;
