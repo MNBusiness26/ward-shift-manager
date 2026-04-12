@@ -19,6 +19,7 @@ import Staff from "./pages/Staff";
 import Analytics from "./pages/Analytics";
 import StaffStats from "./pages/StaffStats";
 import ManagementCalendar from "./pages/ManagementCalendar";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ function AppRoutes() {
       <Route path="/management-calendar" element={<ProtectedRoute requireManager><ManagementCalendar /></ProtectedRoute>} />
       <Route path="/staff-stats" element={<ProtectedRoute requireManager><StaffStats /></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute requireManager><Analytics /></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute requireManager><Admin /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
