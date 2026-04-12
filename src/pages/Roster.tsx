@@ -423,7 +423,75 @@ export default function Roster() {
     setSaveAsName("");
   };
 
-  // Load a saved version
+  // Compute diffs between current shifts and a saved version
+  const computeVersionDiffs = (version: any): VersionDiff[] => {
+    const savedShifts = version.shifts_data as any[];
+    const diffs: VersionDiff[] = [];
+    const staffMap = new Map(staff.map((s) => [s.id, s.full_name]));
+
+    // Current shifts keyed by date+type+user
+    const currentKeys = new Set(
+      shifts.map((s) => `${s.date}|${s.type}|${s.assigned_user_id}`)
+    );
+    const savedKeys = new Set(
+      savedShifts.map((s: any) => `${s.date}|${s.type}|${s.assigned_user_id}`)
+    );
+
+    // Added in saved version (not in current)
+    for (const s of savedShifts) {
+      const key = `${s.date}|${s.type}|${s.assigned_user_id}`;
+      if (!currentKeys.has(key)) {
+        const name = staffMap.get(s.assigned_user_id) || "Unassigned";
+        // Check if same date+type exists with different user (changed)
+        const currentSameSlot = shifts.find(
+          (c) => c.date === s.date && c.type === s.type && c.assigned_user_id !== s.assigned_user_id
+        );
+        if (currentSameSlot) {
+          const oldName = staffMap.get(currentSameSlot.assigned_user_id || "") || "Unassigned";
+          diffs.push({
+            staffName: name,
+            type: "changed",
+            detail: `${s.date} ${s.type}: ${oldName} → ${name}`,
+          });
+        } else {
+          diffs.push({
+            staffName: name,
+            type: "added",
+            detail: `${s.date} ${s.type}`,
+          });
+        }
+      }
+    }
+
+    // Removed (in current but not in saved)
+    for (const s of shifts) {
+      const key = `${s.date}|${s.type}|${s.assigned_user_id}`;
+      if (!savedKeys.has(key)) {
+        const alreadyCovered = diffs.some(
+          (d) => d.detail.includes(s.date) && d.detail.includes(s.type) && d.type === "changed"
+        );
+        if (!alreadyCovered) {
+          const name = staffMap.get(s.assigned_user_id || "") || "Unassigned";
+          diffs.push({
+            staffName: name,
+            type: "removed",
+            detail: `${s.date} ${s.type}`,
+          });
+        }
+      }
+    }
+
+    return diffs;
+  };
+
+  const handleLoadVersionClick = (version: any) => {
+    const diffs = computeVersionDiffs(version);
+    setCompareVersion(version);
+    setCompareDiffs(diffs);
+    setCompareOpen(true);
+  };
+
+  // Load a saved version (after comparison confirmation)
   const loadVersion = useMutation({
     mutationFn: async (version: any) => {
       const weekStr = version.week_start_date;
@@ -464,6 +532,7 @@ export default function Roster() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
       setLoadOpen(false);
+      setCompareOpen(false);
       toast.success("Version loaded");
     },
     onError: (e: any) => toast.error(e.message),
