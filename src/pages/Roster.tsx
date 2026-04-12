@@ -501,6 +501,14 @@ export default function Roster() {
 
       {/* Shift management toolbar */}
       <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 mr-4 border-r pr-4">
+          <Settings className="h-4 w-4 text-muted-foreground" />
+          <Label htmlFor="enforce-full-week" className="text-xs text-muted-foreground cursor-pointer">Full week only</Label>
+          <Switch id="enforce-full-week" checked={enforceFullWeek} onCheckedChange={setEnforceFullWeek} />
+          {enforceFullWeek && !isFullWeek && (
+            <span className="text-xs text-destructive">Not a Sun–Sat week</span>
+          )}
+        </div>
         <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
           <Users className="mr-1 h-4 w-4" />
           Bulk Assign
