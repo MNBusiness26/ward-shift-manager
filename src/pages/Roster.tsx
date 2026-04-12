@@ -605,7 +605,7 @@ export default function Roster() {
                               {s.is_responsible_on_shift && (
                                 <span className="text-[9px] font-bold bg-primary/20 text-primary rounded px-0.5">RN</span>
                               )}
-                              {s.is_draft && <EyeOff className="h-2.5 w-2.5 opacity-60" />}
+                              {s.is_draft ? <EyeOff className="h-2.5 w-2.5 opacity-60" /> : <Lock className="h-2.5 w-2.5 opacity-40" />}
                             </div>
                           </div>
                         ))}
@@ -809,6 +809,27 @@ export default function Roster() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Clear Week Confirmation */}
+      <AlertDialog open={clearWeekConfirmOpen} onOpenChange={setClearWeekConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear entire week?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all shifts from {format(viewStart, "MMM d")} to {format(viewEnd, "MMM d, yyyy")}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => clearWeek.mutate()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete All Shifts
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
