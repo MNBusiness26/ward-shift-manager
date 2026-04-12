@@ -827,8 +827,8 @@ export default function Roster() {
                   {getStaffForDropdown().map((s) => {
                     const blocked = isBlocked(s.id, form.date);
                     return (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.full_name} {blocked ? "⚠️ Blocked" : ""}
+                      <SelectItem key={s.id} value={s.id} disabled={blocked}>
+                        {s.full_name} {blocked ? "🚫 Blocked" : ""}
                       </SelectItem>
                     );
                   })}

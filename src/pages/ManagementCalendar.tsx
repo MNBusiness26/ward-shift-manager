@@ -520,8 +520,8 @@ export default function ManagementCalendar() {
                       return b.date === form.date;
                     });
                     return (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.full_name} {userBlocked ? "⚠️ Blocked" : ""}
+                      <SelectItem key={s.id} value={s.id} disabled={userBlocked}>
+                        {s.full_name} {userBlocked ? "🚫 Blocked" : ""}
                       </SelectItem>
                     );
                   })}
