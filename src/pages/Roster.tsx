@@ -89,6 +89,7 @@ export default function Roster() {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [editingShift, setEditingShift] = useState<string | null>(null);
   const [form, setForm] = useState<ShiftFormData>(defaultForm());
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Copy/Paste state
   const [copiedWeek, setCopiedWeek] = useState<CopiedWeek | null>(null);
@@ -229,9 +230,10 @@ export default function Roster() {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
       setDialogOpen(false);
       setEditingShift(null);
+      setSaveError(null);
       toast.success(editingShift ? "Shift updated" : "Shift created");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => { setSaveError(e.message); toast.error(e.message); },
   });
 
   const deleteShift = useMutation({
@@ -778,7 +780,7 @@ export default function Roster() {
       </Dialog>
 
       {/* Shift create/edit dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(v) => { setDialogOpen(v); if (!v) setSaveError(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{editingShift ? "Edit Shift" : "Create Shift"}</DialogTitle>
@@ -864,6 +866,13 @@ export default function Roster() {
               <Label>Comments</Label>
               <Textarea value={form.comments} onChange={(e) => setForm((f) => ({ ...f, comments: e.target.value }))} placeholder="Optional notes..." rows={2} />
             </div>
+
+            {saveError && (
+              <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm text-destructive flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>{saveError}</span>
+              </div>
+            )}
 
             <div className="flex gap-2 justify-end">
               {editingShift && (

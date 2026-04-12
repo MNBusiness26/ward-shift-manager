@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
@@ -82,6 +82,7 @@ export default function ManagementCalendar() {
   const [bulkDate, setBulkDate] = useState<string | undefined>();
   const [bulkType, setBulkType] = useState<ShiftType | undefined>();
   const [form, setForm] = useState<ShiftFormData>(defaultForm());
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailDate, setDetailDate] = useState("");
@@ -198,9 +199,10 @@ export default function ManagementCalendar() {
       invalidateAll();
       setDialogOpen(false);
       setEditingShift(null);
+      setSaveError(null);
       toast.success(editingShift ? "Shift updated" : "Shift created");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => { setSaveError(e.message); toast.error(e.message); },
   });
 
   const toggleResponsible = useMutation({
@@ -467,7 +469,7 @@ export default function ManagementCalendar() {
       </Dialog>
 
       {/* Add/Edit Shift Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(v) => { setDialogOpen(v); if (!v) setSaveError(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{editingShift ? "Edit Shift" : "Add Shift"}</DialogTitle>
@@ -557,6 +559,13 @@ export default function ManagementCalendar() {
               <Label>Comments</Label>
               <Textarea value={form.comments} onChange={(e) => setForm((f) => ({ ...f, comments: e.target.value }))} />
             </div>
+
+            {saveError && (
+              <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm text-destructive flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>{saveError}</span>
+              </div>
+            )}
 
             <div className="flex gap-2 justify-end">
               {editingShift && (
