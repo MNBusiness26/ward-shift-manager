@@ -164,6 +164,30 @@ export default function Roster() {
     },
   });
 
+  // Hard-locked dates
+  const { data: hardBlockedDates = [] } = useQuery({
+    queryKey: ["blocked-dates", format(viewStart, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blocked_dates")
+        .select("date")
+        .gte("date", format(viewStart, "yyyy-MM-dd"))
+        .lte("date", format(viewEnd, "yyyy-MM-dd"));
+      if (error) throw error;
+      return data?.map((d) => d.date) ?? [];
+    },
+  });
+
+  // All user roles for standby filtering
+  const { data: allUserRoles = [] } = useQuery({
+    queryKey: ["all-user-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_roles").select("user_id, role");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Saved versions for Load dialog
   const { data: savedVersions = [], refetch: refetchVersions } = useQuery({
     queryKey: ["roster-versions"],
