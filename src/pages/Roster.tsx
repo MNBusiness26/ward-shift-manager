@@ -926,9 +926,12 @@ export default function Roster() {
       <AlertDialog open={clearWeekConfirmOpen} onOpenChange={setClearWeekConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Clear entire week?</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Clear entire week?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete all shifts from {format(viewStart, "MMM d")} to {format(viewEnd, "MMM d, yyyy")}. This action cannot be undone.
+              This will permanently delete <strong>{shifts.length}</strong> shift{shifts.length !== 1 ? "s" : ""} from {format(viewStart, "MMM d")} to {format(viewEnd, "MMM d, yyyy")}. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -937,11 +940,19 @@ export default function Roster() {
               onClick={() => clearWeek.mutate()}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete All Shifts
+              Delete {shifts.length} Shift{shifts.length !== 1 ? "s" : ""}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <FrictionDialog
+        open={frictionOpen}
+        onOpenChange={setFrictionOpen}
+        warnings={frictionWarnings}
+        onConfirm={() => { setFrictionOpen(false); saveShift.mutate(); }}
+        isPending={saveShift.isPending}
+      />
 
       <PublishConfirmDialog
         open={publishConfirmOpen}
