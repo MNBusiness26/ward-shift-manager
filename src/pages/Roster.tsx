@@ -1076,6 +1076,17 @@ export default function Roster() {
         }}
         isPending={publishDrafts.isPending}
       />
+
+      <VersionCompareDialog
+        open={compareOpen}
+        onOpenChange={setCompareOpen}
+        versionName={compareVersion?.version_name || ""}
+        diffs={compareDiffs}
+        onConfirm={() => {
+          if (compareVersion) loadVersion.mutate(compareVersion);
+        }}
+        isPending={loadVersion.isPending}
+      />
     </div>
   );
 }
