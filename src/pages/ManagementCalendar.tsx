@@ -13,6 +13,8 @@ import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval }
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
+import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
+import { validateShiftFriction, isOverHeadcount, HEADCOUNT_LIMITS } from "@/components/roster/frictionValidation";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -83,6 +85,8 @@ export default function ManagementCalendar() {
   const [bulkType, setBulkType] = useState<ShiftType | undefined>();
   const [form, setForm] = useState<ShiftFormData>(defaultForm());
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [frictionWarnings, setFrictionWarnings] = useState<FrictionWarning[]>([]);
+  const [frictionOpen, setFrictionOpen] = useState(false);
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailDate, setDetailDate] = useState("");
