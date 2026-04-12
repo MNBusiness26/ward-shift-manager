@@ -27,7 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ShiftDetailCard } from "@/components/calendar/ShiftDetailCard";
-import { useMyShifts, useMyRole, useDayShifts, type Shift } from "@/components/calendar/useMyCalendarData";
+import { useMyShifts, useMyRole, useDayShifts, useAllShiftsInRange, type Shift } from "@/components/calendar/useMyCalendarData";
 
 const shiftDot: Record<string, string> = {
   morning: "bg-shift-morning",
