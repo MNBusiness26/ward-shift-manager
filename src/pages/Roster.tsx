@@ -909,7 +909,7 @@ export default function Roster() {
                       Week of {v.week_start_date} · {(v.shifts_data as any[]).length} shifts · {format(new Date(v.created_at), "MMM d, HH:mm")}
                     </p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => loadVersion.mutate(v)} disabled={loadVersion.isPending}>
+                  <Button size="sm" variant="outline" onClick={() => handleLoadVersionClick(v)} disabled={loadVersion.isPending}>
                     Load
                   </Button>
                 </div>
