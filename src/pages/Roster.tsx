@@ -639,9 +639,9 @@ export default function Roster() {
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`p-1 text-center transition-colors ${dateBlocked ? "bg-gray-200/50 cursor-not-allowed" : "cursor-pointer hover:bg-accent/30"} ${blocked ? "bg-destructive/5" : ""}`}
+                        className={`p-1 text-center transition-colors ${dateBlocked || blocked ? "bg-destructive/5 cursor-not-allowed" : "cursor-pointer hover:bg-accent/30"}`}
                         onClick={() => {
-                          if (dateBlocked) return;
+                          if (dateBlocked || blocked) return;
                           if (dayShifts.length === 0) {
                             setEditingShift(null);
                             setForm({ ...defaultForm(dateStr), assigned_user_id: member.id });
