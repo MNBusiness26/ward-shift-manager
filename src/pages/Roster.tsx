@@ -16,6 +16,7 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, Al
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { PublishConfirmDialog } from "@/components/roster/PublishConfirmDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
+import { VersionCompareDialog, type VersionDiff } from "@/components/roster/VersionCompareDialog";
 import { validateShiftFriction, isOverHeadcount } from "@/components/roster/frictionValidation";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
