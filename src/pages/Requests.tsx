@@ -247,16 +247,18 @@ export default function Requests() {
                           </p>
                         )}
                       </div>
-                      {swap.status === "peer_accepted" && (
+                      {(swap.status === "peer_accepted" || swap.status === "pending") && (
                         <div className="flex gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-green-600 hover:bg-green-50"
-                            onClick={() => handleSwap.mutate({ id: swap.id, status: "manager_approved" })}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
+                          {swap.status === "peer_accepted" && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-green-600 hover:bg-green-50"
+                              onClick={() => handleSwap.mutate({ id: swap.id, status: "manager_approved" })}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             size="icon"
                             variant="ghost"
