@@ -111,8 +111,8 @@ export default function Roster() {
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [currentVersionName, setCurrentVersionName] = useState<string | null>(null);
 
-  // Full-week enforcement
-  const [enforceFullWeek, setEnforceFullWeek] = useState(true);
+  // Full-week enforcement from admin settings
+  const { enforceFullWeek, headcountLimits } = useAppSettings();
   const isFullWeek = getDay(viewStart) === 0; // Sunday start
   const [clearWeekConfirmOpen, setClearWeekConfirmOpen] = useState(false);
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
