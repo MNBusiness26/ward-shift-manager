@@ -34,6 +34,7 @@ const nurseItems = [
   { title: "My Calendar", url: "/calendar", icon: Calendar },
   { title: "Availability", url: "/availability", icon: CalendarOff },
   { title: "Swap Requests", url: "/swaps", icon: ArrowLeftRight },
+  { title: "Team Calendar", url: "/team-calendar", icon: Users },
   { title: "My Stats", url: "/stats", icon: BarChart3 },
 ];
 
