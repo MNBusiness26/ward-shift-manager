@@ -35,6 +35,7 @@ export default function Index() {
         .from("shifts")
         .select("*")
         .eq("assigned_user_id", user!.id)
+        .eq("is_draft", false)
         .gte("date", format(today, "yyyy-MM-dd"))
         .lte("date", format(weekEnd, "yyyy-MM-dd"))
         .order("date")

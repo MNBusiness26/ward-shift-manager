@@ -15,6 +15,7 @@ export function useMyShifts(rangeStart: Date, rangeEnd: Date) {
         .from("shifts")
         .select("*")
         .eq("assigned_user_id", user!.id)
+        .eq("is_draft", false)
         .gte("date", format(rangeStart, "yyyy-MM-dd"))
         .lte("date", format(rangeEnd, "yyyy-MM-dd"))
         .order("date")
