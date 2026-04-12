@@ -456,6 +456,7 @@ export default function Roster() {
   });
 
   const openCreate = (date?: string) => {
+    if (date && isDateBlocked(date)) return;
     setEditingShift(null);
     setForm(defaultForm(date));
     setDialogOpen(true);
