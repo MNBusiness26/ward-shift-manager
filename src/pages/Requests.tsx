@@ -18,7 +18,7 @@ function formatShift(shift: any) {
 export default function Requests() {
   const queryClient = useQueryClient();
   const [availFilter, setAvailFilter] = useState<"pending" | "all">("pending");
-  const [swapFilter, setSwapFilter] = useState<"peer_accepted" | "all">("peer_accepted");
+  const [swapFilter, setSwapFilter] = useState<"pending_all" | "peer_accepted" | "all">("pending_all");
 
   const { data: availRequests = [] } = useQuery({
     queryKey: ["manager-avail-requests", availFilter],
