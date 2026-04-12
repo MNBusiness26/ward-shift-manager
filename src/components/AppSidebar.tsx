@@ -10,6 +10,7 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
+  Shield,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -43,6 +44,7 @@ const managerItems = [
   { title: "Staff", url: "/staff", icon: Users },
   { title: "Staff Stats", url: "/staff-stats", icon: BarChart3 },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Admin", url: "/admin", icon: Shield },
 ];
 
 export function AppSidebar() {

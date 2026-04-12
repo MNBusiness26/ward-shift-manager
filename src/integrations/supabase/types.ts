@@ -58,6 +58,30 @@ export type Database = {
           },
         ]
       }
+      blocked_dates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           constraints: Json
@@ -135,6 +159,7 @@ export type Database = {
           id: string
           is_draft: boolean
           is_responsible_on_shift: boolean
+          is_standby: boolean
           manager_on_duty_id: string | null
           start_time: string
           type: Database["public"]["Enums"]["shift_type"]
@@ -150,6 +175,7 @@ export type Database = {
           id?: string
           is_draft?: boolean
           is_responsible_on_shift?: boolean
+          is_standby?: boolean
           manager_on_duty_id?: string | null
           start_time: string
           type: Database["public"]["Enums"]["shift_type"]
@@ -165,6 +191,7 @@ export type Database = {
           id?: string
           is_draft?: boolean
           is_responsible_on_shift?: boolean
+          is_standby?: boolean
           manager_on_duty_id?: string | null
           start_time?: string
           type?: Database["public"]["Enums"]["shift_type"]

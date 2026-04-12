@@ -17,9 +17,21 @@ WardWise uses a single `shifts` table with an `is_draft` boolean column to manag
 | `assigned_user_id` | uuid (nullable) | FK → profiles.id |
 | `is_draft` | boolean (default `true`) | **Draft vs. published flag** |
 | `is_responsible_on_shift` | boolean | Responsible nurse marker |
+| `is_standby` | boolean (default `false`) | **Stand-by shift flag** |
 | `manager_on_duty_id` | uuid (nullable) | Manager on duty |
 | `comments` | text | Free-text notes |
 | `color_code` | text | Optional visual override |
+
+### `blocked_dates` table
+
+| Column | Type | Purpose |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `date` | date (unique) | The locked date |
+| `reason` | text | Optional reason for blocking |
+| `created_by` | uuid | Manager who blocked the date |
+
+A SQL trigger (`trg_enforce_blocked_dates`) on `shifts` prevents any INSERT or UPDATE if `NEW.date` exists in `blocked_dates`. This is a **hard database-level lock** — no frontend bypass is possible.
 
 ### Key: `is_draft`
 - `true` → draft shift, visible only to managers in management views
@@ -89,7 +101,7 @@ The Master Roster includes an "Enforce Full Week Operations" toggle (default: ON
 
 ### Clear Week Flow
 ```
-Manager clicks "Clear Week" in Master Roster or Management Calendar
+Manager clicks "Clear Week" in Master Roster (exclusive to Roster view)
     ↓
 Confirmation dialog warns about permanent deletion
     ↓
@@ -97,6 +109,8 @@ DELETE shifts WHERE date BETWEEN week_start AND week_end
     ↓
 All shifts (draft and published) in that range are removed
 ```
+
+> **Note:** "Publish Drafts" and "Clear Week" are exclusive to the Master Roster (`/roster`). The Management Calendar supports full CRUD on individual shifts but does not perform bulk publish/clear operations.
 
 ### Draft Versioning Flow
 ```
@@ -135,11 +149,30 @@ RLS: Only managers can read/write roster versions.
 
 ### Manager View (Management Calendar — `/management-calendar`)
 - **Shift-type × Day grid:** Morning/Evening/Night rows with staff badges per cell
-- **Top toolbar:** Publish Drafts, Clear Week, Bulk Assign, Add Shift
+- **Top toolbar:** Bulk Assign, Add Shift (no Publish/Clear — those are Roster-exclusive)
+- **Full CRUD:** Create, Edit, Delete individual shifts via dialogs
 - **Visual indicators:**
   - Draft badges: 60% opacity, dashed border, "D" marker
   - Published badges: Full opacity, `Lock` icon, subtle ring accent
+  - Stand-by badges: Amber "S" badge
+  - Blocked dates: `bg-gray-200/50`, lock icon, `cursor-not-allowed`, click disabled
 - **Cell interaction:** Empty cell → Bulk Assign; populated cell → detail panel
+
+### Stand-by Shifts
+- Toggled via "Stand-by Shift" switch in the shift creation/edit dialog
+- When enabled, staff dropdown filters to only managers, assistant managers, and responsible nurses
+- Rendered with a distinct amber "S" badge in both Roster grid and Management Calendar
+- Stored as `is_standby = true` on the shifts table
+
+### Blocked Dates (Hard Lock)
+- Dates in `blocked_dates` table are visually marked with `bg-gray-200/50` and a lock icon
+- Cell clicks are disabled — no shift creation or editing allowed on blocked dates
+- A SQL trigger enforces this at the database level, rejecting any INSERT/UPDATE on blocked dates
+
+### Admin Route (`/admin`)
+- Restricted to `michael.nejman@gmail.com` via email check in the component
+- Accessible only to managers (route-level `requireManager` guard)
+- Placeholder settings dashboard for system configuration
 
 ### Staff View (My Calendar — `/my-calendar`)
 - Queries shifts where `assigned_user_id = current_user` AND `is_draft = false`

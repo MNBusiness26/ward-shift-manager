@@ -49,6 +49,7 @@ interface ShiftFormData {
   manager_on_duty_id: string;
   comments: string;
   is_draft: boolean;
+  is_standby: boolean;
 }
 
 const defaultForm = (date?: string): ShiftFormData => ({
@@ -61,6 +62,7 @@ const defaultForm = (date?: string): ShiftFormData => ({
   manager_on_duty_id: "",
   comments: "",
   is_draft: true,
+  is_standby: false,
 });
 
 interface CopiedWeek {
@@ -162,6 +164,30 @@ export default function Roster() {
     },
   });
 
+  // Hard-locked dates
+  const { data: hardBlockedDates = [] } = useQuery({
+    queryKey: ["blocked-dates", format(viewStart, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blocked_dates")
+        .select("date")
+        .gte("date", format(viewStart, "yyyy-MM-dd"))
+        .lte("date", format(viewEnd, "yyyy-MM-dd"));
+      if (error) throw error;
+      return data?.map((d) => d.date) ?? [];
+    },
+  });
+
+  // All user roles for standby filtering
+  const { data: allUserRoles = [] } = useQuery({
+    queryKey: ["all-user-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_roles").select("user_id, role");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Saved versions for Load dialog
   const { data: savedVersions = [], refetch: refetchVersions } = useQuery({
     queryKey: ["roster-versions"],
@@ -189,6 +215,7 @@ export default function Roster() {
         manager_on_duty_id: form.manager_on_duty_id || null,
         comments: form.comments || null,
         is_draft: form.is_draft,
+        is_standby: form.is_standby,
       };
       if (editingShift) {
         const { error } = await supabase.from("shifts").update(payload).eq("id", editingShift);
@@ -429,12 +456,17 @@ export default function Roster() {
   });
 
   const openCreate = (date?: string) => {
+    if (date && isDateBlocked(date)) return;
     setEditingShift(null);
     setForm(defaultForm(date));
     setDialogOpen(true);
   };
 
   const openEdit = (shift: any) => {
+    if (isDateBlocked(shift.date)) {
+      toast.error("This date is locked. No modifications allowed.");
+      return;
+    }
     setEditingShift(shift.id);
     setForm({
       date: shift.date,
@@ -446,6 +478,7 @@ export default function Roster() {
       manager_on_duty_id: shift.manager_on_duty_id || "",
       comments: shift.comments || "",
       is_draft: shift.is_draft,
+      is_standby: shift.is_standby ?? false,
     });
     setDialogOpen(true);
   };
@@ -456,6 +489,18 @@ export default function Roster() {
 
   const isBlocked = (userId: string, date: string) =>
     blockedDates.some((b) => b.user_id === userId && b.date === date);
+
+  const isDateBlocked = (dateStr: string) => hardBlockedDates.includes(dateStr);
+
+  const getStaffForDropdown = () => {
+    if (form.is_standby) {
+      return staff.filter((s) => {
+        const roles = allUserRoles.filter((r) => r.user_id === s.id).map((r) => r.role);
+        return roles.includes("manager") || roles.includes("assistant_manager" as any) || s.is_responsible;
+      });
+    }
+    return staff;
+  };
 
   const draftCount = shifts.filter((s) => s.is_draft).length;
   const missingResponsible = shifts.filter((s) => !s.is_responsible_on_shift && !s.is_draft);
@@ -555,12 +600,19 @@ export default function Roster() {
             <thead>
               <tr>
                 <th className="sticky left-0 z-10 bg-card p-2 text-left font-medium text-muted-foreground min-w-[140px]">Staff</th>
-                {days.map((d) => (
-                  <th key={d.toISOString()} className="min-w-[120px] p-2 text-center font-medium text-muted-foreground">
-                    <div>{format(d, "EEE")}</div>
-                    <div className="text-xs">{format(d, "MMM d")}</div>
-                  </th>
-                ))}
+                {days.map((d) => {
+                  const dateStr = format(d, "yyyy-MM-dd");
+                  const dateBlocked = isDateBlocked(dateStr);
+                  return (
+                    <th key={d.toISOString()} className={`min-w-[120px] p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-gray-200/50" : ""}`}>
+                      <div className="flex items-center justify-center gap-1">
+                        {format(d, "EEE")}
+                        {dateBlocked && <Lock className="h-3 w-3" />}
+                      </div>
+                      <div className="text-xs">{format(d, "MMM d")}</div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -579,11 +631,13 @@ export default function Roster() {
                       (s) => s.assigned_user_id === member.id && s.date === dateStr
                     );
                     const blocked = isBlocked(member.id, dateStr);
+                    const dateBlocked = isDateBlocked(dateStr);
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`p-1 text-center cursor-pointer hover:bg-accent/30 transition-colors ${blocked ? "bg-destructive/5" : ""}`}
+                        className={`p-1 text-center transition-colors ${dateBlocked ? "bg-gray-200/50 cursor-not-allowed" : "cursor-pointer hover:bg-accent/30"} ${blocked ? "bg-destructive/5" : ""}`}
                         onClick={() => {
+                          if (dateBlocked) return;
                           if (dayShifts.length === 0) {
                             setEditingShift(null);
                             setForm({ ...defaultForm(dateStr), assigned_user_id: member.id });
@@ -591,6 +645,9 @@ export default function Roster() {
                           }
                         }}
                       >
+                        {dateBlocked && dayShifts.length === 0 && !blocked && (
+                          <span className="text-[10px] text-muted-foreground">🔒</span>
+                        )}
                         {blocked && dayShifts.length === 0 && (
                           <span className="text-[10px] text-destructive">Blocked</span>
                         )}
@@ -598,7 +655,7 @@ export default function Roster() {
                           <div
                             key={s.id}
                             onClick={(e) => { e.stopPropagation(); openEdit(s); }}
-                            className={`mb-1 rounded border px-1.5 py-1 text-xs cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all ${
+                            className={`mb-1 rounded border px-1.5 py-1 text-xs ${dateBlocked ? "cursor-not-allowed" : "cursor-pointer hover:ring-1 hover:ring-primary/50"} transition-all ${
                               s.is_draft ? shiftBgDraft[s.type] + " opacity-60" : shiftBgPublished[s.type]
                             }`}
                           >
@@ -606,6 +663,9 @@ export default function Roster() {
                               <span className="capitalize font-medium">{s.type.charAt(0)}</span>
                               {s.is_responsible_on_shift && (
                                 <span className="text-[9px] font-bold bg-primary/20 text-primary rounded px-0.5">RN</span>
+                              )}
+                              {(s as any).is_standby && (
+                                <span className="text-[9px] font-bold bg-amber-500/20 text-amber-700 rounded px-0.5">S</span>
                               )}
                               {s.is_draft ? <EyeOff className="h-2.5 w-2.5 opacity-60" /> : <Lock className="h-2.5 w-2.5 opacity-40" />}
                             </div>
@@ -747,13 +807,18 @@ export default function Roster() {
               </div>
             </div>
 
+            <div className="flex items-center justify-between">
+              <Label>Stand-by Shift</Label>
+              <Switch checked={form.is_standby} onCheckedChange={(v) => setForm((f) => ({ ...f, is_standby: v, assigned_user_id: "" }))} />
+            </div>
+
             <div className="space-y-2">
               <Label>Assign to Staff</Label>
               <Select value={form.assigned_user_id || "__unassigned__"} onValueChange={(v) => setForm((f) => ({ ...f, assigned_user_id: v === "__unassigned__" ? "" : v }))}>
                 <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__unassigned__">Unassigned</SelectItem>
-                  {staff.map((s) => {
+                  {getStaffForDropdown().map((s) => {
                     const blocked = isBlocked(s.id, form.date);
                     return (
                       <SelectItem key={s.id} value={s.id}>
@@ -763,6 +828,7 @@ export default function Roster() {
                   })}
                 </SelectContent>
               </Select>
+              {form.is_standby && <p className="text-xs text-muted-foreground">Only managers and responsible nurses shown for stand-by shifts.</p>}
             </div>
 
             <div className="space-y-2">
