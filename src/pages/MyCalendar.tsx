@@ -198,20 +198,31 @@ export default function MyCalendar() {
                   ) : (
                     dayShifts.map((shift) => {
                       const Icon = shiftIcons[shift.type] || Sun;
+                      const colleagues = getColleaguesForShift(day, shift.type);
                       return (
                         <div
                           key={shift.id}
-                          className="flex items-center gap-3 text-sm pl-2 py-1 rounded hover:bg-accent/50 cursor-pointer"
+                          className="pl-2 py-1.5 rounded hover:bg-accent/50 cursor-pointer space-y-1"
                           onClick={() => setSelectedDay(day)}
                         >
-                          <div className={`h-2.5 w-2.5 rounded-full ${shiftDot[shift.type]}`} />
-                          <Icon className="h-4 w-4 text-muted-foreground" />
-                          <span>{shiftLabels[shift.type]} Shift</span>
-                          <span className="text-muted-foreground">
-                            {shift.start_time.slice(0, 5)} — {shift.end_time.slice(0, 5)}
-                          </span>
-                          {shift.is_responsible_on_shift && (
-                            <span className="text-xs text-primary font-medium">★ Responsible</span>
+                          <div className="flex items-center gap-3 text-sm">
+                            <div className={`h-2.5 w-2.5 rounded-full ${shiftDot[shift.type]}`} />
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            <span>{shiftLabels[shift.type]} Shift</span>
+                            <span className="text-muted-foreground">
+                              {shift.start_time.slice(0, 5)} — {shift.end_time.slice(0, 5)}
+                            </span>
+                            {shift.is_responsible_on_shift && (
+                              <span className="text-xs text-primary font-medium">★ Responsible</span>
+                            )}
+                          </div>
+                          {colleagues.length > 0 && (
+                            <div className="flex items-center gap-1.5 pl-7 text-xs text-muted-foreground">
+                              <Users className="h-3 w-3 flex-shrink-0" />
+                              <span>
+                                {colleagues.map((c) => (c.profiles as any)?.full_name || "Unknown").join(", ")}
+                              </span>
+                            </div>
                           )}
                         </div>
                       );
