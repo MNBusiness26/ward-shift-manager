@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Users, Star, X, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Users, Star, X, Trash2, Eye, Lock } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
@@ -84,6 +85,7 @@ export default function ManagementCalendar() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailDate, setDetailDate] = useState("");
   const [detailType, setDetailType] = useState<ShiftType>("morning");
+  const [clearWeekConfirmOpen, setClearWeekConfirmOpen] = useState(false);
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["mgmt-calendar-shifts", format(weekStart, "yyyy-MM-dd")],
@@ -195,6 +197,37 @@ export default function ManagementCalendar() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const publishDrafts = useMutation({
+    mutationFn: async () => {
+      const draftIds = shifts.filter((s) => s.is_draft).map((s) => s.id);
+      if (draftIds.length === 0) return;
+      const { error } = await supabase.from("shifts").update({ is_draft: false }).in("id", draftIds);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateAll();
+      toast.success("Schedule published!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const clearWeek = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("shifts")
+        .delete()
+        .gte("date", format(weekStart, "yyyy-MM-dd"))
+        .lte("date", format(weekEnd, "yyyy-MM-dd"));
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateAll();
+      toast.success("Week cleared");
+      setClearWeekConfirmOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const handleTypeChange = (t: ShiftType) => {
     setForm((f) => ({ ...f, type: t, start_time: shiftTimes[t].start, end_time: shiftTimes[t].end }));
   };
@@ -232,12 +265,23 @@ export default function ManagementCalendar() {
   );
 
   const managerStaff = staff.filter((s) => managers.includes(s.id));
+  const draftCount = shifts.filter((s) => s.is_draft).length;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Management Calendar</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {draftCount > 0 && (
+            <Button size="sm" onClick={() => publishDrafts.mutate()} disabled={publishDrafts.isPending}>
+              <Eye className="mr-1 h-4 w-4" />
+              Publish {draftCount} Draft{draftCount > 1 ? "s" : ""}
+            </Button>
+          )}
+          <Button variant="destructive" size="sm" onClick={() => setClearWeekConfirmOpen(true)} disabled={shifts.length === 0}>
+            <Trash2 className="mr-1 h-4 w-4" />
+            Clear Week
+          </Button>
           <Button variant="outline" onClick={() => { setBulkDate(undefined); setBulkType(undefined); setBulkOpen(true); }}>
             <Users className="h-4 w-4 mr-2" />
             Bulk Assign
@@ -301,11 +345,11 @@ export default function ManagementCalendar() {
                               <Badge
                                 key={s.id}
                                 variant={s.is_responsible_on_shift ? "default" : "secondary"}
-                                className={`text-xs ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${s.is_draft ? "opacity-60 border-dashed" : ""}`}
+                                className={`text-xs ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${s.is_draft ? "opacity-60 border-dashed" : "ring-1 ring-current/20"}`}
                               >
                                 {getFirstName(s)}
                                 {s.is_responsible_on_shift && <span className="ml-0.5 text-[9px]">★</span>}
-                                {s.is_draft && <span className="ml-0.5 text-[9px]">D</span>}
+                                {s.is_draft ? <span className="ml-0.5 text-[9px]">D</span> : <Lock className="ml-0.5 h-2.5 w-2.5 opacity-40" />}
                               </Badge>
                             ))}
                           </div>
@@ -510,6 +554,27 @@ export default function ManagementCalendar() {
         initialDate={bulkDate}
         initialType={bulkType}
       />
+
+      {/* Clear Week Confirmation */}
+      <AlertDialog open={clearWeekConfirmOpen} onOpenChange={setClearWeekConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear entire week?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all shifts from {format(weekStart, "MMM d")} to {format(weekEnd, "MMM d, yyyy")}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => clearWeek.mutate()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete All Shifts
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

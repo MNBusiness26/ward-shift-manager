@@ -10,9 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { format, startOfWeek, addWeeks, subWeeks, addDays, subDays, eachDayOfInterval } from "date-fns";
+import { format, startOfWeek, addWeeks, subWeeks, addDays, subDays, eachDayOfInterval, getDay } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Trash2, Copy, ClipboardPaste, Users, Star, Save, FolderOpen } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Trash2, Copy, ClipboardPaste, Users, Star, Save, FolderOpen, Lock, Settings } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,10 +20,16 @@ import type { Database } from "@/integrations/supabase/types";
 
 type ShiftType = Database["public"]["Enums"]["shift_type"];
 
-const shiftBg: Record<string, string> = {
-  morning: "bg-shift-morning/20 border-shift-morning/40 text-shift-morning",
-  evening: "bg-shift-evening/20 border-shift-evening/40 text-shift-evening",
-  night: "bg-shift-night/20 border-shift-night/40 text-shift-night",
+const shiftBgDraft: Record<string, string> = {
+  morning: "bg-shift-morning/10 border-shift-morning/25 text-shift-morning border-dashed",
+  evening: "bg-shift-evening/10 border-shift-evening/25 text-shift-evening border-dashed",
+  night: "bg-shift-night/10 border-shift-night/25 text-shift-night border-dashed",
+};
+
+const shiftBgPublished: Record<string, string> = {
+  morning: "bg-shift-morning/30 border-shift-morning/60 text-shift-morning",
+  evening: "bg-shift-evening/30 border-shift-evening/60 text-shift-evening",
+  night: "bg-shift-night/30 border-shift-night/60 text-shift-night",
 };
 
 const shiftTimes: Record<ShiftType, { start: string; end: string }> = {
@@ -94,6 +100,11 @@ export default function Roster() {
   // Track current version for "Save" (overwrite)
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [currentVersionName, setCurrentVersionName] = useState<string | null>(null);
+
+  // Full-week enforcement
+  const [enforceFullWeek, setEnforceFullWeek] = useState(true);
+  const isFullWeek = getDay(viewStart) === 0; // Sunday start
+  const [clearWeekConfirmOpen, setClearWeekConfirmOpen] = useState(false);
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["roster-shifts", format(viewStart, "yyyy-MM-dd")],
@@ -216,6 +227,23 @@ export default function Roster() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
       toast.success("Schedule published!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const clearWeek = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("shifts")
+        .delete()
+        .gte("date", format(viewStart, "yyyy-MM-dd"))
+        .lte("date", format(viewEnd, "yyyy-MM-dd"));
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
+      toast.success("Week cleared");
+      setClearWeekConfirmOpen(false);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -437,11 +465,26 @@ export default function Roster() {
         <h1 className="text-2xl font-bold">Master Roster</h1>
         <div className="flex items-center gap-2 flex-wrap">
           {draftCount > 0 && (
-            <Button size="sm" onClick={() => publishDrafts.mutate()} disabled={publishDrafts.isPending}>
+            <Button
+              size="sm"
+              onClick={() => publishDrafts.mutate()}
+              disabled={publishDrafts.isPending || (enforceFullWeek && !isFullWeek)}
+              title={enforceFullWeek && !isFullWeek ? "Navigate to a full Sun–Sat week to publish" : undefined}
+            >
               <Eye className="mr-1 h-4 w-4" />
               Publish {draftCount} Draft{draftCount > 1 ? "s" : ""}
             </Button>
           )}
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setClearWeekConfirmOpen(true)}
+            disabled={shifts.length === 0 || (enforceFullWeek && !isFullWeek)}
+            title={enforceFullWeek && !isFullWeek ? "Navigate to a full Sun–Sat week to clear" : undefined}
+          >
+            <Trash2 className="mr-1 h-4 w-4" />
+            Clear Week
+          </Button>
           <Button size="sm" onClick={() => openCreate()}>
             <Plus className="mr-1 h-4 w-4" />
             Add Shift
@@ -458,6 +501,14 @@ export default function Roster() {
 
       {/* Shift management toolbar */}
       <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 mr-4 border-r pr-4">
+          <Settings className="h-4 w-4 text-muted-foreground" />
+          <Label htmlFor="enforce-full-week" className="text-xs text-muted-foreground cursor-pointer">Full week only</Label>
+          <Switch id="enforce-full-week" checked={enforceFullWeek} onCheckedChange={setEnforceFullWeek} />
+          {enforceFullWeek && !isFullWeek && (
+            <span className="text-xs text-destructive">Not a Sun–Sat week</span>
+          )}
+        </div>
         <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
           <Users className="mr-1 h-4 w-4" />
           Bulk Assign
@@ -545,8 +596,8 @@ export default function Roster() {
                           <div
                             key={s.id}
                             onClick={(e) => { e.stopPropagation(); openEdit(s); }}
-                            className={`mb-1 rounded border px-1.5 py-1 text-xs cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all ${shiftBg[s.type]} ${
-                              s.is_draft ? "opacity-60 border-dashed" : ""
+                            className={`mb-1 rounded border px-1.5 py-1 text-xs cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all ${
+                              s.is_draft ? shiftBgDraft[s.type] + " opacity-60" : shiftBgPublished[s.type]
                             }`}
                           >
                             <div className="flex items-center justify-center gap-0.5">
@@ -554,7 +605,7 @@ export default function Roster() {
                               {s.is_responsible_on_shift && (
                                 <span className="text-[9px] font-bold bg-primary/20 text-primary rounded px-0.5">RN</span>
                               )}
-                              {s.is_draft && <EyeOff className="h-2.5 w-2.5 opacity-60" />}
+                              {s.is_draft ? <EyeOff className="h-2.5 w-2.5 opacity-60" /> : <Lock className="h-2.5 w-2.5 opacity-40" />}
                             </div>
                           </div>
                         ))}
@@ -576,7 +627,7 @@ export default function Roster() {
                           <div
                             key={s.id}
                             onClick={() => openEdit(s)}
-                            className={`mb-1 rounded border px-1.5 py-1 text-xs cursor-pointer hover:ring-1 hover:ring-primary/50 ${shiftBg[s.type]} border-dashed`}
+                            className={`mb-1 rounded border px-1.5 py-1 text-xs cursor-pointer hover:ring-1 hover:ring-primary/50 ${shiftBgDraft[s.type]} opacity-60`}
                           >
                             <span className="capitalize font-medium">{s.type.charAt(0)}</span>
                           </div>
@@ -758,6 +809,27 @@ export default function Roster() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Clear Week Confirmation */}
+      <AlertDialog open={clearWeekConfirmOpen} onOpenChange={setClearWeekConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear entire week?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all shifts from {format(viewStart, "MMM d")} to {format(viewEnd, "MMM d, yyyy")}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => clearWeek.mutate()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete All Shifts
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
