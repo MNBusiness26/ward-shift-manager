@@ -23,7 +23,7 @@ interface ShiftInfo {
   is_responsible_on_shift: boolean;
   is_draft: boolean;
   assigned_user_id: string | null;
-  profiles?: { full_name: string } | null;
+  profiles?: any;
 }
 
 interface PublishConfirmDialogProps {
