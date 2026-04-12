@@ -780,7 +780,7 @@ export default function Roster() {
       </Dialog>
 
       {/* Shift create/edit dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(v) => { setDialogOpen(v); if (!v) setSaveError(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{editingShift ? "Edit Shift" : "Create Shift"}</DialogTitle>
