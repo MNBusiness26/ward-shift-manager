@@ -14,7 +14,8 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
-import { validateShiftFriction, isOverHeadcount, HEADCOUNT_LIMITS } from "@/components/roster/frictionValidation";
+import { validateShiftFriction, isOverHeadcount } from "@/components/roster/frictionValidation";
+import { useAppSettings } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -73,6 +74,7 @@ const defaultForm = (date?: string, type?: ShiftType): ShiftFormData => ({
 });
 
 export default function ManagementCalendar() {
+  const { headcountLimits } = useAppSettings();
   const queryClient = useQueryClient();
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
@@ -373,7 +375,7 @@ export default function ManagementCalendar() {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const blocked = isDateBlocked(dateStr);
                     const dayShifts = shifts.filter((s) => s.date === dateStr && s.type === type && s.assigned_user_id);
-                    const overHeadcount = isOverHeadcount(shifts as any[], dateStr, type);
+                    const overHeadcount = isOverHeadcount(shifts as any[], dateStr, type, headcountLimits);
                     return (
                       <td
                         key={d.toISOString()}
@@ -383,7 +385,7 @@ export default function ManagementCalendar() {
                         {overHeadcount && (
                           <div className="flex items-center gap-0.5 mb-1">
                             <AlertTriangle className="h-3 w-3 text-amber-500" />
-                            <span className="text-[9px] text-amber-600 font-medium">{dayShifts.filter(s => !(s as any).is_standby).length}/{HEADCOUNT_LIMITS[type]}</span>
+                            <span className="text-[9px] text-amber-600 font-medium">{dayShifts.filter(s => !(s as any).is_standby).length}/{headcountLimits[type]}</span>
                           </div>
                         )}
                         {dayShifts.length === 0 ? (

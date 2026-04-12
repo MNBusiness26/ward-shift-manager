@@ -16,7 +16,8 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, Al
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { PublishConfirmDialog } from "@/components/roster/PublishConfirmDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
-import { validateShiftFriction, isOverHeadcount, HEADCOUNT_LIMITS } from "@/components/roster/frictionValidation";
+import { validateShiftFriction, isOverHeadcount } from "@/components/roster/frictionValidation";
+import { useAppSettings } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
@@ -110,8 +111,8 @@ export default function Roster() {
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [currentVersionName, setCurrentVersionName] = useState<string | null>(null);
 
-  // Full-week enforcement
-  const [enforceFullWeek, setEnforceFullWeek] = useState(true);
+  // Full-week enforcement from admin settings
+  const { enforceFullWeek, headcountLimits } = useAppSettings();
   const isFullWeek = getDay(viewStart) === 0; // Sunday start
   const [clearWeekConfirmOpen, setClearWeekConfirmOpen] = useState(false);
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
@@ -601,14 +602,12 @@ export default function Roster() {
 
       {/* Shift management toolbar */}
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex items-center gap-2 mr-4 border-r pr-4">
-          <Settings className="h-4 w-4 text-muted-foreground" />
-          <Label htmlFor="enforce-full-week" className="text-xs text-muted-foreground cursor-pointer">Full week only</Label>
-          <Switch id="enforce-full-week" checked={enforceFullWeek} onCheckedChange={setEnforceFullWeek} />
-          {enforceFullWeek && !isFullWeek && (
-            <span className="text-xs text-destructive">Not a Sun–Sat week</span>
-          )}
-        </div>
+        {enforceFullWeek && !isFullWeek && (
+          <div className="flex items-center gap-2 mr-4 border-r pr-4">
+            <Settings className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs text-destructive">Full week mode enforced (Admin) — not a Sun–Sat week</span>
+          </div>
+        )}
         <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
           <Users className="mr-1 h-4 w-4" />
           Bulk Assign
@@ -657,7 +656,7 @@ export default function Roster() {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
                   const headcountIssues = (["morning", "evening", "night"] as const).filter(
-                    (t) => isOverHeadcount(shifts as any[], dateStr, t)
+                    (t) => isOverHeadcount(shifts as any[], dateStr, t, headcountLimits)
                   );
                   return (
                     <th key={d.toISOString()} className={`min-w-[120px] p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-gray-200/50" : ""}`}>

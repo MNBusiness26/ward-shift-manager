@@ -87,8 +87,10 @@ export function isOverHeadcount(
   shifts: Array<{ date: string; type: string; assigned_user_id: string | null; is_standby?: boolean }>,
   date: string,
   type: string,
+  customLimits?: Record<string, number>,
 ): boolean {
-  const limit = HEADCOUNT_LIMITS[type];
+  const limits = customLimits || HEADCOUNT_LIMITS;
+  const limit = limits[type];
   if (!limit) return false;
   const count = shifts.filter(
     (s) => s.date === date && s.type === type && s.assigned_user_id && !(s as any).is_standby

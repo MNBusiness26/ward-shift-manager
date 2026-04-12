@@ -5,19 +5,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Sun, Sunset, Moon, TrendingUp, ArrowLeftRight, CalendarOff,
-  Calendar, Users, Star,
+  Calendar, Users, Star, ChevronLeft, ChevronRight,
 } from "lucide-react";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays } from "date-fns";
+import {
+  format, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
+  addWeeks, subWeeks, addMonths, subMonths, addDays,
+  differenceInCalendarDays, getDay,
+} from "date-fns";
 
 export default function StaffStats() {
   const [selectedId, setSelectedId] = useState<string>("");
+  const [mode, setMode] = useState<"weekly" | "monthly">("weekly");
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(0);
+
   const now = new Date();
-  const weekStart = startOfWeek(now, { weekStartsOn: 0 });
-  const weekEnd = endOfWeek(now, { weekStartsOn: 0 });
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
+
+  // Computed ranges
+  const baseWeek = addWeeks(startOfWeek(now, { weekStartsOn: 0 }), weekOffset);
+  const weekStart = baseWeek;
+  const weekEnd = endOfWeek(baseWeek, { weekStartsOn: 0 });
+
+  const baseMonth = addMonths(now, monthOffset);
+  const monthStart = startOfMonth(baseMonth);
+  const monthEnd = endOfMonth(baseMonth);
+
+  const rangeStart = mode === "weekly" ? weekStart : monthStart;
+  const rangeEnd = mode === "weekly" ? weekEnd : monthEnd;
 
   // All active staff
   const { data: staff = [] } = useQuery({
@@ -44,33 +62,16 @@ export default function StaffStats() {
 
   const selectedProfile = staff.find((s) => s.id === selectedId);
 
-  // Month shifts
-  const { data: monthShifts = [] } = useQuery({
-    queryKey: ["staff-stats-month", selectedId, format(monthStart, "yyyy-MM")],
+  // Range shifts
+  const { data: rangeShifts = [] } = useQuery({
+    queryKey: ["staff-stats-range", selectedId, format(rangeStart, "yyyy-MM-dd"), format(rangeEnd, "yyyy-MM-dd")],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
         .select("*")
         .eq("assigned_user_id", selectedId)
-        .gte("date", format(monthStart, "yyyy-MM-dd"))
-        .lte("date", format(monthEnd, "yyyy-MM-dd"))
-        .order("date");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!selectedId,
-  });
-
-  // Week shifts
-  const { data: weekShifts = [] } = useQuery({
-    queryKey: ["staff-stats-week", selectedId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shifts")
-        .select("*")
-        .eq("assigned_user_id", selectedId)
-        .gte("date", format(weekStart, "yyyy-MM-dd"))
-        .lte("date", format(weekEnd, "yyyy-MM-dd"))
+        .gte("date", format(rangeStart, "yyyy-MM-dd"))
+        .lte("date", format(rangeEnd, "yyyy-MM-dd"))
         .order("date");
       if (error) throw error;
       return data;
@@ -110,7 +111,7 @@ export default function StaffStats() {
     enabled: !!selectedId,
   });
 
-  // Upcoming shifts (agenda)
+  // Upcoming shifts
   const { data: upcoming = [] } = useQuery({
     queryKey: ["staff-stats-agenda", selectedId],
     queryFn: async () => {
@@ -129,13 +130,28 @@ export default function StaffStats() {
   });
 
   const fte = selectedProfile?.target_fte_percent ?? 1;
-  const expectedWeekly = 5 * fte;
-  const fulfillment = expectedWeekly > 0 ? Math.round((weekShifts.length / expectedWeekly) * 100) : 0;
 
-  const morningCount = monthShifts.filter((s) => s.type === "morning").length;
-  const eveningCount = monthShifts.filter((s) => s.type === "evening").length;
-  const nightCount = monthShifts.filter((s) => s.type === "night").length;
-  const completedShifts = monthShifts.filter((s) => new Date(s.date) < now).length;
+  // Fulfillment calculation
+  let expectedShifts: number;
+  if (mode === "weekly") {
+    expectedShifts = 5 * fte;
+  } else {
+    // Monthly: calculate working days (Mon-Fri) in the month, then scale by FTE
+    let workingDays = 0;
+    const totalDays = differenceInCalendarDays(monthEnd, monthStart) + 1;
+    for (let i = 0; i < totalDays; i++) {
+      const d = addDays(monthStart, i);
+      const dow = getDay(d);
+      if (dow !== 0 && dow !== 6) workingDays++;
+    }
+    expectedShifts = Math.round(workingDays * fte);
+  }
+  const fulfillment = expectedShifts > 0 ? Math.round((rangeShifts.length / expectedShifts) * 100) : 0;
+
+  const morningCount = rangeShifts.filter((s) => s.type === "morning").length;
+  const eveningCount = rangeShifts.filter((s) => s.type === "evening").length;
+  const nightCount = rangeShifts.filter((s) => s.type === "night").length;
+  const completedShifts = rangeShifts.filter((s) => new Date(s.date) < now).length;
 
   const shiftLabel: Record<string, string> = { morning: "Morning", evening: "Evening", night: "Night" };
   const statusColor: Record<string, string> = {
@@ -147,10 +163,24 @@ export default function StaffStats() {
     declined: "bg-red-100 text-red-800 border-red-200",
   };
 
+  const handlePrev = () => mode === "weekly" ? setWeekOffset((o) => o - 1) : setMonthOffset((o) => o - 1);
+  const handleNext = () => mode === "weekly" ? setWeekOffset((o) => o + 1) : setMonthOffset((o) => o + 1);
+  const handleToday = () => { setWeekOffset(0); setMonthOffset(0); };
+
+  const rangeLabel = mode === "weekly"
+    ? `${format(weekStart, "MMM d")} — ${format(weekEnd, "MMM d, yyyy")}`
+    : format(baseMonth, "MMMM yyyy");
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Staff Stats</h1>
+        <Tabs value={mode} onValueChange={(v) => setMode(v as "weekly" | "monthly")}>
+          <TabsList>
+            <TabsTrigger value="weekly">Weekly</TabsTrigger>
+            <TabsTrigger value="monthly">Monthly</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Staff selector */}
@@ -197,21 +227,33 @@ export default function StaffStats() {
             </CardContent>
           </Card>
 
+          {/* Period navigation */}
+          <div className="flex items-center justify-center gap-2">
+            <Button variant="outline" size="icon" onClick={handlePrev}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleToday}>
+              {mode === "weekly" ? "This Week" : "This Month"}
+            </Button>
+            <span className="text-sm font-medium min-w-[180px] text-center">{rangeLabel}</span>
+            <Button variant="outline" size="icon" onClick={handleNext}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
           {/* Fulfillment */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
-                <TrendingUp className="h-4 w-4" /> Weekly Fulfillment
-                <span className="ml-auto text-xs font-normal text-muted-foreground">
-                  {format(weekStart, "MMM d")} — {format(weekEnd, "MMM d")}
-                </span>
+                <TrendingUp className="h-4 w-4" />
+                {mode === "weekly" ? "Weekly" : "Monthly"} Fulfillment
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">
-                    {weekShifts.length} of {expectedWeekly} shifts
+                    {rangeShifts.length} of {expectedShifts} shifts
                   </span>
                   <span className="font-semibold">{fulfillment}%</span>
                 </div>
@@ -220,7 +262,7 @@ export default function StaffStats() {
             </CardContent>
           </Card>
 
-          {/* Monthly breakdown */}
+          {/* Shift type breakdown */}
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
               <CardContent className="flex items-center gap-3 p-4">
@@ -257,15 +299,17 @@ export default function StaffStats() {
             </Card>
           </div>
 
-          {/* Month summary */}
+          {/* Summary */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Month Summary — {format(now, "MMMM yyyy")}</CardTitle>
+              <CardTitle className="text-base">
+                {mode === "weekly" ? "Week" : "Month"} Summary — {rangeLabel}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-lg border p-4 text-center">
-                  <p className="text-3xl font-bold">{monthShifts.length}</p>
+                  <p className="text-3xl font-bold">{rangeShifts.length}</p>
                   <p className="text-sm text-muted-foreground">Total Booked</p>
                 </div>
                 <div className="rounded-lg border p-4 text-center">
