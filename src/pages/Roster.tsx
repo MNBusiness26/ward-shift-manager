@@ -108,6 +108,11 @@ export default function Roster() {
   // Load version dialog
   const [loadOpen, setLoadOpen] = useState(false);
 
+  // Version comparison
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [compareVersion, setCompareVersion] = useState<any>(null);
+  const [compareDiffs, setCompareDiffs] = useState<VersionDiff[]>([]);
+
   // Track current version for "Save" (overwrite)
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [currentVersionName, setCurrentVersionName] = useState<string | null>(null);
