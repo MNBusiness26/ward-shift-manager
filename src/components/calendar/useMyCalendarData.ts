@@ -59,3 +59,22 @@ export function useDayShifts(dateStr: string | null) {
     enabled: !!dateStr,
   });
 }
+
+export function useAllShiftsInRange(rangeStart: Date, rangeEnd: Date) {
+  return useQuery({
+    queryKey: ["all-shifts-range", format(rangeStart, "yyyy-MM-dd"), format(rangeEnd, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shifts")
+        .select("id, date, type, assigned_user_id, is_responsible_on_shift, profiles:assigned_user_id(full_name)")
+        .eq("is_draft", false)
+        .not("assigned_user_id", "is", null)
+        .gte("date", format(rangeStart, "yyyy-MM-dd"))
+        .lte("date", format(rangeEnd, "yyyy-MM-dd"))
+        .order("date")
+        .order("start_time");
+      if (error) throw error;
+      return data;
+    },
+  });
+}
