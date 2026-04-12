@@ -85,6 +85,7 @@ export default function ManagementCalendar() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailDate, setDetailDate] = useState("");
   const [detailType, setDetailType] = useState<ShiftType>("morning");
+  const [clearWeekConfirmOpen, setClearWeekConfirmOpen] = useState(false);
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["mgmt-calendar-shifts", format(weekStart, "yyyy-MM-dd")],
@@ -192,6 +193,37 @@ export default function ManagementCalendar() {
     onSuccess: () => {
       invalidateAll();
       toast.success("Staff removed from shift");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const publishDrafts = useMutation({
+    mutationFn: async () => {
+      const draftIds = shifts.filter((s) => s.is_draft).map((s) => s.id);
+      if (draftIds.length === 0) return;
+      const { error } = await supabase.from("shifts").update({ is_draft: false }).in("id", draftIds);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateAll();
+      toast.success("Schedule published!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const clearWeek = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("shifts")
+        .delete()
+        .gte("date", format(weekStart, "yyyy-MM-dd"))
+        .lte("date", format(weekEnd, "yyyy-MM-dd"));
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateAll();
+      toast.success("Week cleared");
+      setClearWeekConfirmOpen(false);
     },
     onError: (e: any) => toast.error(e.message),
   });
