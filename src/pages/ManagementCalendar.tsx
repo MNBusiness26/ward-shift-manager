@@ -513,9 +513,18 @@ export default function ManagementCalendar() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__unassigned__">Unassigned</SelectItem>
-                  {getStaffForDropdown().map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>
-                  ))}
+                  {getStaffForDropdown().map((s) => {
+                    const userBlocked = blockedDates.some((b) => {
+                      if (b.user_id !== s.id) return false;
+                      if (b.end_date) return form.date >= b.date && form.date <= b.end_date;
+                      return b.date === form.date;
+                    });
+                    return (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.full_name} {userBlocked ? "⚠️ Blocked" : ""}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
               {form.is_standby && <p className="text-xs text-muted-foreground">Only managers and responsible nurses shown for stand-by shifts.</p>}
