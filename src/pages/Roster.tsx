@@ -807,13 +807,18 @@ export default function Roster() {
               </div>
             </div>
 
+            <div className="flex items-center justify-between">
+              <Label>Stand-by Shift</Label>
+              <Switch checked={form.is_standby} onCheckedChange={(v) => setForm((f) => ({ ...f, is_standby: v, assigned_user_id: "" }))} />
+            </div>
+
             <div className="space-y-2">
               <Label>Assign to Staff</Label>
               <Select value={form.assigned_user_id || "__unassigned__"} onValueChange={(v) => setForm((f) => ({ ...f, assigned_user_id: v === "__unassigned__" ? "" : v }))}>
                 <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__unassigned__">Unassigned</SelectItem>
-                  {staff.map((s) => {
+                  {getStaffForDropdown().map((s) => {
                     const blocked = isBlocked(s.id, form.date);
                     return (
                       <SelectItem key={s.id} value={s.id}>
@@ -823,6 +828,7 @@ export default function Roster() {
                   })}
                 </SelectContent>
               </Select>
+              {form.is_standby && <p className="text-xs text-muted-foreground">Only managers and responsible nurses shown for stand-by shifts.</p>}
             </div>
 
             <div className="space-y-2">
