@@ -87,6 +87,58 @@ export default function MyCalendar() {
   const shiftIcons: Record<string, React.ElementType> = { morning: Sun, evening: Sunset, night: Moon };
   const shiftLabels: Record<string, string> = { morning: "Morning", evening: "Evening", night: "Night" };
 
+  const generateIcs = () => {
+    const events = shifts.map((s) => {
+      const dateClean = s.date.replace(/-/g, "");
+      const startH = s.start_time.slice(0, 2);
+      const startM = s.start_time.slice(3, 5);
+      const endH = s.end_time.slice(0, 2);
+      const endM = s.end_time.slice(3, 5);
+      // For night shifts ending next day
+      let endDate = dateClean;
+      if (parseInt(endH) < parseInt(startH)) {
+        const d = new Date(s.date);
+        d.setDate(d.getDate() + 1);
+        endDate = format(d, "yyyyMMdd");
+      }
+
+      // Get colleagues for this shift
+      const colleagues = allShifts
+        .filter((a) => a.date === s.date && a.type === s.type && a.assigned_user_id !== user?.id)
+        .map((a) => (a.profiles as any)?.full_name || "Unknown");
+
+      const teamList = colleagues.length > 0 ? `\\nTeam: ${colleagues.join(", ")}` : "";
+      const desc = `${shiftLabels[s.type] || s.type} Shift${s.is_responsible_on_shift ? " (Responsible)" : ""}${teamList}`;
+
+      return [
+        "BEGIN:VEVENT",
+        `DTSTART:${dateClean}T${startH}${startM}00`,
+        `DTEND:${endDate}T${endH}${endM}00`,
+        `SUMMARY:${shiftLabels[s.type] || s.type} Shift${s.is_responsible_on_shift ? " ★" : ""}`,
+        `DESCRIPTION:${desc}`,
+        `UID:${s.id}@wardwise`,
+        "END:VEVENT",
+      ].join("\r\n");
+    });
+
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//WardWise//Shifts//EN",
+      "CALSCALE:GREGORIAN",
+      ...events,
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `my-shifts-${format(rangeStart, "yyyy-MM")}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
