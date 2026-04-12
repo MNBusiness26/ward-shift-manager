@@ -74,6 +74,7 @@ const defaultForm = (date?: string, type?: ShiftType): ShiftFormData => ({
 });
 
 export default function ManagementCalendar() {
+  const { headcountLimits } = useAppSettings();
   const queryClient = useQueryClient();
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
