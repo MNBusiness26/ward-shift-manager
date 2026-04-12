@@ -293,6 +293,30 @@ export default function ManagementCalendar() {
     return staff;
   };
 
+  // Friction pre-save check
+  const handleSaveWithFriction = () => {
+    if (!form.assigned_user_id) {
+      saveShift.mutate();
+      return;
+    }
+    const weekShiftsForUser = shifts.filter(
+      (s) => s.assigned_user_id === form.assigned_user_id && (editingShift ? s.id !== editingShift : true)
+    ).length;
+    const warnings = validateShiftFriction({
+      assignedUserId: form.assigned_user_id,
+      shiftType: form.type,
+      shiftDate: form.date,
+      weekShiftsForUser,
+      staffProfiles: staff as any[],
+    });
+    if (warnings.length > 0) {
+      setFrictionWarnings(warnings);
+      setFrictionOpen(true);
+    } else {
+      saveShift.mutate();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
