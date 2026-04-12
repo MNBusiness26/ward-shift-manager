@@ -546,27 +546,45 @@ export default function Roster() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Master Roster</h1>
         <div className="flex items-center gap-2 flex-wrap">
-          {draftCount > 0 && (
-            <Button
-              size="sm"
-              onClick={() => setPublishConfirmOpen(true)}
-              disabled={publishDrafts.isPending || (enforceFullWeek && !isFullWeek)}
-              title={enforceFullWeek && !isFullWeek ? "Navigate to a full Sun–Sat week to publish" : undefined}
-            >
-              <Eye className="mr-1 h-4 w-4" />
-              Publish {draftCount} Draft{draftCount > 1 ? "s" : ""}
-            </Button>
-          )}
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setClearWeekConfirmOpen(true)}
-            disabled={shifts.length === 0 || (enforceFullWeek && !isFullWeek)}
-            title={enforceFullWeek && !isFullWeek ? "Navigate to a full Sun–Sat week to clear" : undefined}
-          >
-            <Trash2 className="mr-1 h-4 w-4" />
-            Clear Week
-          </Button>
+          <TooltipProvider>
+            {draftCount > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      size="sm"
+                      onClick={() => setPublishConfirmOpen(true)}
+                      disabled={publishDrafts.isPending || (enforceFullWeek && !isFullWeek)}
+                    >
+                      <Eye className="mr-1 h-4 w-4" />
+                      Publish {draftCount} Draft{draftCount > 1 ? "s" : ""}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {enforceFullWeek && !isFullWeek && (
+                  <TooltipContent>Navigate to a full Sun–Sat week to publish</TooltipContent>
+                )}
+              </Tooltip>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setClearWeekConfirmOpen(true)}
+                    disabled={shifts.length === 0 || (enforceFullWeek && !isFullWeek)}
+                  >
+                    <Trash2 className="mr-1 h-4 w-4" />
+                    Clear Week
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {enforceFullWeek && !isFullWeek && (
+                <TooltipContent>Navigate to a full Sun–Sat week to clear</TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
           <Button size="sm" onClick={() => openCreate()}>
             <Plus className="mr-1 h-4 w-4" />
             Add Shift
