@@ -49,6 +49,7 @@ interface ShiftFormData {
   manager_on_duty_id: string;
   comments: string;
   is_draft: boolean;
+  is_standby: boolean;
 }
 
 const defaultForm = (date?: string): ShiftFormData => ({
@@ -61,6 +62,7 @@ const defaultForm = (date?: string): ShiftFormData => ({
   manager_on_duty_id: "",
   comments: "",
   is_draft: true,
+  is_standby: false,
 });
 
 interface CopiedWeek {
