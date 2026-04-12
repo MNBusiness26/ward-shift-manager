@@ -609,7 +609,7 @@ export default function ManagementCalendar() {
                   Delete
                 </Button>
               )}
-              <Button className="flex-1" onClick={() => saveShift.mutate()} disabled={saveShift.isPending}>
+              <Button className="flex-1" onClick={handleSaveWithFriction} disabled={saveShift.isPending}>
                 {editingShift ? "Update" : "Create"} Shift
               </Button>
             </div>
