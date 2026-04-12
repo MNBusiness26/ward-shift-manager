@@ -22,10 +22,6 @@ export default function Admin() {
   const [eveningLimit, setEveningLimit] = useState(3);
   const [nightLimit, setNightLimit] = useState(2);
 
-  if (!user || profile?.email !== ADMIN_EMAIL) {
-    return <Navigate to="/" replace />;
-  }
-
   const { data: settings = [] } = useQuery({
     queryKey: ["app-settings"],
     queryFn: async () => {
@@ -39,6 +35,21 @@ export default function Admin() {
 
   // Sync local state from DB
   useEffect(() => {
+    const efwSetting = settings.find((s: any) => s.key === "enforce_full_week");
+    if (efwSetting) setEnforceFullWeek(efwSetting.value === "true" || efwSetting.value === true);
+
+    const hcSetting = settings.find((s: any) => s.key === "headcount_limits");
+    if (hcSetting && typeof hcSetting.value === "object") {
+      const v = hcSetting.value as any;
+      if (v.morning != null) setMorningLimit(v.morning);
+      if (v.evening != null) setEveningLimit(v.evening);
+      if (v.night != null) setNightLimit(v.night);
+    }
+  }, [settings]);
+
+  if (!user || profile?.email !== ADMIN_EMAIL) {
+    return <Navigate to="/" replace />;
+  }
     const efwSetting = settings.find((s: any) => s.key === "enforce_full_week");
     if (efwSetting) setEnforceFullWeek(efwSetting.value === "true" || efwSetting.value === true);
 
