@@ -656,6 +656,9 @@ export default function Roster() {
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
+                  const headcountIssues = (["morning", "evening", "night"] as const).filter(
+                    (t) => isOverHeadcount(shifts as any[], dateStr, t)
+                  );
                   return (
                     <th key={d.toISOString()} className={`min-w-[120px] p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-gray-200/50" : ""}`}>
                       <div className="flex items-center justify-center gap-1">
@@ -663,6 +666,14 @@ export default function Roster() {
                         {dateBlocked && <Lock className="h-3 w-3" />}
                       </div>
                       <div className="text-xs">{format(d, "MMM d")}</div>
+                      {headcountIssues.length > 0 && (
+                        <div className="flex items-center justify-center gap-0.5 mt-0.5">
+                          <AlertTriangle className="h-3 w-3 text-amber-500" />
+                          <span className="text-[9px] text-amber-600 font-medium">
+                            {headcountIssues.map((t) => t.charAt(0).toUpperCase()).join("/")} over
+                          </span>
+                        </div>
+                      )}
                     </th>
                   );
                 })}
