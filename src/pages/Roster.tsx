@@ -262,14 +262,22 @@ export default function Roster() {
 
   const publishDrafts = useMutation({
     mutationFn: async () => {
-      const draftIds = shifts.filter((s) => s.is_draft).map((s) => s.id);
-      if (draftIds.length === 0) return;
+      const drafts = shifts.filter((s) => s.is_draft);
+      const draftIds = drafts.map((s) => s.id);
+      if (draftIds.length === 0) return [];
       const { error } = await supabase.from("shifts").update({ is_draft: false }).in("id", draftIds);
       if (error) throw error;
+      // Return affected staff names
+      const affectedUserIds = [...new Set(drafts.map((s) => s.assigned_user_id).filter(Boolean))];
+      return affectedUserIds.map((uid) => staff.find((s) => s.id === uid)?.full_name || "Unknown");
     },
-    onSuccess: () => {
+    onSuccess: (staffNames) => {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
-      toast.success("Schedule published!");
+      if (staffNames && staffNames.length > 0) {
+        toast.success(`Schedule published! Notified: ${staffNames.join(", ")}`);
+      } else {
+        toast.success("Schedule published!");
+      }
     },
     onError: (e: any) => toast.error(e.message),
   });
