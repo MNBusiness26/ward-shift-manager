@@ -155,10 +155,10 @@ export default function Roster() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("availability_requests")
-        .select("user_id, date")
+        .select("user_id, date, end_date")
         .eq("status", "approved")
-        .gte("date", format(viewStart, "yyyy-MM-dd"))
-        .lte("date", format(viewEnd, "yyyy-MM-dd"));
+        .lte("date", format(viewEnd, "yyyy-MM-dd"))
+        .or(`end_date.gte.${format(viewStart, "yyyy-MM-dd")},end_date.is.null`);
       if (error) throw error;
       return data;
     },
@@ -488,7 +488,11 @@ export default function Roster() {
   };
 
   const isBlocked = (userId: string, date: string) =>
-    blockedDates.some((b) => b.user_id === userId && b.date === date);
+    blockedDates.some((b) => {
+      if (b.user_id !== userId) return false;
+      if (b.end_date) return date >= b.date && date <= b.end_date;
+      return b.date === date;
+    });
 
   const isDateBlocked = (dateStr: string) => hardBlockedDates.includes(dateStr);
 
@@ -656,7 +660,9 @@ export default function Roster() {
                             key={s.id}
                             onClick={(e) => { e.stopPropagation(); openEdit(s); }}
                             className={`mb-1 rounded border px-1.5 py-1 text-xs ${dateBlocked ? "cursor-not-allowed" : "cursor-pointer hover:ring-1 hover:ring-primary/50"} transition-all ${
-                              s.is_draft ? shiftBgDraft[s.type] + " opacity-60" : shiftBgPublished[s.type]
+                              (s as any).is_standby
+                                ? `bg-transparent border-2 border-dashed ${s.type === "morning" ? "border-shift-morning text-shift-morning" : s.type === "evening" ? "border-shift-evening text-shift-evening" : "border-shift-night text-shift-night"}`
+                                : s.is_draft ? shiftBgDraft[s.type] + " opacity-60" : shiftBgPublished[s.type]
                             }`}
                           >
                             <div className="flex items-center justify-center gap-0.5">

@@ -132,10 +132,10 @@ export default function ManagementCalendar() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("availability_requests")
-        .select("user_id, date")
+        .select("user_id, date, end_date")
         .eq("status", "approved")
-        .gte("date", format(weekStart, "yyyy-MM-dd"))
-        .lte("date", format(weekEnd, "yyyy-MM-dd"));
+        .lte("date", format(weekEnd, "yyyy-MM-dd"))
+        .or(`end_date.gte.${format(weekStart, "yyyy-MM-dd")},end_date.is.null`);
       if (error) throw error;
       return data;
     },
@@ -357,11 +357,15 @@ export default function ManagementCalendar() {
                               <Badge
                                 key={s.id}
                                 variant={s.is_responsible_on_shift ? "default" : "secondary"}
-                                className={`text-xs ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${s.is_draft ? "opacity-60 border-dashed" : "ring-1 ring-current/20"}`}
+                                className={`text-xs ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
+                                  (s as any).is_standby
+                                    ? "bg-transparent border-2 border-dashed border-current"
+                                    : s.is_draft ? "opacity-60 border-dashed" : "ring-1 ring-current/20"
+                                }`}
                               >
                                 {getFirstName(s)}
                                 {s.is_responsible_on_shift && <span className="ml-0.5 text-[9px]">★</span>}
-                                {(s as any).is_standby && <span className="ml-0.5 text-[9px] font-bold bg-amber-500/20 text-amber-700 rounded px-0.5">S</span>}
+                                {(s as any).is_standby && <span className="ml-0.5 text-[9px] font-bold">S</span>}
                                 {s.is_draft ? <span className="ml-0.5 text-[9px]">D</span> : <Lock className="ml-0.5 h-2.5 w-2.5 opacity-40" />}
                               </Badge>
                             ))}
