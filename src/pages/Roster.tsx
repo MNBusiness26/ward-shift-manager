@@ -832,6 +832,18 @@ export default function Roster() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PublishConfirmDialog
+        open={publishConfirmOpen}
+        onOpenChange={setPublishConfirmOpen}
+        drafts={shifts.filter((s) => s.is_draft)}
+        allShifts={shifts}
+        onConfirm={() => {
+          publishDrafts.mutate();
+          setPublishConfirmOpen(false);
+        }}
+        isPending={publishDrafts.isPending}
+      />
     </div>
   );
 }
