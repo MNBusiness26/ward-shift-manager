@@ -20,10 +20,16 @@ import type { Database } from "@/integrations/supabase/types";
 
 type ShiftType = Database["public"]["Enums"]["shift_type"];
 
-const shiftBg: Record<string, string> = {
-  morning: "bg-shift-morning/20 border-shift-morning/40 text-shift-morning",
-  evening: "bg-shift-evening/20 border-shift-evening/40 text-shift-evening",
-  night: "bg-shift-night/20 border-shift-night/40 text-shift-night",
+const shiftBgDraft: Record<string, string> = {
+  morning: "bg-shift-morning/10 border-shift-morning/25 text-shift-morning border-dashed",
+  evening: "bg-shift-evening/10 border-shift-evening/25 text-shift-evening border-dashed",
+  night: "bg-shift-night/10 border-shift-night/25 text-shift-night border-dashed",
+};
+
+const shiftBgPublished: Record<string, string> = {
+  morning: "bg-shift-morning/30 border-shift-morning/60 text-shift-morning",
+  evening: "bg-shift-evening/30 border-shift-evening/60 text-shift-evening",
+  night: "bg-shift-night/30 border-shift-night/60 text-shift-night",
 };
 
 const shiftTimes: Record<ShiftType, { start: string; end: string }> = {
