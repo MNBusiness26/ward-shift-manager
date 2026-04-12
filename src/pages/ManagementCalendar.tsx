@@ -618,6 +618,13 @@ export default function ManagementCalendar() {
       </Dialog>
 
       <BulkAssignDialog open={bulkOpen} onOpenChange={setBulkOpen} staff={staff} blockedDates={blockedDates} initialDate={bulkDate} initialType={bulkType} />
+      <FrictionDialog
+        open={frictionOpen}
+        onOpenChange={setFrictionOpen}
+        warnings={frictionWarnings}
+        onConfirm={() => { setFrictionOpen(false); saveShift.mutate(); }}
+        isPending={saveShift.isPending}
+      />
     </div>
   );
 }
