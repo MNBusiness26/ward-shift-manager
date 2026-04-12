@@ -50,17 +50,6 @@ export default function Admin() {
   if (!user || profile?.email !== ADMIN_EMAIL) {
     return <Navigate to="/" replace />;
   }
-    const efwSetting = settings.find((s: any) => s.key === "enforce_full_week");
-    if (efwSetting) setEnforceFullWeek(efwSetting.value === "true" || efwSetting.value === true);
-
-    const hcSetting = settings.find((s: any) => s.key === "headcount_limits");
-    if (hcSetting && typeof hcSetting.value === "object") {
-      const v = hcSetting.value as any;
-      if (v.morning != null) setMorningLimit(v.morning);
-      if (v.evening != null) setEveningLimit(v.evening);
-      if (v.night != null) setNightLimit(v.night);
-    }
-  }, [settings]);
 
   const saveSetting = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
