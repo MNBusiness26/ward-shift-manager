@@ -84,7 +84,7 @@ export default function Requests() {
   });
 
   const pendingAvail = availRequests.filter((r) => r.status === "pending").length;
-  const pendingSwaps = swapRequests.filter((r) => r.status === "peer_accepted").length;
+  const pendingSwaps = swapRequests.filter((r) => r.status === "pending" || r.status === "peer_accepted").length;
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
