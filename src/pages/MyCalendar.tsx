@@ -53,6 +53,7 @@ export default function MyCalendar() {
   const rangeEnd = view === "month" ? endOfMonth(currentMonth) : endOfWeek(currentWeek, { weekStartsOn: 0 });
 
   const { data: shifts = [] } = useMyShifts(rangeStart, rangeEnd);
+  const { data: allShifts = [] } = useAllShiftsInRange(rangeStart, rangeEnd);
   const { data: myRoles = [] } = useMyRole();
   const selectedDateStr = selectedDay ? format(selectedDay, "yyyy-MM-dd") : null;
   const { data: dayAllShifts = [] } = useDayShifts(selectedDateStr);
@@ -61,6 +62,13 @@ export default function MyCalendar() {
 
   const getShiftsForDay = (day: Date) =>
     shifts.filter((s) => isSameDay(new Date(s.date), day));
+
+  const getColleaguesForShift = (day: Date, shiftType: string) => {
+    const dateStr = format(day, "yyyy-MM-dd");
+    return allShifts.filter(
+      (s) => s.date === dateStr && s.type === shiftType && s.assigned_user_id !== user?.id
+    );
+  };
 
   const getColleaguesByShift = (shiftType: string) =>
     dayAllShifts.filter(
