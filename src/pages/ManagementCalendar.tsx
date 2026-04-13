@@ -353,7 +353,7 @@ export default function ManagementCalendar() {
               aria-hidden="true"
               className="pointer-events-none absolute inset-y-0 left-0 z-10 w-[50px] bg-card shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[90px]"
             />
-            <table className="w-max min-w-full border-separate border-spacing-0 text-xs md:text-sm">
+            <table className="w-full border-separate border-spacing-0 text-xs md:text-sm">
             <thead>
               <tr>
                 <th className="sticky left-0 z-30 w-[50px] min-w-[50px] border-b border-r bg-card p-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[90px] md:min-w-[90px] md:p-2">
