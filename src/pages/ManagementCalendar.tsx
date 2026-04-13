@@ -43,8 +43,8 @@ const shiftTextColors: Record<string, string> = {
 
 const shiftTimes: Record<ShiftType, { start: string; end: string }> = {
   morning: { start: "07:00", end: "15:00" },
-  evening: { start: "15:00", end: "23:00" },
-  night: { start: "23:00", end: "07:00" },
+  evening: { start: "14:30", end: "23:00" },
+  night: { start: "22:30", end: "07:00" },
 };
 
 interface ShiftFormData {
