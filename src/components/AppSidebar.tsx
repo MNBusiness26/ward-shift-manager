@@ -15,6 +15,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sidebar,
   SidebarContent,
@@ -49,10 +50,15 @@ const managerItems = [
 ];
 
 export function AppSidebar() {
-  const { state, toggleSidebar } = useSidebar();
+  const { state, toggleSidebar, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { isManager, profile, signOut } = useAuth();
+  const isMobile = useIsMobile();
+
+  const handleLinkClick = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   const isActive = (path: string) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
@@ -86,10 +92,11 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
-                      className="hover:bg-sidebar-accent"
+                      className="hover:bg-sidebar-accent text-base md:text-sm"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      onClick={handleLinkClick}
                     >
-                      <item.icon className="mr-2 h-4 w-4" />
+                      <item.icon className="mr-2 h-5 w-5 md:h-4 md:w-4" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
@@ -109,10 +116,11 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.url}
-                        className="hover:bg-sidebar-accent"
+                        className="hover:bg-sidebar-accent text-base md:text-sm"
                         activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        onClick={handleLinkClick}
                       >
-                        <item.icon className="mr-2 h-4 w-4" />
+                        <item.icon className="mr-2 h-5 w-5 md:h-4 md:w-4" />
                         {!collapsed && <span>{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>

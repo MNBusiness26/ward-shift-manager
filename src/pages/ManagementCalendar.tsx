@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle, Sun, Sunset, Moon } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
 import { validateShiftFriction, isOverHeadcount, getHeadcountTarget } from "@/components/roster/frictionValidation";
@@ -323,14 +323,14 @@ export default function ManagementCalendar() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Management Calendar</h1>
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" onClick={() => { setBulkDate(undefined); setBulkType(undefined); setBulkOpen(true); }}>
-            <Users className="h-4 w-4 mr-2" />
-            Bulk Assign
+        <div className="flex gap-1.5 md:gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => { setBulkDate(undefined); setBulkType(undefined); setBulkOpen(true); }}>
+            <Users className="h-4 w-4 md:mr-2" />
+            <span className="hidden sm:inline">Bulk Assign</span>
           </Button>
-          <Button onClick={() => openAddShift()}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Shift
+          <Button size="sm" onClick={() => openAddShift()}>
+            <Plus className="h-4 w-4 md:mr-2" />
+            <span className="hidden sm:inline">Add Shift</span>
           </Button>
         </div>
       </div>
@@ -348,29 +348,42 @@ export default function ManagementCalendar() {
           </Button>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full text-xs md:text-sm border-collapse">
             <thead>
               <tr>
-                <th className="sticky left-0 z-10 bg-card p-2 text-left font-medium text-muted-foreground min-w-[90px] border-b">Shift</th>
+                <th className="sticky left-0 z-10 bg-card p-1.5 md:p-2 text-left font-medium text-muted-foreground min-w-[50px] md:min-w-[90px] border-b">
+                  <span className="hidden md:inline">Shift</span>
+                  <span className="md:hidden">Type</span>
+                </th>
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const blocked = isDateBlocked(dateStr);
                   return (
-                    <th key={d.toISOString()} className={`min-w-[140px] p-2 text-center font-medium text-muted-foreground border-b ${blocked ? "bg-gray-200/50" : ""}`}>
+                    <th key={d.toISOString()} className={`min-w-[80px] md:min-w-[140px] p-1.5 md:p-2 text-center font-medium text-muted-foreground border-b ${blocked ? "bg-gray-200/50" : ""}`}>
                       <div className="flex items-center justify-center gap-1">
                         {format(d, "EEE")}
                         {blocked && <Lock className="h-3 w-3 text-muted-foreground" />}
                       </div>
-                      <div className="text-xs">{format(d, "MMM d")}</div>
+                      <div className="text-[10px] md:text-xs">{format(d, "MMM d")}</div>
                     </th>
                   );
                 })}
               </tr>
             </thead>
             <tbody>
-              {shiftTypes.map((type) => (
+              {shiftTypes.map((type) => {
+                const Icon = type === "morning" ? Eye : type === "evening" ? Star : Lock;
+                return (
                 <tr key={type} className="border-t">
-                  <td className={`sticky left-0 z-10 bg-card p-2 font-semibold ${shiftTextColors[type]}`}>{shiftLabels[type]}</td>
+                  <td className={`sticky left-0 z-10 bg-card p-1.5 md:p-2 font-semibold ${shiftTextColors[type]}`}>
+                    <span className="hidden md:inline">{shiftLabels[type]}</span>
+                    <span className="md:hidden flex items-center gap-0.5">
+                      {type === "morning" && <Sun className="h-3.5 w-3.5" />}
+                      {type === "evening" && <Sunset className="h-3.5 w-3.5" />}
+                      {type === "night" && <Moon className="h-3.5 w-3.5" />}
+                      <span>{type.charAt(0).toUpperCase()}</span>
+                    </span>
+                  </td>
                   {days.map((d) => {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const blocked = isDateBlocked(dateStr);
@@ -414,7 +427,8 @@ export default function ManagementCalendar() {
                     );
                   })}
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </CardContent>

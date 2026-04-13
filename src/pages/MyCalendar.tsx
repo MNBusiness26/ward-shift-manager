@@ -208,15 +208,18 @@ export default function MyCalendar() {
                               <span className="truncate hidden md:inline">
                                 {s.start_time.slice(0, 5)}
                               </span>
+                              <span className="truncate md:hidden">
+                                {shiftLabels[s.type]?.slice(0, 3)}
+                              </span>
                               {s.is_responsible_on_shift && (
                                 <span className="text-primary font-bold flex-shrink-0">★</span>
                               )}
                             </div>
                             {colleagues.length > 0 && (
-                              <div className="hidden md:flex flex-col pl-0.5 mt-px">
+                              <div className="flex flex-col pl-0.5 mt-px">
                                 {colleagues.map((c) => (
                                   <span key={c.id} className="text-[8px] leading-[1.3] text-muted-foreground truncate">
-                                    {(c.profiles as any)?.full_name || "Unknown"}
+                                    {(c.profiles as any)?.full_name?.split(" ")[0] || "?"}
                                   </span>
                                 ))}
                               </div>

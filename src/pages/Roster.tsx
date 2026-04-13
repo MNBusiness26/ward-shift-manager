@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { format, startOfWeek, addWeeks, subWeeks, addDays, subDays, eachDayOfInterval, getDay } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Trash2, Copy, ClipboardPaste, Users, Star, Save, FolderOpen, Lock, Settings } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Trash2, Copy, ClipboardPaste, Users, Star, Save, FolderOpen, Lock, Settings, X } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { PublishConfirmDialog } from "@/components/roster/PublishConfirmDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
@@ -122,6 +122,7 @@ export default function Roster() {
   const isFullWeek = getDay(viewStart) === 0; // Sunday start
   const [clearWeekConfirmOpen, setClearWeekConfirmOpen] = useState(false);
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
+  const [dismissedWarning, setDismissedWarning] = useState(false);
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["roster-shifts", format(viewStart, "yyyy-MM-dd")],
@@ -628,8 +629,8 @@ export default function Roster() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-bold">Master Roster</h1>
-        <div className="flex items-center gap-2 flex-wrap">
+        <h1 className="text-xl md:text-2xl font-bold">Master Roster</h1>
+        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <TooltipProvider>
             {draftCount > 0 && (
               <Tooltip>
@@ -640,8 +641,8 @@ export default function Roster() {
                       onClick={() => setPublishConfirmOpen(true)}
                       disabled={publishDrafts.isPending || (enforceFullWeek && !isFullWeek)}
                     >
-                      <Eye className="mr-1 h-4 w-4" />
-                      Publish {draftCount} Draft{draftCount > 1 ? "s" : ""}
+                      <Eye className="h-4 w-4 md:mr-1" />
+                      <span className="hidden sm:inline">Publish {draftCount}</span>
                     </Button>
                   </span>
                 </TooltipTrigger>
@@ -659,8 +660,8 @@ export default function Roster() {
                     onClick={() => setClearWeekConfirmOpen(true)}
                     disabled={shifts.length === 0 || (enforceFullWeek && !isFullWeek)}
                   >
-                    <Trash2 className="mr-1 h-4 w-4" />
-                    Clear Week
+                    <Trash2 className="h-4 w-4 md:mr-1" />
+                    <span className="hidden sm:inline">Clear Week</span>
                   </Button>
                 </span>
               </TooltipTrigger>
@@ -670,40 +671,43 @@ export default function Roster() {
             </Tooltip>
           </TooltipProvider>
           <Button size="sm" onClick={() => openCreate()}>
-            <Plus className="mr-1 h-4 w-4" />
-            Add Shift
+            <Plus className="h-4 w-4 md:mr-1" />
+            <span className="hidden sm:inline">Add Shift</span>
           </Button>
         </div>
       </div>
 
-      {missingResponsible.length > 0 && (
+      {missingResponsible.length > 0 && !dismissedWarning && (
         <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
-          <AlertTriangle className="h-4 w-4 text-destructive" />
-          <span>{missingResponsible.length} published shift(s) missing a Responsible Nurse</span>
+          <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+          <span className="flex-1">{missingResponsible.length} published shift(s) missing a Responsible Nurse</span>
+          <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => setDismissedWarning(true)}>
+            <X className="h-3.5 w-3.5" />
+          </Button>
         </div>
       )}
 
       {/* Shift management toolbar */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
         {enforceFullWeek && !isFullWeek && (
           <div className="flex items-center gap-2 mr-4 border-r pr-4">
             <Settings className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-destructive">Full week mode enforced (Admin) — not a Sun–Sat week</span>
+            <span className="text-xs text-destructive">Full week mode enforced</span>
           </div>
         )}
         <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
-          <Users className="mr-1 h-4 w-4" />
-          Bulk Assign
+          <Users className="h-4 w-4 md:mr-1" />
+          <span className="hidden sm:inline">Bulk Assign</span>
         </Button>
         {!copiedWeek ? (
           <Button variant="outline" size="sm" onClick={handleCopyWeek} disabled={shifts.length === 0}>
-            <Copy className="mr-1 h-4 w-4" />
-            Copy Week
+            <Copy className="h-4 w-4 md:mr-1" />
+            <span className="hidden sm:inline">Copy Week</span>
           </Button>
         ) : (
           <Button variant="outline" size="sm" onClick={() => pasteWeek.mutate()} disabled={pasteWeek.isPending}>
-            <ClipboardPaste className="mr-1 h-4 w-4" />
-            Paste Week
+            <ClipboardPaste className="h-4 w-4 md:mr-1" />
+            <span className="hidden sm:inline">Paste Week</span>
           </Button>
         )}
       </div>
@@ -731,20 +735,20 @@ export default function Roster() {
           </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs md:text-sm">
             <thead>
               <tr>
-                <th className="sticky left-0 z-10 bg-card p-2 text-left font-medium text-muted-foreground min-w-[140px]">Staff</th>
+                <th className="sticky left-0 z-10 bg-card p-1.5 md:p-2 text-left font-medium text-muted-foreground min-w-[100px] md:min-w-[140px]">Staff</th>
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
                   return (
-                    <th key={d.toISOString()} className={`min-w-[120px] p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-muted/50" : ""}`}>
+                    <th key={d.toISOString()} className={`min-w-[70px] md:min-w-[120px] p-1 md:p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-muted/50" : ""}`}>
                       <div className="flex items-center justify-center gap-1">
                         {format(d, "EEE")}
                         {dateBlocked && <Lock className="h-3 w-3" />}
                       </div>
-                      <div className="text-xs mb-1">{format(d, "MMM d")}</div>
+                      <div className="text-[10px] md:text-xs mb-1">{format(d, "MMM d")}</div>
                       {/* Fulfillment summary per shift type */}
                       <div className="flex flex-col gap-0.5">
                         {(["morning", "evening", "night"] as const).map((t) => {
@@ -757,7 +761,7 @@ export default function Roster() {
                           return (
                             <div
                               key={t}
-                              className={`text-[9px] rounded px-1 py-px font-medium ${
+                              className={`text-[8px] md:text-[9px] rounded px-0.5 md:px-1 py-px font-medium ${
                                 over
                                   ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                                   : met
@@ -779,11 +783,13 @@ export default function Roster() {
             <tbody>
               {staff.map((member) => (
                 <tr key={member.id} className="border-t">
-                  <td className="sticky left-0 z-10 bg-card p-2 font-medium">
-                    <div className="flex items-center gap-1 max-w-[160px]">
-                      <span className="truncate">{member.full_name}</span>
-                      <span className="text-xs text-muted-foreground flex-shrink-0">{Math.round(Number(member.target_fte_percent) * 100)}%</span>
-                      {member.is_responsible && <Star className="h-3 w-3 fill-primary text-primary flex-shrink-0" />}
+                  <td className="sticky left-0 z-10 bg-card p-1.5 md:p-2 font-medium">
+                    <div className="max-w-[100px] md:max-w-[160px]">
+                      <span className="truncate block text-xs md:text-sm">{member.full_name}</span>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="text-[10px] md:text-xs text-muted-foreground">{Math.round(Number(member.target_fte_percent) * 100)}%</span>
+                        {member.is_responsible && <Star className="h-3 w-3 fill-primary text-primary flex-shrink-0" />}
+                      </div>
                     </div>
                   </td>
                   {days.map((d) => {
