@@ -404,7 +404,7 @@ export default function ManagementCalendar() {
                               >
                                 {getFirstName(s)}
                                 {s.is_responsible_on_shift && <span className="ml-0.5 text-[9px]">★</span>}
-                                {(s as any).is_standby && <span className="ml-0.5 text-[9px] font-bold">S</span>}
+                                {(s as any).is_standby && <span className="ml-0.5 text-[9px] font-bold">OC</span>}
                                 {s.is_draft ? <span className="ml-0.5 text-[9px]">D</span> : <Lock className="ml-0.5 h-2.5 w-2.5 opacity-40" />}
                               </Badge>
                             ))}
@@ -433,7 +433,7 @@ export default function ManagementCalendar() {
           <Badge variant="secondary" className="text-[10px]">
             Name <span className="bg-amber-500/20 text-amber-700 rounded px-0.5">S</span>
           </Badge>
-          <span>Stand-by</span>
+          <span>On Call</span>
         </div>
         <div className="flex items-center gap-1">
           <Badge variant="secondary" className="text-[10px] opacity-60 border-dashed">Name D</Badge>
@@ -465,7 +465,7 @@ export default function ManagementCalendar() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{(s as any).profiles?.full_name || "Unknown"}</span>
                     {s.is_responsible_on_shift && <Badge variant="default" className="text-[10px] px-1 py-0">★ Responsible</Badge>}
-                    {(s as any).is_standby && <Badge variant="outline" className="text-[10px] px-1 py-0 bg-amber-500/10 text-amber-700">S Stand-by</Badge>}
+                    {(s as any).is_standby && <Badge variant="outline" className="text-[10px] px-1 py-0 bg-amber-500/10 text-amber-700">OC On Call</Badge>}
                     {s.is_draft && <Badge variant="outline" className="text-[10px] px-1 py-0 opacity-60">Draft</Badge>}
                   </div>
                   <div className="flex items-center gap-1">

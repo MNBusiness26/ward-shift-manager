@@ -813,7 +813,7 @@ export default function Roster() {
                                 <span className="text-[9px] font-bold bg-primary/20 text-primary rounded px-0.5">RN</span>
                               )}
                               {(s as any).is_standby && (
-                                <span className="text-[9px] font-bold bg-amber-500/20 text-amber-700 rounded px-0.5">S</span>
+                                <span className="text-[9px] font-bold bg-amber-500/20 text-amber-700 rounded px-0.5">OC</span>
                               )}
                               {s.is_draft ? <EyeOff className="h-2.5 w-2.5 opacity-60" /> : <Lock className="h-2.5 w-2.5 opacity-40" />}
                             </div>
@@ -956,7 +956,7 @@ export default function Roster() {
             </div>
 
             <div className="flex items-center justify-between">
-              <Label>Stand-by Shift</Label>
+              <Label>On Call Shift</Label>
               <Switch checked={form.is_standby} onCheckedChange={(v) => setForm((f) => ({ ...f, is_standby: v, assigned_user_id: "" }))} />
             </div>
 
@@ -976,7 +976,7 @@ export default function Roster() {
                   })}
                 </SelectContent>
               </Select>
-              {form.is_standby && <p className="text-xs text-muted-foreground">Only managers and responsible nurses shown for stand-by shifts.</p>}
+              {form.is_standby && <p className="text-xs text-muted-foreground">Only managers and responsible nurses shown for on call shifts.</p>}
             </div>
 
             <div className="space-y-2">

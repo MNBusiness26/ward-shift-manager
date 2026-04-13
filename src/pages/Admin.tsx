@@ -107,7 +107,7 @@ export default function Admin() {
         <CardHeader>
           <CardTitle>Target Headcount Limits</CardTitle>
           <CardDescription>
-            Maximum number of non-standby staff per shift type. Exceeding triggers a yellow warning.
+            Maximum number of non-on-call staff per shift type. Exceeding triggers a yellow warning.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
