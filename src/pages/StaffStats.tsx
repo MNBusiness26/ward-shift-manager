@@ -155,15 +155,16 @@ export default function StaffStats() {
   const createProxyRequest = useMutation({
     mutationFn: async () => {
       if (!selectedId || !proxyDate || !user) return;
-      const endStr = proxyEndDate || proxyDate;
+      const isBlock = proxyType === "block";
+      const endStr = isBlock ? proxyDate : (proxyEndDate || proxyDate);
       const { error } = await supabase.from("availability_requests").insert({
         user_id: selectedId,
         date: proxyDate,
         end_date: endStr,
         reason: proxyReason || null,
         request_type: proxyType,
-        status: "approved", // Manager-created requests are auto-approved
-        blocked_shifts: proxyType === "block" ? proxyBlockedShifts : [],
+        status: "approved",
+        blocked_shifts: isBlock ? proxyBlockedShifts : [],
         created_by_manager_id: user.id,
       } as any);
       if (error) throw error;
@@ -530,37 +531,42 @@ export default function StaffStats() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Start Date</Label>
-                <Input type="date" value={proxyDate} onChange={(e) => setProxyDate(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>End Date</Label>
-                <Input
-                  type="date"
-                  value={proxyEndDate || proxyDate}
-                  min={proxyDate}
-                  onChange={(e) => setProxyEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Shift picker for block type */}
-            {proxyType === "block" && proxyDate && proxyDate === (proxyEndDate || proxyDate) && (
-              <div className="space-y-2">
-                <Label>Block specific shifts (optional)</Label>
-                <p className="text-xs text-muted-foreground">Leave unchecked to block the entire day</p>
-                <div className="flex gap-3">
-                  {SHIFT_TYPES.map((type) => (
-                    <label key={type} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={proxyBlockedShifts.includes(type)}
-                        onCheckedChange={() => toggleProxyShift(type)}
-                      />
-                      <span className="capitalize">{type}</span>
-                    </label>
-                  ))}
+            {proxyType === "block" ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Date</Label>
+                  <Input type="date" value={proxyDate} onChange={(e) => setProxyDate(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Block specific shifts (optional)</Label>
+                  <p className="text-xs text-muted-foreground">Leave unchecked to block the entire day</p>
+                  <div className="flex gap-3">
+                    {SHIFT_TYPES.map((type) => (
+                      <label key={type} className="flex items-center gap-2 text-sm cursor-pointer">
+                        <Checkbox
+                          checked={proxyBlockedShifts.includes(type)}
+                          onCheckedChange={() => toggleProxyShift(type)}
+                        />
+                        <span className="capitalize">{type}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Input type="date" value={proxyDate} onChange={(e) => setProxyDate(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <Input
+                    type="date"
+                    value={proxyEndDate || proxyDate}
+                    min={proxyDate}
+                    onChange={(e) => setProxyEndDate(e.target.value)}
+                  />
                 </div>
               </div>
             )}
