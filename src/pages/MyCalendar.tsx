@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sun, Sunset, Moon, Users, Download, RefreshCw } from "lucide-react";
+import { Sun, Sunset, Moon, Users, RefreshCw } from "lucide-react";
 import { CalendarSyncDialog } from "@/components/calendar/CalendarSyncDialog";
 import {
   format,
