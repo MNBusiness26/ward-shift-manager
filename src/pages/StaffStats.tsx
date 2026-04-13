@@ -530,37 +530,42 @@ export default function StaffStats() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Start Date</Label>
-                <Input type="date" value={proxyDate} onChange={(e) => setProxyDate(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>End Date</Label>
-                <Input
-                  type="date"
-                  value={proxyEndDate || proxyDate}
-                  min={proxyDate}
-                  onChange={(e) => setProxyEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Shift picker for block type */}
-            {proxyType === "block" && proxyDate && proxyDate === (proxyEndDate || proxyDate) && (
-              <div className="space-y-2">
-                <Label>Block specific shifts (optional)</Label>
-                <p className="text-xs text-muted-foreground">Leave unchecked to block the entire day</p>
-                <div className="flex gap-3">
-                  {SHIFT_TYPES.map((type) => (
-                    <label key={type} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={proxyBlockedShifts.includes(type)}
-                        onCheckedChange={() => toggleProxyShift(type)}
-                      />
-                      <span className="capitalize">{type}</span>
-                    </label>
-                  ))}
+            {proxyType === "block" ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Date</Label>
+                  <Input type="date" value={proxyDate} onChange={(e) => setProxyDate(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Block specific shifts (optional)</Label>
+                  <p className="text-xs text-muted-foreground">Leave unchecked to block the entire day</p>
+                  <div className="flex gap-3">
+                    {SHIFT_TYPES.map((type) => (
+                      <label key={type} className="flex items-center gap-2 text-sm cursor-pointer">
+                        <Checkbox
+                          checked={proxyBlockedShifts.includes(type)}
+                          onCheckedChange={() => toggleProxyShift(type)}
+                        />
+                        <span className="capitalize">{type}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Input type="date" value={proxyDate} onChange={(e) => setProxyDate(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <Input
+                    type="date"
+                    value={proxyEndDate || proxyDate}
+                    min={proxyDate}
+                    onChange={(e) => setProxyEndDate(e.target.value)}
+                  />
                 </div>
               </div>
             )}
