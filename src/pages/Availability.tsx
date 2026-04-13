@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +36,8 @@ import {
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, X, CalendarOff, Palmtree } from "lucide-react";
 
+const SHIFT_TYPES = ["morning", "evening", "night"] as const;
+
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
   approved: "bg-green-100 text-green-800 border-green-200",
@@ -54,6 +57,7 @@ export default function Availability() {
   const [endDate, setEndDate] = useState<string>("");
   const [reason, setReason] = useState("");
   const [requestType, setRequestType] = useState<"block" | "vacation">("block");
+  const [blockedShifts, setBlockedShifts] = useState<string[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const monthStart = startOfMonth(currentMonth);
@@ -86,6 +90,7 @@ export default function Availability() {
         end_date: endStr,
         reason: reason || null,
         request_type: requestType,
+        blocked_shifts: requestType === "block" ? blockedShifts : [],
       } as any);
       if (error) throw error;
     },
@@ -114,7 +119,14 @@ export default function Availability() {
     setReason("");
     setEndDate("");
     setRequestType("block");
+    setBlockedShifts([]);
     setSelectedDate(null);
+  };
+
+  const toggleShift = (shift: string) => {
+    setBlockedShifts((prev) =>
+      prev.includes(shift) ? prev.filter((s) => s !== shift) : [...prev, shift]
+    );
   };
 
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -139,6 +151,14 @@ export default function Availability() {
     return req.status === "approved"
       ? "bg-destructive/10 border-destructive/30"
       : "bg-yellow-50 border-yellow-200";
+  };
+
+  const isSingleDay = !endDate || endDate === (selectedDate ? format(selectedDate, "yyyy-MM-dd") : "");
+
+  const formatBlockedShifts = (req: any) => {
+    const shifts: string[] = (req as any).blocked_shifts || [];
+    if (shifts.length === 0) return null;
+    return shifts.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(" & ");
   };
 
   return (
@@ -211,10 +231,11 @@ export default function Availability() {
                 const rType = (r as any).request_type || "block";
                 const rEnd = (r as any).end_date;
                 const isRange = rEnd && rEnd !== r.date;
+                const blockedLabel = formatBlockedShifts(r);
                 return (
                   <div key={r.id} className="flex items-center justify-between rounded-lg border p-3">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium">
                           {format(new Date(r.date), "EEE, MMM d")}
                           {isRange && ` → ${format(new Date(rEnd), "EEE, MMM d")}`}
@@ -223,6 +244,11 @@ export default function Availability() {
                           {typeIcons[rType]}
                           <span className="ml-1">{rType}</span>
                         </Badge>
+                        {blockedLabel && (
+                          <Badge variant="outline" className="text-[10px]">
+                            {blockedLabel} only
+                          </Badge>
+                        )}
                       </div>
                       {r.reason && <p className="text-xs text-muted-foreground">{r.reason}</p>}
                     </div>
@@ -257,7 +283,7 @@ export default function Availability() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Type</Label>
-                <Select value={requestType} onValueChange={(v: any) => setRequestType(v)}>
+                <Select value={requestType} onValueChange={(v: any) => { setRequestType(v); setBlockedShifts([]); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="block">
@@ -285,6 +311,25 @@ export default function Availability() {
                   />
                 </div>
               </div>
+
+              {/* Shift picker for single-day blocks */}
+              {requestType === "block" && isSingleDay && (
+                <div className="space-y-2">
+                  <Label>Block specific shifts (optional)</Label>
+                  <p className="text-xs text-muted-foreground">Leave unchecked to block the entire day</p>
+                  <div className="flex gap-3">
+                    {SHIFT_TYPES.map((type) => (
+                      <label key={type} className="flex items-center gap-2 text-sm cursor-pointer">
+                        <Checkbox
+                          checked={blockedShifts.includes(type)}
+                          onCheckedChange={() => toggleShift(type)}
+                        />
+                        <span className="capitalize">{type}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Reason (optional)</Label>
