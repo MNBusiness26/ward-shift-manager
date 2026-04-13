@@ -155,15 +155,16 @@ export default function StaffStats() {
   const createProxyRequest = useMutation({
     mutationFn: async () => {
       if (!selectedId || !proxyDate || !user) return;
-      const endStr = proxyEndDate || proxyDate;
+      const isBlock = proxyType === "block";
+      const endStr = isBlock ? proxyDate : (proxyEndDate || proxyDate);
       const { error } = await supabase.from("availability_requests").insert({
         user_id: selectedId,
         date: proxyDate,
         end_date: endStr,
         reason: proxyReason || null,
         request_type: proxyType,
-        status: "approved", // Manager-created requests are auto-approved
-        blocked_shifts: proxyType === "block" ? proxyBlockedShifts : [],
+        status: "approved",
+        blocked_shifts: isBlock ? proxyBlockedShifts : [],
         created_by_manager_id: user.id,
       } as any);
       if (error) throw error;
