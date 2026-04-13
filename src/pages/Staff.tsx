@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { UserCheck, UserX, Pencil, Users, Clock, Shield, Star, X } from "lucide-react";
+import { UserCheck, UserX, Pencil, Users, Clock, Shield, Star, X, ChartLine } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -22,6 +23,7 @@ const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function Staff() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [editDialog, setEditDialog] = useState(false);
   const [editMember, setEditMember] = useState<any>(null);
   const [editForm, setEditForm] = useState({
@@ -242,6 +244,9 @@ export default function Staff() {
                       </div>
                     </div>
                     <div className="flex gap-1">
+                      <Button size="icon" variant="ghost" className="h-8 w-8" title="View Stats" onClick={() => navigate(`/staff-stats?id=${member.id}`)}>
+                        <ChartLine className="h-4 w-4" />
+                      </Button>
                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(member)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
