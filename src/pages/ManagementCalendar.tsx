@@ -542,7 +542,7 @@ export default function ManagementCalendar() {
             </div>
 
             <div className="flex items-center justify-between">
-              <Label>Stand-by Shift</Label>
+              <Label>On Call Shift</Label>
               <Switch checked={form.is_standby} onCheckedChange={(v) => setForm((f) => ({ ...f, is_standby: v, assigned_user_id: "" }))} />
             </div>
 
@@ -566,7 +566,7 @@ export default function ManagementCalendar() {
                   })}
                 </SelectContent>
               </Select>
-              {form.is_standby && <p className="text-xs text-muted-foreground">Only managers and responsible nurses shown for stand-by shifts.</p>}
+              {form.is_standby && <p className="text-xs text-muted-foreground">Only managers and responsible nurses shown for on call shifts.</p>}
             </div>
 
             <div className="space-y-2">
