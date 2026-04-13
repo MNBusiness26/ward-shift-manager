@@ -44,6 +44,8 @@ const shiftTimes: Record<ShiftType, { start: string; end: string }> = {
   night: { start: "22:30", end: "07:00" },
 };
 
+const warningStorageKey = "roster-dismissed-warning";
+
 interface ShiftFormData {
   date: string;
   type: ShiftType;
@@ -122,7 +124,10 @@ export default function Roster() {
   const isFullWeek = getDay(viewStart) === 0; // Sunday start
   const [clearWeekConfirmOpen, setClearWeekConfirmOpen] = useState(false);
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
-  const [dismissedWarning, setDismissedWarning] = useState(false);
+  const [dismissedWarningKey, setDismissedWarningKey] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return window.sessionStorage.getItem(warningStorageKey);
+  });
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["roster-shifts", format(viewStart, "yyyy-MM-dd")],
@@ -625,6 +630,17 @@ export default function Roster() {
   const draftCount = shifts.filter((s) => s.is_draft).length;
   const missingResponsible = shifts.filter((s) => !s.is_responsible_on_shift && !s.is_draft);
   const managerStaff = staff.filter((s) => managers.includes(s.id));
+  const warningDismissKey = `roster-missing-rn:${format(viewStart, "yyyy-MM-dd")}:${missingResponsible
+    .map((shift) => shift.id)
+    .sort()
+    .join(",")}`;
+
+  const dismissWarning = () => {
+    setDismissedWarningKey(warningDismissKey);
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(warningStorageKey, warningDismissKey);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -677,11 +693,11 @@ export default function Roster() {
         </div>
       </div>
 
-      {missingResponsible.length > 0 && !dismissedWarning && (
+      {missingResponsible.length > 0 && dismissedWarningKey !== warningDismissKey && (
         <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
           <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
           <span className="flex-1">{missingResponsible.length} published shift(s) missing a Responsible Nurse</span>
-          <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => setDismissedWarning(true)}>
+          <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={dismissWarning}>
             <X className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -734,11 +750,16 @@ export default function Roster() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="relative overflow-x-auto overflow-y-hidden">
-          <table className="w-full border-separate border-spacing-0 text-xs md:text-sm">
+        <CardContent className="overflow-hidden p-0">
+          <div className="relative isolate overflow-x-auto">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-0 z-10 w-[100px] bg-card shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px]"
+            />
+            <table className="w-max min-w-full border-separate border-spacing-0 text-xs md:text-sm">
             <thead>
               <tr>
-                <th className="sticky left-0 z-30 w-[100px] min-w-[100px] border-r bg-card p-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] after:pointer-events-none after:absolute after:inset-y-0 after:-right-3 after:w-3 after:bg-gradient-to-r after:from-card after:to-transparent md:w-[140px] md:min-w-[140px] md:p-2">Staff</th>
+                <th className="sticky left-0 z-30 w-[100px] min-w-[100px] border-r bg-card p-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:p-2">Staff</th>
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
@@ -783,7 +804,7 @@ export default function Roster() {
             <tbody>
               {staff.map((member) => (
                 <tr key={member.id} className="border-t">
-                  <td className="sticky left-0 z-20 w-[100px] min-w-[100px] overflow-hidden border-r bg-card p-1.5 font-medium shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] after:pointer-events-none after:absolute after:inset-y-0 after:-right-3 after:w-3 after:bg-gradient-to-r after:from-card after:to-transparent md:w-[140px] md:min-w-[140px] md:p-2">
+                  <td className="sticky left-0 z-20 w-[100px] min-w-[100px] overflow-hidden border-r bg-card p-1.5 font-medium shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:p-2">
                     <div className="max-w-[100px] md:max-w-[160px]">
                       <span className="truncate block text-xs md:text-sm">{member.full_name}</span>
                       <div className="flex items-center gap-1 mt-0.5">
@@ -848,7 +869,7 @@ export default function Roster() {
               {/* Unassigned shifts row */}
               {shifts.some((s) => !s.assigned_user_id) && (
                 <tr className="border-t bg-muted/30">
-                  <td className="sticky left-0 z-20 w-[100px] min-w-[100px] overflow-hidden border-r bg-muted/30 p-2 font-medium text-muted-foreground italic shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.12)] after:pointer-events-none after:absolute after:inset-y-0 after:-right-3 after:w-3 after:bg-gradient-to-r after:from-muted after:to-transparent md:w-[140px] md:min-w-[140px]">Unassigned</td>
+                  <td className="sticky left-0 z-20 w-[100px] min-w-[100px] overflow-hidden border-r bg-muted/30 p-2 font-medium text-muted-foreground italic shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.12)] md:w-[140px] md:min-w-[140px]">Unassigned</td>
                   {days.map((d) => {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const unassigned = shifts.filter((s) => !s.assigned_user_id && s.date === dateStr);
@@ -869,7 +890,8 @@ export default function Roster() {
                 </tr>
               )}
             </tbody>
-          </table>
+            </table>
+          </div>
         </CardContent>
       </Card>
 
