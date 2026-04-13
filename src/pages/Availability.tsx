@@ -296,37 +296,49 @@ export default function Availability() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Start Date</Label>
-                  <Input type="date" value={format(selectedDate, "yyyy-MM-dd")} readOnly className="bg-muted" />
-                </div>
-                <div className="space-y-2">
-                  <Label>End Date</Label>
-                  <Input
-                    type="date"
-                    value={endDate || format(selectedDate, "yyyy-MM-dd")}
-                    min={format(selectedDate, "yyyy-MM-dd")}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Shift picker for single-day blocks */}
-              {requestType === "block" && isSingleDay && (
-                <div className="space-y-2">
-                  <Label>Block specific shifts (optional)</Label>
-                  <p className="text-xs text-muted-foreground">Leave unchecked to block the entire day</p>
-                  <div className="flex gap-3">
-                    {SHIFT_TYPES.map((type) => (
-                      <label key={type} className="flex items-center gap-2 text-sm cursor-pointer">
-                        <Checkbox
-                          checked={blockedShifts.includes(type)}
-                          onCheckedChange={() => toggleShift(type)}
-                        />
-                        <span className="capitalize">{type}</span>
-                      </label>
-                    ))}
+              {requestType === "block" ? (
+                <>
+                  <div className="space-y-2">
+                    <Label>Date</Label>
+                    <Input
+                      type="date"
+                      value={format(selectedDate, "yyyy-MM-dd")}
+                      onChange={(e) => {
+                        const d = new Date(e.target.value + "T00:00:00");
+                        if (!isNaN(d.getTime())) setSelectedDate(d);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Block specific shifts (optional)</Label>
+                    <p className="text-xs text-muted-foreground">Leave unchecked to block the entire day</p>
+                    <div className="flex gap-3">
+                      {SHIFT_TYPES.map((type) => (
+                        <label key={type} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <Checkbox
+                            checked={blockedShifts.includes(type)}
+                            onCheckedChange={() => toggleShift(type)}
+                          />
+                          <span className="capitalize">{type}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Start Date</Label>
+                    <Input type="date" value={format(selectedDate, "yyyy-MM-dd")} readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>End Date</Label>
+                    <Input
+                      type="date"
+                      value={endDate || format(selectedDate, "yyyy-MM-dd")}
+                      min={format(selectedDate, "yyyy-MM-dd")}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
                   </div>
                 </div>
               )}
