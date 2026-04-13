@@ -277,25 +277,19 @@ export default function StaffStats() {
           {/* Profile summary + proxy button */}
           <Card>
             <CardContent className="p-4">
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-lg font-semibold">{selectedProfile.full_name}</span>
-                  {staffRoles.map((r) => (
-                    <Badge key={r} variant="outline" className="capitalize">{r}</Badge>
-                  ))}
-                  <span className="text-sm text-muted-foreground">
-                    {(fte * 100).toFixed(0)}% FTE
-                  </span>
-                  {selectedProfile.is_responsible && (
-                    <Badge className="gap-1">
-                      <Star className="h-3 w-3 fill-current" /> Resp. Nurse
-                    </Badge>
-                  )}
-                </div>
-                <Button size="sm" variant="outline" onClick={() => setProxyOpen(true)}>
-                  <UserPlus className="mr-1 h-4 w-4" />
-                  Request on Behalf
-                </Button>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-lg font-semibold">{selectedProfile.full_name}</span>
+                {staffRoles.map((r) => (
+                  <Badge key={r} variant="outline" className="capitalize">{r}</Badge>
+                ))}
+                <span className="text-sm text-muted-foreground">
+                  {(fte * 100).toFixed(0)}% FTE
+                </span>
+                {selectedProfile.is_responsible && (
+                  <Badge className="gap-1">
+                    <Star className="h-3 w-3 fill-current" /> Resp. Nurse
+                  </Badge>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -470,9 +464,15 @@ export default function StaffStats() {
           {/* Availability */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CalendarOff className="h-4 w-4" /> Availability Requests
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <CalendarOff className="h-4 w-4" /> Availability Requests
+                </CardTitle>
+                <Button size="sm" variant="outline" onClick={() => setProxyOpen(true)}>
+                  <UserPlus className="mr-1 h-4 w-4" />
+                  Request on Behalf
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {availRequests.length === 0 ? (
