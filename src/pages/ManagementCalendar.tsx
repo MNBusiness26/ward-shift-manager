@@ -347,11 +347,11 @@ export default function ManagementCalendar() {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent className="relative overflow-x-auto">
+        <CardContent className="relative overflow-x-auto overflow-y-hidden">
           <table className="w-full border-separate border-spacing-0 text-xs md:text-sm">
             <thead>
               <tr>
-                <th className="sticky left-0 z-40 w-[50px] min-w-[50px] border-b border-r bg-card p-1.5 text-left font-medium text-muted-foreground shadow-[8px_0_0_hsl(var(--card))] md:w-[90px] md:min-w-[90px] md:p-2">
+                <th className="sticky left-0 z-30 w-[50px] min-w-[50px] border-b border-r bg-card p-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] after:pointer-events-none after:absolute after:inset-y-0 after:-right-3 after:w-3 after:bg-gradient-to-r after:from-card after:to-transparent md:w-[90px] md:min-w-[90px] md:p-2">
                   <span className="hidden md:inline">Shift</span>
                   <span className="md:hidden">Type</span>
                 </th>
@@ -359,7 +359,7 @@ export default function ManagementCalendar() {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const blocked = isDateBlocked(dateStr);
                   return (
-                    <th key={d.toISOString()} className={`min-w-[80px] md:min-w-[140px] p-1.5 md:p-2 text-center font-medium text-muted-foreground border-b ${blocked ? "bg-gray-200/50" : ""}`}>
+                    <th key={d.toISOString()} className={`relative z-10 min-w-[80px] md:min-w-[140px] p-1.5 md:p-2 text-center font-medium text-muted-foreground border-b ${blocked ? "bg-gray-200/50" : ""}`}>
                       <div className="flex items-center justify-center gap-1">
                         {format(d, "EEE")}
                         {blocked && <Lock className="h-3 w-3 text-muted-foreground" />}
@@ -375,7 +375,7 @@ export default function ManagementCalendar() {
                 const Icon = type === "morning" ? Eye : type === "evening" ? Star : Lock;
                 return (
                 <tr key={type} className="border-t">
-                  <td className={`sticky left-0 z-30 w-[50px] min-w-[50px] overflow-hidden border-r bg-card p-1.5 font-semibold shadow-[8px_0_0_hsl(var(--card))] md:w-[90px] md:min-w-[90px] md:p-2 ${shiftTextColors[type]}`}>
+                  <td className={`sticky left-0 z-20 w-[50px] min-w-[50px] overflow-hidden border-r bg-card p-1.5 font-semibold shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] after:pointer-events-none after:absolute after:inset-y-0 after:-right-3 after:w-3 after:bg-gradient-to-r after:from-card after:to-transparent md:w-[90px] md:min-w-[90px] md:p-2 ${shiftTextColors[type]}`}>
                     <span className="hidden md:inline">{shiftLabels[type]}</span>
                     <span className="md:hidden flex items-center gap-0.5">
                       {type === "morning" && <Sun className="h-3.5 w-3.5" />}
@@ -392,7 +392,7 @@ export default function ManagementCalendar() {
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`p-2 border-l align-top ${blocked ? "bg-gray-200/50 cursor-not-allowed" : `${shiftColors[type]} cursor-pointer hover:opacity-80`} ${overHeadcount ? "ring-2 ring-inset ring-amber-400/60" : ""}`}
+                        className={`relative z-0 p-2 border-l align-top ${blocked ? "bg-gray-200/50 cursor-not-allowed" : `${shiftColors[type]} cursor-pointer hover:opacity-80`} ${overHeadcount ? "ring-2 ring-inset ring-amber-400/60" : ""}`}
                         onClick={() => !blocked && handleCellClick(dateStr, type)}
                       >
                         {overHeadcount && (

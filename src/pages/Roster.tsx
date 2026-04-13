@@ -734,16 +734,16 @@ export default function Roster() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="relative overflow-x-auto">
+        <CardContent className="relative overflow-x-auto overflow-y-hidden">
           <table className="w-full border-separate border-spacing-0 text-xs md:text-sm">
             <thead>
               <tr>
-                <th className="sticky left-0 z-40 w-[100px] min-w-[100px] border-r bg-card p-1.5 text-left font-medium text-muted-foreground shadow-[8px_0_0_hsl(var(--card))] md:w-[140px] md:min-w-[140px] md:p-2">Staff</th>
+                <th className="sticky left-0 z-30 w-[100px] min-w-[100px] border-r bg-card p-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] after:pointer-events-none after:absolute after:inset-y-0 after:-right-3 after:w-3 after:bg-gradient-to-r after:from-card after:to-transparent md:w-[140px] md:min-w-[140px] md:p-2">Staff</th>
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
                   return (
-                    <th key={d.toISOString()} className={`min-w-[70px] md:min-w-[120px] p-1 md:p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-muted/50" : ""}`}>
+                    <th key={d.toISOString()} className={`relative z-10 min-w-[70px] md:min-w-[120px] p-1 md:p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-muted/50" : ""}`}>
                       <div className="flex items-center justify-center gap-1">
                         {format(d, "EEE")}
                         {dateBlocked && <Lock className="h-3 w-3" />}
@@ -783,7 +783,7 @@ export default function Roster() {
             <tbody>
               {staff.map((member) => (
                 <tr key={member.id} className="border-t">
-                  <td className="sticky left-0 z-30 w-[100px] min-w-[100px] overflow-hidden border-r bg-card p-1.5 font-medium shadow-[8px_0_0_hsl(var(--card))] md:w-[140px] md:min-w-[140px] md:p-2">
+                  <td className="sticky left-0 z-20 w-[100px] min-w-[100px] overflow-hidden border-r bg-card p-1.5 font-medium shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] after:pointer-events-none after:absolute after:inset-y-0 after:-right-3 after:w-3 after:bg-gradient-to-r after:from-card after:to-transparent md:w-[140px] md:min-w-[140px] md:p-2">
                     <div className="max-w-[100px] md:max-w-[160px]">
                       <span className="truncate block text-xs md:text-sm">{member.full_name}</span>
                       <div className="flex items-center gap-1 mt-0.5">
@@ -802,7 +802,7 @@ export default function Roster() {
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`p-1 text-center transition-colors ${dateBlocked || blocked ? "bg-destructive/5 cursor-not-allowed" : "cursor-pointer hover:bg-accent/30"}`}
+                        className={`relative z-0 p-1 text-center transition-colors ${dateBlocked || blocked ? "bg-destructive/5 cursor-not-allowed" : "cursor-pointer hover:bg-accent/30"}`}
                         onClick={() => {
                           if (dateBlocked || blocked) return;
                           if (dayShifts.length === 0) {
@@ -848,7 +848,7 @@ export default function Roster() {
               {/* Unassigned shifts row */}
               {shifts.some((s) => !s.assigned_user_id) && (
                 <tr className="border-t bg-muted/30">
-                  <td className="sticky left-0 z-30 w-[100px] min-w-[100px] overflow-hidden border-r bg-muted/30 p-2 font-medium text-muted-foreground italic shadow-[8px_0_0_hsl(var(--muted))] md:w-[140px] md:min-w-[140px]">Unassigned</td>
+                  <td className="sticky left-0 z-20 w-[100px] min-w-[100px] overflow-hidden border-r bg-muted/30 p-2 font-medium text-muted-foreground italic shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.12)] after:pointer-events-none after:absolute after:inset-y-0 after:-right-3 after:w-3 after:bg-gradient-to-r after:from-muted after:to-transparent md:w-[140px] md:min-w-[140px]">Unassigned</td>
                   {days.map((d) => {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const unassigned = shifts.filter((s) => !s.assigned_user_id && s.date === dateStr);
