@@ -40,7 +40,9 @@ export type Database = {
       }
       availability_requests: {
         Row: {
+          blocked_shifts: string[] | null
           created_at: string
+          created_by_manager_id: string | null
           date: string
           end_date: string | null
           id: string
@@ -51,7 +53,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          blocked_shifts?: string[] | null
           created_at?: string
+          created_by_manager_id?: string | null
           date: string
           end_date?: string | null
           id?: string
@@ -62,7 +66,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          blocked_shifts?: string[] | null
           created_at?: string
+          created_by_manager_id?: string | null
           date?: string
           end_date?: string | null
           id?: string
