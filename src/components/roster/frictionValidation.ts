@@ -19,11 +19,6 @@ export function getHeadcountTarget(
   dateStr: string,
   customLimits?: Record<string, number | Record<string, number>>,
 ): number {
-  // If custom limits are a flat object (legacy admin settings), use them directly
-  if (customLimits && typeof customLimits[type] === "number") {
-    return customLimits[type] as number;
-  }
-
   const dayOfWeek = getDay(new Date(dateStr + "T00:00"));
   const isFriSat = dayOfWeek === 5 || dayOfWeek === 6;
 
@@ -32,6 +27,12 @@ export function getHeadcountTarget(
     evening: { monThu: 4, friSat: 4 },
     night: { monThu: 3, friSat: 3 },
   };
+
+  // Support day-aware custom limits: { morning: { monThu: 6, friSat: 5 }, ... }
+  if (customLimits && typeof customLimits[type] === "object") {
+    const custom = customLimits[type] as { monThu: number; friSat: number };
+    return isFriSat ? custom.friSat : custom.monThu;
+  }
 
   const target = defaults[type];
   if (!target) return 0;
