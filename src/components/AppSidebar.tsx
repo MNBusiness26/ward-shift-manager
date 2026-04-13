@@ -30,6 +30,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 
+const ADMIN_EMAIL = "michael.nejman@gmail.com";
+
 const nurseItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "My Calendar", url: "/calendar", icon: Calendar },
@@ -44,24 +46,23 @@ const managerItems = [
   { title: "Mgmt Calendar", url: "/management-calendar", icon: CalendarDays },
   { title: "Requests", url: "/requests", icon: Settings },
   { title: "Staff", url: "/staff", icon: Users },
-  
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
-  { title: "Admin", url: "/admin", icon: Shield },
 ];
 
 export function AppSidebar() {
   const { state, toggleSidebar, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { isManager, profile, signOut } = useAuth();
+  const { isManager, isAssistantManager, profile, signOut } = useAuth();
   const isMobile = useIsMobile();
 
   const handleLinkClick = () => {
     if (isMobile) setOpenMobile(false);
   };
 
-  const isActive = (path: string) =>
-    path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+  const showManagement = isManager || isAssistantManager;
+  // Only full managers with the admin email see the Admin link
+  const showAdmin = isManager && profile?.email === ADMIN_EMAIL;
 
   return (
     <Sidebar collapsible="icon">
@@ -106,7 +107,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {isManager && (
+        {showManagement && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-sidebar-foreground/60">Management</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -126,6 +127,21 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+                {showAdmin && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to="/admin"
+                        className="hover:bg-sidebar-accent text-base md:text-sm"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        onClick={handleLinkClick}
+                      >
+                        <Shield className="mr-2 h-5 w-5 md:h-4 md:w-4" />
+                        {!collapsed && <span>Admin</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
