@@ -676,10 +676,13 @@ export default function Roster() {
         </div>
       </div>
 
-      {missingResponsible.length > 0 && (
+      {missingResponsible.length > 0 && !dismissedWarning && (
         <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
-          <AlertTriangle className="h-4 w-4 text-destructive" />
-          <span>{missingResponsible.length} published shift(s) missing a Responsible Nurse</span>
+          <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+          <span className="flex-1">{missingResponsible.length} published shift(s) missing a Responsible Nurse</span>
+          <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => setDismissedWarning(true)}>
+            <X className="h-3.5 w-3.5" />
+          </Button>
         </div>
       )}
 
