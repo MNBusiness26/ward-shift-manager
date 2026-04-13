@@ -250,6 +250,42 @@ export type Database = {
           },
         ]
       }
+      staff_directory: {
+        Row: {
+          app_role: Database["public"]["Enums"]["app_role"]
+          claimed_by: string | null
+          created_at: string
+          created_by: string | null
+          email: string
+          full_name: string
+          id: string
+          is_claimed: boolean
+          target_fte_percent: number
+        }
+        Insert: {
+          app_role?: Database["public"]["Enums"]["app_role"]
+          claimed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          email: string
+          full_name: string
+          id?: string
+          is_claimed?: boolean
+          target_fte_percent?: number
+        }
+        Update: {
+          app_role?: Database["public"]["Enums"]["app_role"]
+          claimed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          is_claimed?: boolean
+          target_fte_percent?: number
+        }
+        Relationships: []
+      }
       swap_requests: {
         Row: {
           covering_user_id: string | null
