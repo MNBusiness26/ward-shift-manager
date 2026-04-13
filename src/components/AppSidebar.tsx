@@ -44,7 +44,7 @@ const managerItems = [
   { title: "Mgmt Calendar", url: "/management-calendar", icon: CalendarDays },
   { title: "Requests", url: "/requests", icon: Settings },
   { title: "Staff", url: "/staff", icon: Users },
-  { title: "Staff Stats", url: "/staff-stats", icon: BarChart3 },
+  
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Admin", url: "/admin", icon: Shield },
 ];
