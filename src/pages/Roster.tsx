@@ -738,24 +738,39 @@ export default function Roster() {
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
-                  const headcountIssues = (["morning", "evening", "night"] as const).filter(
-                    (t) => isOverHeadcount(shifts as any[], dateStr, t, headcountLimits)
-                  );
                   return (
-                    <th key={d.toISOString()} className={`min-w-[120px] p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-gray-200/50" : ""}`}>
+                    <th key={d.toISOString()} className={`min-w-[120px] p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-muted/50" : ""}`}>
                       <div className="flex items-center justify-center gap-1">
                         {format(d, "EEE")}
                         {dateBlocked && <Lock className="h-3 w-3" />}
                       </div>
-                      <div className="text-xs">{format(d, "MMM d")}</div>
-                      {headcountIssues.length > 0 && (
-                        <div className="flex items-center justify-center gap-0.5 mt-0.5">
-                          <AlertTriangle className="h-3 w-3 text-amber-500" />
-                          <span className="text-[9px] text-amber-600 font-medium">
-                            {headcountIssues.map((t) => t.charAt(0).toUpperCase()).join("/")} over
-                          </span>
-                        </div>
-                      )}
+                      <div className="text-xs mb-1">{format(d, "MMM d")}</div>
+                      {/* Fulfillment summary per shift type */}
+                      <div className="flex flex-col gap-0.5">
+                        {(["morning", "evening", "night"] as const).map((t) => {
+                          const target = getHeadcountTarget(t, dateStr, headcountLimits);
+                          const count = shifts.filter(
+                            (s) => s.date === dateStr && s.type === t && s.assigned_user_id && !(s as any).is_standby
+                          ).length;
+                          const met = count >= target;
+                          const over = count > target;
+                          return (
+                            <div
+                              key={t}
+                              className={`text-[9px] rounded px-1 py-px font-medium ${
+                                over
+                                  ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                  : met
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {t.charAt(0).toUpperCase()}: {count}/{target}
+                              {met && !over && " ✓"}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </th>
                   );
                 })}
