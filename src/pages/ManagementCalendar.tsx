@@ -323,14 +323,14 @@ export default function ManagementCalendar() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Management Calendar</h1>
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" onClick={() => { setBulkDate(undefined); setBulkType(undefined); setBulkOpen(true); }}>
-            <Users className="h-4 w-4 mr-2" />
-            Bulk Assign
+        <div className="flex gap-1.5 md:gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => { setBulkDate(undefined); setBulkType(undefined); setBulkOpen(true); }}>
+            <Users className="h-4 w-4 md:mr-2" />
+            <span className="hidden sm:inline">Bulk Assign</span>
           </Button>
-          <Button onClick={() => openAddShift()}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Shift
+          <Button size="sm" onClick={() => openAddShift()}>
+            <Plus className="h-4 w-4 md:mr-2" />
+            <span className="hidden sm:inline">Add Shift</span>
           </Button>
         </div>
       </div>
