@@ -149,11 +149,8 @@ export default function MyCalendar() {
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setSyncOpen(true)}>
             <RefreshCw className="h-4 w-4" />
-            {hasSyncLink ? "Manage Sync" : "Sync Calendar"}
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={generateIcs}>
-            <Download className="h-4 w-4" />
-            Export .ics
+            <span className="hidden sm:inline">{hasSyncLink ? "Manage Sync" : "Sync Calendar"}</span>
+            <span className="sm:hidden">{hasSyncLink ? "Sync" : "Sync"}</span>
           </Button>
           <Tabs value={view} onValueChange={(v) => setView(v as "month" | "week")}>
             <TabsList>
