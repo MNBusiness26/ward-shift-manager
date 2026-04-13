@@ -20,8 +20,8 @@ type ShiftType = Database["public"]["Enums"]["shift_type"];
 
 const shiftTimes: Record<ShiftType, { start: string; end: string }> = {
   morning: { start: "07:00", end: "15:00" },
-  evening: { start: "15:00", end: "23:00" },
-  night: { start: "23:00", end: "07:00" },
+  evening: { start: "14:30", end: "23:00" },
+  night: { start: "22:30", end: "07:00" },
 };
 
 // 8 hours per shift
@@ -117,15 +117,34 @@ export function BulkAssignDialog({ open, onOpenChange, staff, blockedDates, init
     const profile = staffProfiles.find((p) => p.id === userId);
     if (!profile) return null;
     const c = typeof profile.constraints === "object" && profile.constraints !== null ? profile.constraints : {};
-    
-    if (type === "night" && (c as any).no_nights) {
+
+    // New exclusion model
+    const excludedShifts: string[] = (c as any).excluded_shifts || [];
+    const excludedDays: number[] = (c as any).excluded_days || [];
+
+    if (excludedShifts.includes(type)) {
+      return `${type.charAt(0).toUpperCase() + type.slice(1)} excluded`;
+    }
+
+    if (date) {
+      try {
+        const d = parseISO(date);
+        const dayOfWeek = getDay(d);
+        if (excludedDays.includes(dayOfWeek)) {
+          const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+          return `${dayNames[dayOfWeek]} excluded`;
+        }
+      } catch {}
+    }
+
+    // Legacy support
+    if (type === "night" && (c as any).no_nights && !excludedShifts.includes("night")) {
       return "No night shifts";
     }
     if (date) {
       try {
         const d = parseISO(date);
-        // Only Saturday (6) is considered a weekend
-        if (getDay(d) === 6 && (c as any).no_weekends) {
+        if (getDay(d) === 6 && (c as any).no_weekends && !excludedDays.includes(6)) {
           return "No weekend shifts";
         }
       } catch {}
@@ -150,13 +169,8 @@ export function BulkAssignDialog({ open, onOpenChange, staff, blockedDates, init
     setStartTime(shiftTimes[t].start);
     setEndTime(shiftTimes[t].end);
     // Deselect any staff that are now constrained
-    setSelectedStaff((prev) => prev.filter((id) => {
-      const profile = staffProfiles.find((p) => p.id === id);
-      if (!profile) return true;
-      const c = typeof profile.constraints === "object" && profile.constraints !== null ? profile.constraints : {};
-      if (t === "night" && (c as any).no_nights) return false;
-      return true;
-    }));
+    // Deselect any staff that are now constrained by new type
+    setSelectedStaff((prev) => prev.filter((id) => !getConstraintReason(id)));
   };
 
   const checkOvertimeAndAssign = () => {

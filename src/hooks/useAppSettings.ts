@@ -24,8 +24,9 @@ export function useAppSettings() {
     if (v && typeof v === "object") {
       return v as { morning: number; evening: number; night: number };
     }
-    return { morning: 4, evening: 3, night: 2 };
+    // Return undefined to let getHeadcountTarget use day-aware defaults
+    return undefined;
   })();
 
-  return { enforceFullWeek, headcountLimits, settings };
+  return { enforceFullWeek, headcountLimits, settings } as const;
 }

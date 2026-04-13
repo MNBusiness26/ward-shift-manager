@@ -18,9 +18,9 @@ export default function Admin() {
   const queryClient = useQueryClient();
 
   const [enforceFullWeek, setEnforceFullWeek] = useState(true);
-  const [morningLimit, setMorningLimit] = useState(4);
-  const [eveningLimit, setEveningLimit] = useState(3);
-  const [nightLimit, setNightLimit] = useState(2);
+  const [morningLimit, setMorningLimit] = useState(6);
+  const [eveningLimit, setEveningLimit] = useState(4);
+  const [nightLimit, setNightLimit] = useState(3);
 
   const { data: settings = [] } = useQuery({
     queryKey: ["app-settings"],
