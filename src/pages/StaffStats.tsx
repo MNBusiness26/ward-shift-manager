@@ -1,31 +1,58 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Sun, Sunset, Moon, TrendingUp, ArrowLeftRight, CalendarOff,
-  Calendar, Users, Star, ChevronLeft, ChevronRight,
+  Calendar, Users, Star, ChevronLeft, ChevronRight, UserPlus,
 } from "lucide-react";
 import {
   format, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
   addWeeks, subWeeks, addMonths, subMonths, addDays,
   differenceInCalendarDays, getDay,
 } from "date-fns";
+import { toast } from "sonner";
+
+const SHIFT_TYPES = ["morning", "evening", "night"] as const;
 
 export default function StaffStats() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [selectedId, setSelectedId] = useState<string>("");
   const [mode, setMode] = useState<"weekly" | "monthly">("weekly");
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
 
+  // Proxy request dialog state
+  const [proxyOpen, setProxyOpen] = useState(false);
+  const [proxyType, setProxyType] = useState<"block" | "vacation">("block");
+  const [proxyDate, setProxyDate] = useState("");
+  const [proxyEndDate, setProxyEndDate] = useState("");
+  const [proxyReason, setProxyReason] = useState("");
+  const [proxyBlockedShifts, setProxyBlockedShifts] = useState<string[]>([]);
+
+  // Pre-select from URL param
+  useEffect(() => {
+    const idFromUrl = searchParams.get("id");
+    if (idFromUrl && !selectedId) {
+      setSelectedId(idFromUrl);
+    }
+  }, [searchParams, selectedId]);
+
   const now = new Date();
 
-  // Computed ranges
   const baseWeek = addWeeks(startOfWeek(now, { weekStartsOn: 0 }), weekOffset);
   const weekStart = baseWeek;
   const weekEnd = endOfWeek(baseWeek, { weekStartsOn: 0 });
@@ -37,7 +64,6 @@ export default function StaffStats() {
   const rangeStart = mode === "weekly" ? weekStart : monthStart;
   const rangeEnd = mode === "weekly" ? weekEnd : monthEnd;
 
-  // All active staff
   const { data: staff = [] } = useQuery({
     queryKey: ["staff-stats-list"],
     queryFn: async () => {
@@ -62,7 +88,6 @@ export default function StaffStats() {
 
   const selectedProfile = staff.find((s) => s.id === selectedId);
 
-  // Range shifts
   const { data: rangeShifts = [] } = useQuery({
     queryKey: ["staff-stats-range", selectedId, format(rangeStart, "yyyy-MM-dd"), format(rangeEnd, "yyyy-MM-dd")],
     queryFn: async () => {
@@ -79,7 +104,6 @@ export default function StaffStats() {
     enabled: !!selectedId,
   });
 
-  // Swap requests
   const { data: swapRequests = [] } = useQuery({
     queryKey: ["staff-stats-swaps", selectedId],
     queryFn: async () => {
@@ -95,7 +119,6 @@ export default function StaffStats() {
     enabled: !!selectedId,
   });
 
-  // Availability requests
   const { data: availRequests = [] } = useQuery({
     queryKey: ["staff-stats-avail", selectedId],
     queryFn: async () => {
@@ -111,7 +134,6 @@ export default function StaffStats() {
     enabled: !!selectedId,
   });
 
-  // Upcoming shifts
   const { data: upcoming = [] } = useQuery({
     queryKey: ["staff-stats-agenda", selectedId],
     queryFn: async () => {
@@ -129,14 +151,52 @@ export default function StaffStats() {
     enabled: !!selectedId,
   });
 
+  // Proxy request mutation
+  const createProxyRequest = useMutation({
+    mutationFn: async () => {
+      if (!selectedId || !proxyDate || !user) return;
+      const endStr = proxyEndDate || proxyDate;
+      const { error } = await supabase.from("availability_requests").insert({
+        user_id: selectedId,
+        date: proxyDate,
+        end_date: endStr,
+        reason: proxyReason || null,
+        request_type: proxyType,
+        status: "approved", // Manager-created requests are auto-approved
+        blocked_shifts: proxyType === "block" ? proxyBlockedShifts : [],
+        created_by_manager_id: user.id,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-stats-avail"] });
+      toast.success("Request created on behalf of staff");
+      closeProxyDialog();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const closeProxyDialog = () => {
+    setProxyOpen(false);
+    setProxyType("block");
+    setProxyDate("");
+    setProxyEndDate("");
+    setProxyReason("");
+    setProxyBlockedShifts([]);
+  };
+
+  const toggleProxyShift = (shift: string) => {
+    setProxyBlockedShifts((prev) =>
+      prev.includes(shift) ? prev.filter((s) => s !== shift) : [...prev, shift]
+    );
+  };
+
   const fte = selectedProfile?.target_fte_percent ?? 1;
 
-  // Fulfillment calculation
   let expectedShifts: number;
   if (mode === "weekly") {
     expectedShifts = 5 * fte;
   } else {
-    // Monthly: calculate working days (Mon-Fri) in the month, then scale by FTE
     let workingDays = 0;
     const totalDays = differenceInCalendarDays(monthEnd, monthStart) + 1;
     for (let i = 0; i < totalDays; i++) {
@@ -170,6 +230,12 @@ export default function StaffStats() {
   const rangeLabel = mode === "weekly"
     ? `${format(weekStart, "MMM d")} — ${format(weekEnd, "MMM d, yyyy")}`
     : format(baseMonth, "MMMM yyyy");
+
+  const formatBlockedShifts = (req: any) => {
+    const shifts: string[] = req.blocked_shifts || [];
+    if (shifts.length === 0) return null;
+    return shifts.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(" & ");
+  };
 
   return (
     <div className="space-y-6">
@@ -207,22 +273,28 @@ export default function StaffStats() {
 
       {selectedId && selectedProfile && (
         <>
-          {/* Profile summary */}
+          {/* Profile summary + proxy button */}
           <Card>
             <CardContent className="p-4">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-lg font-semibold">{selectedProfile.full_name}</span>
-                {staffRoles.map((r) => (
-                  <Badge key={r} variant="outline" className="capitalize">{r}</Badge>
-                ))}
-                <span className="text-sm text-muted-foreground">
-                  {(fte * 100).toFixed(0)}% FTE
-                </span>
-                {selectedProfile.is_responsible && (
-                  <Badge className="gap-1">
-                    <Star className="h-3 w-3 fill-current" /> Resp. Nurse
-                  </Badge>
-                )}
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-lg font-semibold">{selectedProfile.full_name}</span>
+                  {staffRoles.map((r) => (
+                    <Badge key={r} variant="outline" className="capitalize">{r}</Badge>
+                  ))}
+                  <span className="text-sm text-muted-foreground">
+                    {(fte * 100).toFixed(0)}% FTE
+                  </span>
+                  {selectedProfile.is_responsible && (
+                    <Badge className="gap-1">
+                      <Star className="h-3 w-3 fill-current" /> Resp. Nurse
+                    </Badge>
+                  )}
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setProxyOpen(true)}>
+                  <UserPlus className="mr-1 h-4 w-4" />
+                  Request on Behalf
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -406,26 +478,114 @@ export default function StaffStats() {
                 <p className="text-sm text-muted-foreground">No availability requests.</p>
               ) : (
                 <div className="space-y-2">
-                  {availRequests.map((ar) => (
-                    <div key={ar.id} className="flex items-center justify-between rounded-lg border p-3">
-                      <div className="text-sm">
-                        <span className="font-medium">{format(new Date(ar.date), "MMM d")}</span>
-                        {ar.end_date && (
-                          <span className="text-muted-foreground"> — {format(new Date(ar.end_date), "MMM d")}</span>
-                        )}
-                        <Badge variant="outline" className="ml-2 capitalize text-xs">{ar.request_type}</Badge>
+                  {availRequests.map((ar) => {
+                    const blockedLabel = formatBlockedShifts(ar);
+                    return (
+                      <div key={ar.id} className="flex items-center justify-between rounded-lg border p-3">
+                        <div className="text-sm">
+                          <span className="font-medium">{format(new Date(ar.date), "MMM d")}</span>
+                          {ar.end_date && ar.end_date !== ar.date && (
+                            <span className="text-muted-foreground"> — {format(new Date(ar.end_date), "MMM d")}</span>
+                          )}
+                          <Badge variant="outline" className="ml-2 capitalize text-xs">{ar.request_type}</Badge>
+                          {blockedLabel && (
+                            <span className="ml-2 text-xs text-muted-foreground">({blockedLabel} only)</span>
+                          )}
+                          {(ar as any).created_by_manager_id && (
+                            <Badge variant="outline" className="ml-2 text-[10px]">Manager</Badge>
+                          )}
+                        </div>
+                        <Badge variant="outline" className={statusColor[ar.status] || ""}>
+                          {ar.status}
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className={statusColor[ar.status] || ""}>
-                        {ar.status}
-                      </Badge>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
           </Card>
         </>
       )}
+
+      {/* Proxy request dialog */}
+      <Dialog open={proxyOpen} onOpenChange={(open) => { if (!open) closeProxyDialog(); else setProxyOpen(true); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request on Behalf of {selectedProfile?.full_name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Type</Label>
+              <Select value={proxyType} onValueChange={(v: any) => { setProxyType(v); setProxyBlockedShifts([]); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="block">
+                    <span className="flex items-center gap-2"><CalendarOff className="h-3 w-3" /> Block Dates</span>
+                  </SelectItem>
+                  <SelectItem value="vacation">
+                    <span className="flex items-center gap-2">🌴 Vacation</span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Start Date</Label>
+                <Input type="date" value={proxyDate} onChange={(e) => setProxyDate(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>End Date</Label>
+                <Input
+                  type="date"
+                  value={proxyEndDate || proxyDate}
+                  min={proxyDate}
+                  onChange={(e) => setProxyEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Shift picker for block type */}
+            {proxyType === "block" && proxyDate && proxyDate === (proxyEndDate || proxyDate) && (
+              <div className="space-y-2">
+                <Label>Block specific shifts (optional)</Label>
+                <p className="text-xs text-muted-foreground">Leave unchecked to block the entire day</p>
+                <div className="flex gap-3">
+                  {SHIFT_TYPES.map((type) => (
+                    <label key={type} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={proxyBlockedShifts.includes(type)}
+                        onCheckedChange={() => toggleProxyShift(type)}
+                      />
+                      <span className="capitalize">{type}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Reason (optional)</Label>
+              <Input
+                placeholder="Reason for request"
+                value={proxyReason}
+                onChange={(e) => setProxyReason(e.target.value)}
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={closeProxyDialog}>Cancel</Button>
+              <Button
+                onClick={() => createProxyRequest.mutate()}
+                disabled={!proxyDate || createProxyRequest.isPending}
+              >
+                Submit Request
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

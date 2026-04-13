@@ -67,9 +67,7 @@ export default function Requests() {
       if (status === "manager_approved") {
         const swap = swapRequests.find((s) => s.id === id);
         if (swap?.covering_user_id && swap?.shift_id) {
-          // Flip the requesting shift to covering user
           await supabase.from("shifts").update({ assigned_user_id: swap.covering_user_id }).eq("id", swap.shift_id);
-          // If there's a target shift, flip it to requesting user (true swap)
           if (swap.target_shift_id && swap.requesting_user_id) {
             await supabase.from("shifts").update({ assigned_user_id: swap.requesting_user_id }).eq("id", swap.target_shift_id);
           }
@@ -96,6 +94,12 @@ export default function Requests() {
       denied: "bg-destructive/10 text-destructive border-destructive/20",
     };
     return map[status] || "";
+  };
+
+  const formatBlockedShifts = (req: any) => {
+    const shifts: string[] = (req as any).blocked_shifts || [];
+    if (shifts.length === 0) return null;
+    return shifts.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(" & ");
   };
 
   return (
@@ -150,49 +154,60 @@ export default function Requests() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {availRequests.map((req) => (
-                    <div key={req.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/30 transition-colors">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium">{(req.profiles as any)?.full_name}</p>
-                          <Badge variant="outline" className={`text-[10px] ${statusBadge(req.status)}`}>
-                            {req.status}
-                          </Badge>
+                  {availRequests.map((req) => {
+                    const blockedLabel = formatBlockedShifts(req);
+                    return (
+                      <div key={req.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/30 transition-colors">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-medium">{(req.profiles as any)?.full_name}</p>
+                            <Badge variant="outline" className={`text-[10px] ${statusBadge(req.status)}`}>
+                              {req.status}
+                            </Badge>
+                            {(req as any).created_by_manager_id && (
+                              <Badge variant="outline" className="text-[10px]">Manager Proxy</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            <p className="text-xs text-muted-foreground">
+                              <Clock className="inline mr-1 h-3 w-3" />
+                              {format(new Date(req.date), "EEE, MMM d, yyyy")}
+                              {(req as any).end_date && (req as any).end_date !== req.date && ` → ${format(new Date((req as any).end_date), "EEE, MMM d, yyyy")}`}
+                              {req.reason && ` — "${req.reason}"`}
+                            </p>
+                            <Badge variant="outline" className="text-[10px] capitalize">
+                              {(req as any).request_type === "vacation" ? "🌴 Vacation" : "🚫 Block"}
+                            </Badge>
+                            {blockedLabel && (
+                              <Badge variant="outline" className="text-[10px]">
+                                {blockedLabel} only
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-xs text-muted-foreground">
-                            <Clock className="inline mr-1 h-3 w-3" />
-                            {format(new Date(req.date), "EEE, MMM d, yyyy")}
-                            {(req as any).end_date && (req as any).end_date !== req.date && ` → ${format(new Date((req as any).end_date), "EEE, MMM d, yyyy")}`}
-                            {req.reason && ` — "${req.reason}"`}
-                          </p>
-                          <Badge variant="outline" className="text-[10px] capitalize">
-                            {(req as any).request_type === "vacation" ? "🌴 Vacation" : "🚫 Block"}
-                          </Badge>
-                        </div>
+                        {req.status === "pending" && (
+                          <div className="flex gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-green-600 hover:bg-green-50"
+                              onClick={() => handleAvailability.mutate({ id: req.id, status: "approved" })}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                              onClick={() => handleAvailability.mutate({ id: req.id, status: "declined" })}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                      {req.status === "pending" && (
-                        <div className="flex gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-green-600 hover:bg-green-50"
-                            onClick={() => handleAvailability.mutate({ id: req.id, status: "approved" })}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                            onClick={() => handleAvailability.mutate({ id: req.id, status: "declined" })}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -223,7 +238,7 @@ export default function Requests() {
                   {swapRequests.map((swap) => (
                     <div key={swap.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/30 transition-colors">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-medium">
                             {(swap.requester as any)?.full_name} → {(swap.coverer as any)?.full_name || "Pool"}
                           </p>
@@ -236,6 +251,11 @@ export default function Requests() {
                           {swap.is_take_only && (
                             <Badge variant="outline" className="text-[10px]">Take Only</Badge>
                           )}
+                          {swap.status === "pending" && (
+                            <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                              No peer response yet
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           <Clock className="inline mr-1 h-3 w-3" />
@@ -247,18 +267,18 @@ export default function Requests() {
                           </p>
                         )}
                       </div>
+                      {/* Manager can approve/deny both pending and peer_accepted swaps */}
                       {(swap.status === "peer_accepted" || swap.status === "pending") && (
                         <div className="flex gap-1">
-                          {swap.status === "peer_accepted" && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-green-600 hover:bg-green-50"
-                              onClick={() => handleSwap.mutate({ id: swap.id, status: "manager_approved" })}
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                          )}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-green-600 hover:bg-green-50"
+                            title={swap.status === "pending" ? "Approve (override — no peer response yet)" : "Approve"}
+                            onClick={() => handleSwap.mutate({ id: swap.id, status: "manager_approved" })}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
                           <Button
                             size="icon"
                             variant="ghost"
