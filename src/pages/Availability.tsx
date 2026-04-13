@@ -179,13 +179,13 @@ export default function Availability() {
                       setDialogOpen(true);
                     }
                   }}
-                  className={`h-16 md:h-20 rounded-md border p-1 text-xs cursor-pointer transition-colors ${getDayCellStyle(dayReqs)}`}
+                  className={`h-16 md:h-20 rounded-md border p-1 text-xs cursor-pointer transition-colors flex flex-col items-center justify-start ${getDayCellStyle(dayReqs)}`}
                 >
                   <span className="text-muted-foreground">{format(day, "d")}</span>
                   {dayReqs.map((r) => (
                     <div key={r.id} className="flex items-center gap-0.5 mt-1">
                       {typeIcons[(r as any).request_type || "block"]}
-                      <Badge variant="outline" className={`text-[10px] ${statusColors[r.status]}`}>
+                      <Badge variant="outline" className={`text-[8px] md:text-[10px] px-1 py-0 leading-tight ${statusColors[r.status]}`}>
                         {r.status}
                       </Badge>
                     </div>
