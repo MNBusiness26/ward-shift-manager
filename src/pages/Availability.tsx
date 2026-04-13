@@ -183,9 +183,9 @@ export default function Availability() {
                 >
                   <span className="text-muted-foreground">{format(day, "d")}</span>
                   {dayReqs.map((r) => (
-                    <div key={r.id} className="flex items-center gap-0.5 mt-1">
+                    <div key={r.id} className="flex flex-col items-center gap-0 mt-0.5">
                       {typeIcons[(r as any).request_type || "block"]}
-                      <Badge variant="outline" className={`text-[8px] md:text-[10px] px-1 py-0 leading-tight ${statusColors[r.status]}`}>
+                      <Badge variant="outline" className={`text-[7px] md:text-[10px] px-0.5 md:px-1 py-0 leading-tight ${statusColors[r.status]}`}>
                         {r.status}
                       </Badge>
                     </div>
