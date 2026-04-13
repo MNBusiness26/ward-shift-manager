@@ -165,7 +165,7 @@ export default function GlobalTeamCalendar() {
                                         >
                                           {firstName}
                                           {isResp && <Star className="inline h-2 w-2 ml-0.5 -mt-0.5" />}
-                                          {isStandby && <span className="text-[8px] ml-0.5">S</span>}
+                                          {isStandby && <span className="text-[8px] ml-0.5">OC</span>}
                                         </span>
                                       );
                                     })}
@@ -198,8 +198,8 @@ export default function GlobalTeamCalendar() {
           <span>Responsible</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="italic opacity-50 text-[11px]">Name S</span>
-          <span>Stand-by</span>
+          <span className="italic opacity-50 text-[11px]">Name OC</span>
+          <span>On Call</span>
         </div>
       </div>
     </div>

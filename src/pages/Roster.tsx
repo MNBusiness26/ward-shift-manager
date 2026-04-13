@@ -17,7 +17,7 @@ import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { PublishConfirmDialog } from "@/components/roster/PublishConfirmDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
 import { VersionCompareDialog, type VersionDiff } from "@/components/roster/VersionCompareDialog";
-import { validateShiftFriction, isOverHeadcount } from "@/components/roster/frictionValidation";
+import { validateShiftFriction, isOverHeadcount, getHeadcountTarget } from "@/components/roster/frictionValidation";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -40,8 +40,8 @@ const shiftBgPublished: Record<string, string> = {
 
 const shiftTimes: Record<ShiftType, { start: string; end: string }> = {
   morning: { start: "07:00", end: "15:00" },
-  evening: { start: "15:00", end: "23:00" },
-  night: { start: "23:00", end: "07:00" },
+  evening: { start: "14:30", end: "23:00" },
+  night: { start: "22:30", end: "07:00" },
 };
 
 interface ShiftFormData {
@@ -738,24 +738,39 @@ export default function Roster() {
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
-                  const headcountIssues = (["morning", "evening", "night"] as const).filter(
-                    (t) => isOverHeadcount(shifts as any[], dateStr, t, headcountLimits)
-                  );
                   return (
-                    <th key={d.toISOString()} className={`min-w-[120px] p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-gray-200/50" : ""}`}>
+                    <th key={d.toISOString()} className={`min-w-[120px] p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-muted/50" : ""}`}>
                       <div className="flex items-center justify-center gap-1">
                         {format(d, "EEE")}
                         {dateBlocked && <Lock className="h-3 w-3" />}
                       </div>
-                      <div className="text-xs">{format(d, "MMM d")}</div>
-                      {headcountIssues.length > 0 && (
-                        <div className="flex items-center justify-center gap-0.5 mt-0.5">
-                          <AlertTriangle className="h-3 w-3 text-amber-500" />
-                          <span className="text-[9px] text-amber-600 font-medium">
-                            {headcountIssues.map((t) => t.charAt(0).toUpperCase()).join("/")} over
-                          </span>
-                        </div>
-                      )}
+                      <div className="text-xs mb-1">{format(d, "MMM d")}</div>
+                      {/* Fulfillment summary per shift type */}
+                      <div className="flex flex-col gap-0.5">
+                        {(["morning", "evening", "night"] as const).map((t) => {
+                          const target = getHeadcountTarget(t, dateStr, headcountLimits);
+                          const count = shifts.filter(
+                            (s) => s.date === dateStr && s.type === t && s.assigned_user_id && !(s as any).is_standby
+                          ).length;
+                          const met = count >= target;
+                          const over = count > target;
+                          return (
+                            <div
+                              key={t}
+                              className={`text-[9px] rounded px-1 py-px font-medium ${
+                                over
+                                  ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                  : met
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {t.charAt(0).toUpperCase()}: {count}/{target}
+                              {met && !over && " ✓"}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </th>
                   );
                 })}
@@ -813,7 +828,7 @@ export default function Roster() {
                                 <span className="text-[9px] font-bold bg-primary/20 text-primary rounded px-0.5">RN</span>
                               )}
                               {(s as any).is_standby && (
-                                <span className="text-[9px] font-bold bg-amber-500/20 text-amber-700 rounded px-0.5">S</span>
+                                <span className="text-[9px] font-bold bg-amber-500/20 text-amber-700 rounded px-0.5">OC</span>
                               )}
                               {s.is_draft ? <EyeOff className="h-2.5 w-2.5 opacity-60" /> : <Lock className="h-2.5 w-2.5 opacity-40" />}
                             </div>
@@ -956,7 +971,7 @@ export default function Roster() {
             </div>
 
             <div className="flex items-center justify-between">
-              <Label>Stand-by Shift</Label>
+              <Label>On Call Shift</Label>
               <Switch checked={form.is_standby} onCheckedChange={(v) => setForm((f) => ({ ...f, is_standby: v, assigned_user_id: "" }))} />
             </div>
 
@@ -976,7 +991,7 @@ export default function Roster() {
                   })}
                 </SelectContent>
               </Select>
-              {form.is_standby && <p className="text-xs text-muted-foreground">Only managers and responsible nurses shown for stand-by shifts.</p>}
+              {form.is_standby && <p className="text-xs text-muted-foreground">Only managers and responsible nurses shown for on call shifts.</p>}
             </div>
 
             <div className="space-y-2">

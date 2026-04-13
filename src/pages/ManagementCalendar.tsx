@@ -14,7 +14,7 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
-import { validateShiftFriction, isOverHeadcount } from "@/components/roster/frictionValidation";
+import { validateShiftFriction, isOverHeadcount, getHeadcountTarget } from "@/components/roster/frictionValidation";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
@@ -43,8 +43,8 @@ const shiftTextColors: Record<string, string> = {
 
 const shiftTimes: Record<ShiftType, { start: string; end: string }> = {
   morning: { start: "07:00", end: "15:00" },
-  evening: { start: "15:00", end: "23:00" },
-  night: { start: "23:00", end: "07:00" },
+  evening: { start: "14:30", end: "23:00" },
+  night: { start: "22:30", end: "07:00" },
 };
 
 interface ShiftFormData {
@@ -385,7 +385,7 @@ export default function ManagementCalendar() {
                         {overHeadcount && (
                           <div className="flex items-center gap-0.5 mb-1">
                             <AlertTriangle className="h-3 w-3 text-amber-500" />
-                            <span className="text-[9px] text-amber-600 font-medium">{dayShifts.filter(s => !(s as any).is_standby).length}/{headcountLimits[type]}</span>
+                            <span className="text-[9px] text-amber-600 font-medium">{dayShifts.filter(s => !(s as any).is_standby).length}/{getHeadcountTarget(type, dateStr, headcountLimits)}</span>
                           </div>
                         )}
                         {dayShifts.length === 0 ? (
@@ -404,7 +404,7 @@ export default function ManagementCalendar() {
                               >
                                 {getFirstName(s)}
                                 {s.is_responsible_on_shift && <span className="ml-0.5 text-[9px]">★</span>}
-                                {(s as any).is_standby && <span className="ml-0.5 text-[9px] font-bold">S</span>}
+                                {(s as any).is_standby && <span className="ml-0.5 text-[9px] font-bold">OC</span>}
                                 {s.is_draft ? <span className="ml-0.5 text-[9px]">D</span> : <Lock className="ml-0.5 h-2.5 w-2.5 opacity-40" />}
                               </Badge>
                             ))}
@@ -433,7 +433,7 @@ export default function ManagementCalendar() {
           <Badge variant="secondary" className="text-[10px]">
             Name <span className="bg-amber-500/20 text-amber-700 rounded px-0.5">S</span>
           </Badge>
-          <span>Stand-by</span>
+          <span>On Call</span>
         </div>
         <div className="flex items-center gap-1">
           <Badge variant="secondary" className="text-[10px] opacity-60 border-dashed">Name D</Badge>
@@ -465,7 +465,7 @@ export default function ManagementCalendar() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{(s as any).profiles?.full_name || "Unknown"}</span>
                     {s.is_responsible_on_shift && <Badge variant="default" className="text-[10px] px-1 py-0">★ Responsible</Badge>}
-                    {(s as any).is_standby && <Badge variant="outline" className="text-[10px] px-1 py-0 bg-amber-500/10 text-amber-700">S Stand-by</Badge>}
+                    {(s as any).is_standby && <Badge variant="outline" className="text-[10px] px-1 py-0 bg-amber-500/10 text-amber-700">OC On Call</Badge>}
                     {s.is_draft && <Badge variant="outline" className="text-[10px] px-1 py-0 opacity-60">Draft</Badge>}
                   </div>
                   <div className="flex items-center gap-1">
@@ -542,7 +542,7 @@ export default function ManagementCalendar() {
             </div>
 
             <div className="flex items-center justify-between">
-              <Label>Stand-by Shift</Label>
+              <Label>On Call Shift</Label>
               <Switch checked={form.is_standby} onCheckedChange={(v) => setForm((f) => ({ ...f, is_standby: v, assigned_user_id: "" }))} />
             </div>
 
@@ -566,7 +566,7 @@ export default function ManagementCalendar() {
                   })}
                 </SelectContent>
               </Select>
-              {form.is_standby && <p className="text-xs text-muted-foreground">Only managers and responsible nurses shown for stand-by shifts.</p>}
+              {form.is_standby && <p className="text-xs text-muted-foreground">Only managers and responsible nurses shown for on call shifts.</p>}
             </div>
 
             <div className="space-y-2">
