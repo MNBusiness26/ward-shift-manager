@@ -9,11 +9,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { UserCheck, UserX, Pencil, Users, Clock, Shield, Star } from "lucide-react";
+import { UserCheck, UserX, Pencil, Users, Clock, Shield, Star, X } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
+
+const SHIFT_TYPES = ["morning", "evening", "night"] as const;
+const SHIFT_LABELS: Record<string, string> = { morning: "M", evening: "E", night: "N" };
+const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function Staff() {
   const queryClient = useQueryClient();
@@ -26,6 +31,8 @@ export default function Staff() {
     is_responsible: false,
     no_nights: false,
     no_weekends: false,
+    excluded_shifts: [] as string[],
+    excluded_days: [] as number[],
   });
 
   const { data: staff = [] } = useQuery({
@@ -63,6 +70,8 @@ export default function Staff() {
         ...(typeof editMember.constraints === "object" ? editMember.constraints : {}),
         no_nights: editForm.no_nights,
         no_weekends: editForm.no_weekends,
+        excluded_shifts: editForm.excluded_shifts,
+        excluded_days: editForm.excluded_days,
       };
       const { error } = await supabase
         .from("profiles")
@@ -75,7 +84,6 @@ export default function Staff() {
         .eq("id", editMember.id);
       if (error) throw error;
 
-      // Update role if changed
       const currentRole = editMember.roles?.[0];
       if (currentRole !== editForm.role) {
         if (currentRole) {
@@ -102,12 +110,45 @@ export default function Staff() {
       is_responsible: !!member.is_responsible,
       no_nights: !!(constraints as any).no_nights,
       no_weekends: !!(constraints as any).no_weekends,
+      excluded_shifts: (constraints as any).excluded_shifts || [],
+      excluded_days: (constraints as any).excluded_days || [],
     });
     setEditDialog(true);
   };
 
+  const toggleExcludedShift = (shift: string) => {
+    setEditForm((f) => ({
+      ...f,
+      excluded_shifts: f.excluded_shifts.includes(shift)
+        ? f.excluded_shifts.filter((s) => s !== shift)
+        : [...f.excluded_shifts, shift],
+    }));
+  };
+
+  const toggleExcludedDay = (day: number) => {
+    setEditForm((f) => ({
+      ...f,
+      excluded_days: f.excluded_days.includes(day)
+        ? f.excluded_days.filter((d) => d !== day)
+        : [...f.excluded_days, day],
+    }));
+  };
+
   const pendingStaff = staff.filter((s) => !s.is_active);
   const activeStaff = staff.filter((s) => s.is_active);
+
+  const getExclusionBadges = (member: any) => {
+    const c = typeof member.constraints === "object" && member.constraints !== null ? member.constraints : {};
+    const badges: string[] = [];
+    const exShifts: string[] = (c as any).excluded_shifts || [];
+    const exDays: number[] = (c as any).excluded_days || [];
+    if (exShifts.length > 0) badges.push(`No ${exShifts.map((s: string) => s.charAt(0).toUpperCase()).join("/")}`);
+    if (exDays.length > 0) badges.push(`No ${exDays.map((d: number) => DAY_LABELS[d]).join("/")}`);
+    // Legacy
+    if ((c as any).no_nights && !exShifts.includes("night")) badges.push("No nights");
+    if ((c as any).no_weekends && !exDays.includes(6)) badges.push("No weekends");
+    return badges;
+  };
 
   return (
     <div className="space-y-6">
@@ -119,7 +160,7 @@ export default function Staff() {
             {activeStaff.length} active
           </Badge>
           {pendingStaff.length > 0 && (
-            <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+            <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
               <Clock className="mr-1 h-3 w-3" />
               {pendingStaff.length} pending
             </Badge>
@@ -131,14 +172,14 @@ export default function Staff() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="h-4 w-4 text-yellow-600" />
+              <Clock className="h-4 w-4 text-amber-600" />
               Pending Activation ({pendingStaff.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {pendingStaff.map((member) => (
-                <div key={member.id} className="flex items-center justify-between rounded-lg border border-yellow-200 bg-yellow-50 p-3">
+                <div key={member.id} className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-3">
                   <div>
                     <p className="text-sm font-medium">{member.full_name || "Unnamed"}</p>
                     <p className="text-xs text-muted-foreground">{member.roles?.join(", ") || "nurse"}</p>
@@ -173,7 +214,7 @@ export default function Staff() {
           ) : (
             <div className="space-y-2">
               {activeStaff.map((member) => {
-                const constraints = typeof member.constraints === "object" && member.constraints !== null ? member.constraints : {};
+                const exclusionBadges = getExclusionBadges(member);
                 return (
                   <div key={member.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/30 transition-colors">
                     <div>
@@ -193,12 +234,11 @@ export default function Staff() {
                             <Star className="mr-0.5 h-2.5 w-2.5" /> Resp. Nurse
                           </Badge>
                         )}
-                        {(constraints as any)?.no_nights && (
-                          <Badge variant="outline" className="text-[10px] bg-muted">No nights</Badge>
-                        )}
-                        {(constraints as any)?.no_weekends && (
-                          <Badge variant="outline" className="text-[10px] bg-muted">No weekends</Badge>
-                        )}
+                        {exclusionBadges.map((label) => (
+                          <Badge key={label} variant="outline" className="text-[10px] bg-destructive/10 text-destructive border-destructive/20">
+                            <X className="mr-0.5 h-2.5 w-2.5" /> {label}
+                          </Badge>
+                        ))}
                       </div>
                     </div>
                     <div className="flex gap-1">
@@ -267,15 +307,57 @@ export default function Staff() {
               </div>
             </div>
 
+            {/* Work Exclusions */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Constraints</Label>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">No Night Shifts</span>
-                <Switch checked={editForm.no_nights} onCheckedChange={(v) => setEditForm((f) => ({ ...f, no_nights: v }))} />
+              <Label className="text-sm font-medium">Work Exclusions</Label>
+              <p className="text-xs text-muted-foreground">Tap to exclude shifts or days. Assignments to excluded slots trigger a hard friction warning.</p>
+
+              <div className="space-y-2">
+                <span className="text-xs font-medium text-muted-foreground">Shift Types</span>
+                <div className="flex gap-2">
+                  {SHIFT_TYPES.map((type) => {
+                    const excluded = editForm.excluded_shifts.includes(type);
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => toggleExcludedShift(type)}
+                        className={`flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+                          excluded
+                            ? "bg-destructive/10 border-destructive/30 text-destructive"
+                            : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/50"
+                        }`}
+                      >
+                        {excluded && <X className="h-3.5 w-3.5" />}
+                        {SHIFT_LABELS[type]} ({type.charAt(0).toUpperCase() + type.slice(1)})
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">No Weekend Shifts</span>
-                <Switch checked={editForm.no_weekends} onCheckedChange={(v) => setEditForm((f) => ({ ...f, no_weekends: v }))} />
+
+              <div className="space-y-2">
+                <span className="text-xs font-medium text-muted-foreground">Weekdays</span>
+                <div className="flex gap-1">
+                  {DAY_LABELS.map((label, idx) => {
+                    const excluded = editForm.excluded_days.includes(idx);
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => toggleExcludedDay(idx)}
+                        title={DAY_NAMES[idx]}
+                        className={`w-9 h-9 rounded-md border text-sm font-medium transition-colors flex items-center justify-center ${
+                          excluded
+                            ? "bg-destructive/10 border-destructive/30 text-destructive"
+                            : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/50"
+                        }`}
+                      >
+                        {excluded ? <X className="h-3.5 w-3.5" /> : label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
