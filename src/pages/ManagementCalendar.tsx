@@ -347,11 +347,11 @@ export default function ManagementCalendar() {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-xs md:text-sm border-collapse">
+        <CardContent className="relative overflow-x-auto">
+          <table className="w-full border-separate border-spacing-0 text-xs md:text-sm">
             <thead>
               <tr>
-                <th className="sticky left-0 z-20 bg-card p-1.5 md:p-2 text-left font-medium text-muted-foreground min-w-[50px] md:min-w-[90px] border-b">
+                <th className="sticky left-0 z-40 w-[50px] min-w-[50px] border-b border-r bg-card p-1.5 text-left font-medium text-muted-foreground shadow-[8px_0_0_hsl(var(--card))] md:w-[90px] md:min-w-[90px] md:p-2">
                   <span className="hidden md:inline">Shift</span>
                   <span className="md:hidden">Type</span>
                 </th>
@@ -375,7 +375,7 @@ export default function ManagementCalendar() {
                 const Icon = type === "morning" ? Eye : type === "evening" ? Star : Lock;
                 return (
                 <tr key={type} className="border-t">
-                  <td className={`sticky left-0 z-20 bg-card p-1.5 md:p-2 font-semibold ${shiftTextColors[type]}`}>
+                  <td className={`sticky left-0 z-30 w-[50px] min-w-[50px] overflow-hidden border-r bg-card p-1.5 font-semibold shadow-[8px_0_0_hsl(var(--card))] md:w-[90px] md:min-w-[90px] md:p-2 ${shiftTextColors[type]}`}>
                     <span className="hidden md:inline">{shiftLabels[type]}</span>
                     <span className="md:hidden flex items-center gap-0.5">
                       {type === "morning" && <Sun className="h-3.5 w-3.5" />}

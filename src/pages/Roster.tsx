@@ -734,11 +734,11 @@ export default function Roster() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-xs md:text-sm">
+        <CardContent className="relative overflow-x-auto">
+          <table className="w-full border-separate border-spacing-0 text-xs md:text-sm">
             <thead>
               <tr>
-                <th className="sticky left-0 z-20 bg-card p-1.5 md:p-2 text-left font-medium text-muted-foreground min-w-[100px] md:min-w-[140px]">Staff</th>
+                <th className="sticky left-0 z-40 w-[100px] min-w-[100px] border-r bg-card p-1.5 text-left font-medium text-muted-foreground shadow-[8px_0_0_hsl(var(--card))] md:w-[140px] md:min-w-[140px] md:p-2">Staff</th>
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
@@ -783,7 +783,7 @@ export default function Roster() {
             <tbody>
               {staff.map((member) => (
                 <tr key={member.id} className="border-t">
-                  <td className="sticky left-0 z-20 bg-card p-1.5 md:p-2 font-medium">
+                  <td className="sticky left-0 z-30 w-[100px] min-w-[100px] overflow-hidden border-r bg-card p-1.5 font-medium shadow-[8px_0_0_hsl(var(--card))] md:w-[140px] md:min-w-[140px] md:p-2">
                     <div className="max-w-[100px] md:max-w-[160px]">
                       <span className="truncate block text-xs md:text-sm">{member.full_name}</span>
                       <div className="flex items-center gap-1 mt-0.5">
@@ -848,7 +848,7 @@ export default function Roster() {
               {/* Unassigned shifts row */}
               {shifts.some((s) => !s.assigned_user_id) && (
                 <tr className="border-t bg-muted/30">
-                  <td className="sticky left-0 z-20 bg-muted/30 p-2 font-medium text-muted-foreground italic">Unassigned</td>
+                  <td className="sticky left-0 z-30 w-[100px] min-w-[100px] overflow-hidden border-r bg-muted/30 p-2 font-medium text-muted-foreground italic shadow-[8px_0_0_hsl(var(--muted))] md:w-[140px] md:min-w-[140px]">Unassigned</td>
                   {days.map((d) => {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const unassigned = shifts.filter((s) => !s.assigned_user_id && s.date === dateStr);
