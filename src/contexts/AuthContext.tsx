@@ -14,6 +14,9 @@ interface AuthContextType {
   isLoading: boolean;
   isActive: boolean;
   isManager: boolean;
+  isAssistantManager: boolean;
+  hasProfile: boolean;
+  profileLoaded: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -25,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
@@ -33,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("id", userId)
       .single();
     setProfile(data);
+    setProfileLoaded(true);
   };
 
   const fetchRoles = async (userId: string) => {
@@ -49,7 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          // Use setTimeout to avoid potential deadlock with Supabase auth
           setTimeout(() => {
             fetchProfile(session.user.id);
             fetchRoles(session.user.id);
@@ -57,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setProfile(null);
           setRoles([]);
+          setProfileLoaded(false);
         }
         setIsLoading(false);
       }
@@ -79,6 +84,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const hasProfile = profile !== null;
+  const isManager = roles.includes("manager");
+  const isAssistantManager = roles.includes("assistant_manager");
+
   return (
     <AuthContext.Provider
       value={{
@@ -88,7 +97,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         roles,
         isLoading,
         isActive: profile?.is_active ?? false,
-        isManager: roles.includes("manager"),
+        isManager,
+        isAssistantManager,
+        hasProfile,
+        profileLoaded,
         signOut,
       }}
     >

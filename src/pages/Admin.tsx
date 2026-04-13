@@ -1,11 +1,13 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Shield, Save } from "lucide-react";
+import { Shield, Save, UserPlus, Trash2, Check, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -22,18 +24,33 @@ export default function Admin() {
   const [eveningLimit, setEveningLimit] = useState(4);
   const [nightLimit, setNightLimit] = useState(3);
 
+  // Staff directory form state
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newRole, setNewRole] = useState<string>("nurse");
+  const [newFte, setNewFte] = useState("100");
+
   const { data: settings = [] } = useQuery({
     queryKey: ["app-settings"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("app_settings")
-        .select("*");
+      const { data, error } = await supabase.from("app_settings").select("*");
       if (error) throw error;
       return data;
     },
   });
 
-  // Sync local state from DB
+  const { data: directory = [] } = useQuery({
+    queryKey: ["staff-directory"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("staff_directory")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   useEffect(() => {
     const efwSetting = settings.find((s: any) => s.key === "enforce_full_week");
     if (efwSetting) setEnforceFullWeek(efwSetting.value === "true" || efwSetting.value === true);
@@ -66,6 +83,41 @@ export default function Admin() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const addStaff = useMutation({
+    mutationFn: async () => {
+      const fteDecimal = Math.max(0, Math.min(100, Number(newFte))) / 100;
+      const { error } = await supabase.from("staff_directory").insert({
+        full_name: newName.trim(),
+        email: newEmail.trim().toLowerCase(),
+        app_role: newRole as any,
+        target_fte_percent: fteDecimal,
+        created_by: user.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-directory"] });
+      toast.success("Staff member added to directory");
+      setNewName("");
+      setNewEmail("");
+      setNewRole("nurse");
+      setNewFte("100");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const removeEntry = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("staff_directory").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-directory"] });
+      toast.success("Entry removed");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const handleToggleFullWeek = (checked: boolean) => {
     setEnforceFullWeek(checked);
     saveSetting.mutate({ key: "enforce_full_week", value: checked ? "true" : "false" });
@@ -78,6 +130,16 @@ export default function Admin() {
     });
   };
 
+  const handleAddStaff = () => {
+    if (!newName.trim() || !newEmail.trim()) {
+      toast.error("Name and email are required");
+      return;
+    }
+    addStaff.mutate();
+  };
+
+  const roleLabel = (r: string) => r.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -85,6 +147,85 @@ export default function Admin() {
         Admin Settings
       </h1>
 
+      {/* Staff Directory */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5" />
+            Staff Directory (Pre-Seed)
+          </CardTitle>
+          <CardDescription>
+            Add staff members before they sign up. When they register with the matching email, their account will be automatically linked with the correct role and FTE.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="space-y-1">
+              <Label className="text-xs">Full Name</Label>
+              <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Jane Doe" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Email</Label>
+              <Input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="jane@hospital.com" type="email" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Role</Label>
+              <Select value={newRole} onValueChange={setNewRole}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nurse">Nurse</SelectItem>
+                  <SelectItem value="assistant">Assistant</SelectItem>
+                  <SelectItem value="assistant_manager">Assistant Manager</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">FTE %</Label>
+              <Input type="number" min={10} max={100} step={5} value={newFte} onChange={(e) => setNewFte(e.target.value)} />
+            </div>
+            <div className="flex items-end">
+              <Button onClick={handleAddStaff} disabled={addStaff.isPending} className="w-full gap-1">
+                <UserPlus className="h-4 w-4" />
+                Add
+              </Button>
+            </div>
+          </div>
+
+          {directory.length > 0 && (
+            <div className="rounded-lg border">
+              <div className="grid grid-cols-[1fr_1fr_auto_auto_auto] gap-2 border-b bg-muted/50 p-2 text-xs font-medium text-muted-foreground">
+                <span>Name</span>
+                <span>Email</span>
+                <span>Role</span>
+                <span>FTE</span>
+                <span></span>
+              </div>
+              {directory.map((entry: any) => (
+                <div key={entry.id} className="grid grid-cols-[1fr_1fr_auto_auto_auto] items-center gap-2 border-b last:border-0 p-2 text-sm">
+                  <span className="truncate">{entry.full_name}</span>
+                  <span className="truncate text-muted-foreground">{entry.email}</span>
+                  <Badge variant={entry.is_claimed ? "default" : "secondary"} className="text-xs">
+                    {roleLabel(entry.app_role)}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">{Math.round(entry.target_fte_percent * 100)}%</span>
+                  <div className="flex items-center gap-1">
+                    {entry.is_claimed ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeEntry.mutate(entry.id)}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Operational Toggles */}
       <Card>
         <CardHeader>
           <CardTitle>Operational Toggles</CardTitle>
@@ -103,6 +244,7 @@ export default function Admin() {
         </CardContent>
       </Card>
 
+      {/* Headcount Limits */}
       <Card>
         <CardHeader>
           <CardTitle>Target Headcount Limits</CardTitle>
@@ -114,33 +256,15 @@ export default function Admin() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label className="text-sm">Morning Max</Label>
-              <Input
-                type="number"
-                min={1}
-                max={20}
-                value={morningLimit}
-                onChange={(e) => setMorningLimit(Number(e.target.value))}
-              />
+              <Input type="number" min={1} max={20} value={morningLimit} onChange={(e) => setMorningLimit(Number(e.target.value))} />
             </div>
             <div className="space-y-2">
               <Label className="text-sm">Evening Max</Label>
-              <Input
-                type="number"
-                min={1}
-                max={20}
-                value={eveningLimit}
-                onChange={(e) => setEveningLimit(Number(e.target.value))}
-              />
+              <Input type="number" min={1} max={20} value={eveningLimit} onChange={(e) => setEveningLimit(Number(e.target.value))} />
             </div>
             <div className="space-y-2">
               <Label className="text-sm">Night Max</Label>
-              <Input
-                type="number"
-                min={1}
-                max={20}
-                value={nightLimit}
-                onChange={(e) => setNightLimit(Number(e.target.value))}
-              />
+              <Input type="number" min={1} max={20} value={nightLimit} onChange={(e) => setNightLimit(Number(e.target.value))} />
             </div>
           </div>
           <Button onClick={handleSaveHeadcounts} className="gap-2">

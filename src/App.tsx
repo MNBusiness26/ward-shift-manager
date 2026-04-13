@@ -5,9 +5,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/AppLayout";
+import { WelcomeOverlay } from "@/components/WelcomeOverlay";
 
 import Auth from "./pages/Auth";
 import PendingActivation from "./pages/PendingActivation";
+import RestrictedAccess from "./pages/RestrictedAccess";
 import Index from "./pages/Index";
 import MyCalendar from "./pages/MyCalendar";
 import Availability from "./pages/Availability";
@@ -26,7 +28,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children, requireManager }: { children: React.ReactNode; requireManager?: boolean }) {
-  const { user, isLoading, isActive, isManager } = useAuth();
+  const { user, isLoading, isActive, isManager, isAssistantManager, hasProfile, profileLoaded } = useAuth();
 
   if (isLoading) {
     return (
@@ -37,10 +39,29 @@ function ProtectedRoute({ children, requireManager }: { children: React.ReactNod
   }
 
   if (!user) return <Navigate to="/auth" replace />;
-  if (!isActive) return <PendingActivation />;
-  if (requireManager && !isManager) return <Navigate to="/" replace />;
 
-  return <AppLayout>{children}</AppLayout>;
+  // Wait for profile fetch to complete
+  if (!profileLoaded) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  // No profile = email not in staff directory
+  if (!hasProfile) return <RestrictedAccess />;
+  // Profile exists but not activated
+  if (!isActive) return <PendingActivation />;
+  // Management routes: allow manager OR assistant_manager
+  if (requireManager && !isManager && !isAssistantManager) return <Navigate to="/" replace />;
+
+  return (
+    <AppLayout>
+      <WelcomeOverlay />
+      {children}
+    </AppLayout>
+  );
 }
 
 function AppRoutes() {
