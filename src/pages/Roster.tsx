@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { format, startOfWeek, addWeeks, subWeeks, addDays, subDays, eachDayOfInterval, getDay } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Trash2, Copy, ClipboardPaste, Users, Star, Save, FolderOpen, Lock, Settings } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Trash2, Copy, ClipboardPaste, Users, Star, Save, FolderOpen, Lock, Settings, X } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { PublishConfirmDialog } from "@/components/roster/PublishConfirmDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
@@ -122,6 +122,7 @@ export default function Roster() {
   const isFullWeek = getDay(viewStart) === 0; // Sunday start
   const [clearWeekConfirmOpen, setClearWeekConfirmOpen] = useState(false);
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
+  const [dismissedWarning, setDismissedWarning] = useState(false);
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["roster-shifts", format(viewStart, "yyyy-MM-dd")],
