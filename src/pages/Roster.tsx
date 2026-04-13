@@ -738,7 +738,7 @@ export default function Roster() {
           <table className="w-full text-xs md:text-sm">
             <thead>
               <tr>
-                <th className="sticky left-0 z-10 bg-card p-1.5 md:p-2 text-left font-medium text-muted-foreground min-w-[100px] md:min-w-[140px]">Staff</th>
+                <th className="sticky left-0 z-20 bg-card p-1.5 md:p-2 text-left font-medium text-muted-foreground min-w-[100px] md:min-w-[140px]">Staff</th>
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
@@ -783,7 +783,7 @@ export default function Roster() {
             <tbody>
               {staff.map((member) => (
                 <tr key={member.id} className="border-t">
-                  <td className="sticky left-0 z-10 bg-card p-1.5 md:p-2 font-medium">
+                  <td className="sticky left-0 z-20 bg-card p-1.5 md:p-2 font-medium">
                     <div className="max-w-[100px] md:max-w-[160px]">
                       <span className="truncate block text-xs md:text-sm">{member.full_name}</span>
                       <div className="flex items-center gap-1 mt-0.5">
@@ -848,7 +848,7 @@ export default function Roster() {
               {/* Unassigned shifts row */}
               {shifts.some((s) => !s.assigned_user_id) && (
                 <tr className="border-t bg-muted/30">
-                  <td className="sticky left-0 z-10 bg-muted/30 p-2 font-medium text-muted-foreground italic">Unassigned</td>
+                  <td className="sticky left-0 z-20 bg-muted/30 p-2 font-medium text-muted-foreground italic">Unassigned</td>
                   {days.map((d) => {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const unassigned = shifts.filter((s) => !s.assigned_user_id && s.date === dateStr);
