@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Check, X, CalendarOff, ArrowLeftRight, Clock, Filter } from "lucide-react";
@@ -19,6 +20,7 @@ export default function Requests() {
   const queryClient = useQueryClient();
   const [availFilter, setAvailFilter] = useState<"pending" | "all">("pending");
   const [swapFilter, setSwapFilter] = useState<"pending_all" | "peer_accepted" | "all">("pending_all");
+  const [infoPopup, setInfoPopup] = useState<{ title: string; message: string } | null>(null);
 
   const { data: availRequests = [] } = useQuery({
     queryKey: ["manager-avail-requests", availFilter],
@@ -56,7 +58,7 @@ export default function Requests() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["manager-avail-requests"] });
-      toast.success(`Request updated — ${variables.status === "approved" ? "Approved" : "Declined"}`);
+      setInfoPopup({ title: "Request Updated", message: `Request updated — ${variables.status === "approved" ? "Approved" : "Declined"}.` });
     },
   });
 
@@ -77,7 +79,7 @@ export default function Requests() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["manager-swap-requests"] });
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
-      toast.success(`Request updated — ${variables.status === "manager_approved" ? "Approved" : "Declined"}`);
+      setInfoPopup({ title: "Request Updated", message: `Request updated — ${variables.status === "manager_approved" ? "Approved" : "Declined"}.` });
     },
   });
 
@@ -297,6 +299,19 @@ export default function Requests() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Info confirmation popup */}
+      <AlertDialog open={!!infoPopup} onOpenChange={(open) => !open && setInfoPopup(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{infoPopup?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{infoPopup?.message}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setInfoPopup(null)}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

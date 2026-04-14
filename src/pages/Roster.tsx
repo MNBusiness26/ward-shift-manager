@@ -44,7 +44,7 @@ const shiftTimes: Record<ShiftType, { start: string; end: string }> = {
   night: { start: "22:30", end: "07:00" },
 };
 
-const warningStorageKey = "roster-dismissed-warning";
+const warningStorageKey = "roster-dismissed-warnings";
 
 interface ShiftFormData {
   date: string;
@@ -124,10 +124,16 @@ export default function Roster() {
   const isFullWeek = getDay(viewStart) === 0; // Sunday start
   const [clearWeekConfirmOpen, setClearWeekConfirmOpen] = useState(false);
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
-  const [dismissedWarningKey, setDismissedWarningKey] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return window.sessionStorage.getItem(warningStorageKey);
+  const [dismissedWarningKeys, setDismissedWarningKeys] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const stored = window.sessionStorage.getItem(warningStorageKey);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch { return new Set(); }
   });
+
+  // Info popup state (for copy/paste/clear confirmations)
+  const [infoPopup, setInfoPopup] = useState<{ title: string; message: string } | null>(null);
 
   const { data: shifts = [] } = useQuery({
     queryKey: ["roster-shifts", format(viewStart, "yyyy-MM-dd")],
@@ -308,11 +314,11 @@ export default function Roster() {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
       setClearWeekConfirmOpen(false);
       if (result?.deletedCount === 0) {
-        toast.info("No draft shifts to remove. Published shifts remain for safety.");
+        setInfoPopup({ title: "Clear Week", message: "No draft shifts to remove. Published shifts remain for safety." });
       } else if (result?.hadPublished) {
-        toast.info("Only draft shifts were removed. Published shifts remain for safety.");
+        setInfoPopup({ title: "Clear Week", message: "Only draft shifts were removed. Published shifts remain for safety." });
       } else {
-        toast.success("All draft shifts cleared");
+        setInfoPopup({ title: "Clear Week", message: "All draft shifts cleared." });
       }
     },
     onError: (e: any) => toast.error(e.message),
@@ -340,7 +346,7 @@ export default function Roster() {
       }),
     };
     setCopiedWeek(copied);
-    toast.success("Week copied! Navigate to target week and paste.");
+    setInfoPopup({ title: "Week Copied", message: "Week copied to clipboard. Navigate to target week and paste." });
   };
 
   // Paste copied week
@@ -367,7 +373,7 @@ export default function Roster() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
       setCopiedWeek(null);
-      toast.success("Week pasted as drafts");
+      setInfoPopup({ title: "Week Pasted", message: "Week successfully pasted as drafts." });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -649,10 +655,14 @@ export default function Roster() {
     .join(",")}`;
 
   const dismissWarning = () => {
-    setDismissedWarningKey(warningDismissKey);
-    if (typeof window !== "undefined") {
-      window.sessionStorage.setItem(warningStorageKey, warningDismissKey);
-    }
+    setDismissedWarningKeys((prev) => {
+      const next = new Set(prev);
+      next.add(warningDismissKey);
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(warningStorageKey, JSON.stringify([...next]));
+      }
+      return next;
+    });
   };
 
   return (
@@ -706,7 +716,7 @@ export default function Roster() {
         </div>
       </div>
 
-      {missingResponsible.length > 0 && dismissedWarningKey !== warningDismissKey && (
+      {missingResponsible.length > 0 && !dismissedWarningKeys.has(warningDismissKey) && (
         <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
           <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
           <span className="flex-1">{missingResponsible.length} published shift(s) missing a Responsible Nurse</span>
@@ -1157,6 +1167,19 @@ export default function Roster() {
         }}
         isPending={loadVersion.isPending}
       />
+
+      {/* Info confirmation popup */}
+      <AlertDialog open={!!infoPopup} onOpenChange={(open) => !open && setInfoPopup(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{infoPopup?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{infoPopup?.message}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setInfoPopup(null)}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
