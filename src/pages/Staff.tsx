@@ -1,3 +1,4 @@
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,7 @@ const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function Staff() {
+  const { isManager } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [editDialog, setEditDialog] = useState(false);
@@ -111,6 +113,7 @@ export default function Staff() {
       target_fte_percent: member.target_fte_percent ?? 1,
       role: member.roles?.[0] || "nurse",
       is_responsible: !!member.is_responsible,
+      is_assistant_manager: (member.roles ?? []).includes("assistant_manager"),
       no_nights: !!(constraints as any).no_nights,
       no_weekends: !!(constraints as any).no_weekends,
       excluded_shifts: (constraints as any).excluded_shifts || [],
