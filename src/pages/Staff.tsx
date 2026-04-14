@@ -31,6 +31,7 @@ export default function Staff() {
     target_fte_percent: 1,
     role: "nurse" as AppRole,
     is_responsible: false,
+    is_assistant_manager: false,
     no_nights: false,
     no_weekends: false,
     excluded_shifts: [] as string[],
