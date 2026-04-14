@@ -118,6 +118,21 @@ export default function Admin() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const updateRole = useMutation({
+    mutationFn: async ({ id, role }: { id: string; role: string }) => {
+      const { error } = await supabase
+        .from("staff_directory")
+        .update({ app_role: role as any })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-directory"] });
+      toast.success("Role updated");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const handleToggleFullWeek = (checked: boolean) => {
     setEnforceFullWeek(checked);
     saveSetting.mutate({ key: "enforce_full_week", value: checked ? "true" : "false" });
@@ -205,9 +220,23 @@ export default function Admin() {
                 <div key={entry.id} className="grid grid-cols-[1fr_1fr_auto_auto_auto] items-center gap-2 border-b last:border-0 p-2 text-sm">
                   <span className="truncate">{entry.full_name}</span>
                   <span className="truncate text-muted-foreground">{entry.email}</span>
-                  <Badge variant={entry.is_claimed ? "default" : "secondary"} className="text-xs">
-                    {roleLabel(entry.app_role)}
-                  </Badge>
+                  {entry.is_claimed ? (
+                    <Badge variant="default" className="text-xs">
+                      {roleLabel(entry.app_role)}
+                    </Badge>
+                  ) : (
+                    <Select value={entry.app_role} onValueChange={(v) => updateRole.mutate({ id: entry.id, role: v })}>
+                      <SelectTrigger className="h-7 w-[140px] text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nurse">Nurse</SelectItem>
+                        <SelectItem value="assistant">Assistant</SelectItem>
+                        <SelectItem value="assistant_manager">Assistant Manager</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                   <span className="text-xs text-muted-foreground">{Math.round(entry.target_fte_percent * 100)}%</span>
                   <div className="flex items-center gap-1">
                     {entry.is_claimed ? (
