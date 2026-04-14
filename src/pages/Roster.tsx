@@ -1167,6 +1167,19 @@ export default function Roster() {
         }}
         isPending={loadVersion.isPending}
       />
+
+      {/* Info confirmation popup */}
+      <AlertDialog open={!!infoPopup} onOpenChange={(open) => !open && setInfoPopup(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{infoPopup?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{infoPopup?.message}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setInfoPopup(null)}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
