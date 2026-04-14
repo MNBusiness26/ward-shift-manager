@@ -1155,6 +1155,8 @@ export default function Roster() {
           setPublishConfirmOpen(false);
         }}
         isPending={publishDrafts.isPending}
+        staffProfiles={staff as any[]}
+        headcountLimits={headcountLimits}
       />
 
       <VersionCompareDialog
