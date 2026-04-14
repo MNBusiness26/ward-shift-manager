@@ -118,6 +118,21 @@ export default function Admin() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const updateRole = useMutation({
+    mutationFn: async ({ id, role }: { id: string; role: string }) => {
+      const { error } = await supabase
+        .from("staff_directory")
+        .update({ app_role: role as any })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-directory"] });
+      toast.success("Role updated");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const handleToggleFullWeek = (checked: boolean) => {
     setEnforceFullWeek(checked);
     saveSetting.mutate({ key: "enforce_full_week", value: checked ? "true" : "false" });
