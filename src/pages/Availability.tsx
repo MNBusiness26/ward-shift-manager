@@ -32,6 +32,7 @@ import {
   subMonths,
   isWithinInterval,
   parseISO,
+  isToday,
 } from "date-fns";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, X, CalendarOff, Palmtree } from "lucide-react";
@@ -45,8 +46,8 @@ const statusColors: Record<string, string> = {
 };
 
 const typeIcons: Record<string, React.ReactNode> = {
-  block: <CalendarOff className="h-3 w-3" />,
-  vacation: <Palmtree className="h-3 w-3" />,
+  block: <CalendarOff className="h-3 w-3 shrink-0" />,
+  vacation: <Palmtree className="h-3 w-3 shrink-0" />,
 };
 
 export default function Availability() {
@@ -154,8 +155,6 @@ export default function Availability() {
       : "bg-yellow-50 border-yellow-200";
   };
 
-  const isSingleDay = !endDate || endDate === (selectedDate ? format(selectedDate, "yyyy-MM-dd") : "");
-
   const formatBlockedShifts = (req: any) => {
     const shifts: string[] = (req as any).blocked_shifts || [];
     if (shifts.length === 0) return null;
@@ -163,34 +162,57 @@ export default function Availability() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Availability</h1>
+        <h1 className="text-xl md:text-2xl font-bold">Availability</h1>
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-2 md:gap-3 text-[11px] md:text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1">
+          <span className="h-3 w-3 rounded-sm border bg-yellow-50 border-yellow-200" /> Pending
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-3 w-3 rounded-sm border bg-destructive/10 border-destructive/30" /> Blocked
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-3 w-3 rounded-sm border bg-blue-100 border-blue-300" /> Vacation
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-3 w-3 rounded-sm border bg-green-100 border-green-200" /> Approved
+        </span>
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+        <CardHeader className="flex flex-row items-center justify-between pb-2 px-2 md:px-6">
+          <Button variant="ghost" size="icon" className="h-8 w-8 md:h-9 md:w-9" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <CardTitle className="text-base">{format(currentMonth, "MMMM yyyy")}</CardTitle>
-          <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+          <CardTitle className="text-sm md:text-base">{format(currentMonth, "MMMM yyyy")}</CardTitle>
+          <Button variant="ghost" size="icon" className="h-8 w-8 md:h-9 md:w-9" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-7 gap-px text-center text-xs font-medium text-muted-foreground mb-1">
+        <CardContent className="px-1 md:px-6">
+          {/* Day headers */}
+          <div className="grid grid-cols-7 text-center text-[10px] md:text-xs font-medium text-muted-foreground mb-0.5 md:mb-1">
+            {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+              <div key={i} className="py-1 md:py-2 md:hidden">{d}</div>
+            ))}
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-              <div key={d} className="py-2">{d}</div>
+              <div key={d} className="py-1 md:py-2 hidden md:block">{d}</div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-px">
+
+          {/* Calendar grid */}
+          <div className="grid grid-cols-7 gap-[2px] md:gap-px">
             {Array.from({ length: startPad }).map((_, i) => (
-              <div key={`pad-${i}`} className="h-16 md:h-20" />
+              <div key={`pad-${i}`} className="aspect-square md:h-20" />
             ))}
             {days.map((day) => {
               const dayReqs = getRequestsForDay(day);
               const hasBlock = dayReqs.length > 0;
+              const today = isToday(day);
               return (
                 <div
                   key={day.toISOString()}
@@ -200,13 +222,32 @@ export default function Availability() {
                       setDialogOpen(true);
                     }
                   }}
-                  className={`h-16 md:h-20 rounded-md border p-1 text-xs cursor-pointer transition-colors flex flex-col items-center justify-start ${getDayCellStyle(dayReqs)}`}
+                  className={`
+                    aspect-square md:aspect-auto md:h-20
+                    rounded-md border p-0.5 md:p-1
+                    cursor-pointer transition-colors
+                    flex flex-col items-center justify-center md:justify-start
+                    min-h-[40px]
+                    active:ring-2 active:ring-primary/50 active:border-primary
+                    ${today ? "ring-1 ring-primary/30" : ""}
+                    ${getDayCellStyle(dayReqs)}
+                  `}
                 >
-                  <span className="text-muted-foreground">{format(day, "d")}</span>
+                  <span className={`text-[clamp(0.6rem,2.5vw,0.8rem)] md:text-xs leading-none ${today ? "font-bold text-primary" : "text-muted-foreground"}`}>
+                    {format(day, "d")}
+                  </span>
                   {dayReqs.map((r) => (
                     <div key={r.id} className="flex flex-col items-center gap-0 mt-0.5">
-                      {typeIcons[(r as any).request_type || "block"]}
-                      <Badge variant="outline" className={`text-[7px] md:text-[10px] px-0.5 md:px-1 py-0 leading-tight ${statusColors[r.status]}`}>
+                      <span className="hidden md:inline-flex">{typeIcons[(r as any).request_type || "block"]}</span>
+                      <Badge
+                        variant="outline"
+                        className={`
+                          text-[clamp(0.4rem,1.8vw,0.625rem)] md:text-[10px]
+                          px-0.5 md:px-1 py-0
+                          leading-none whitespace-nowrap truncate max-w-full
+                          ${statusColors[r.status]}
+                        `}
+                      >
                         {r.status}
                       </Badge>
                     </div>
@@ -220,12 +261,12 @@ export default function Availability() {
 
       {/* Requests list */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Your Requests</CardTitle>
+        <CardHeader className="px-3 md:px-6">
+          <CardTitle className="text-sm md:text-base">Your Requests</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 md:px-6">
           {requests.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No availability requests this month.</p>
+            <p className="text-xs md:text-sm text-muted-foreground">No availability requests this month.</p>
           ) : (
             <div className="space-y-2">
               {requests.map((r) => {
@@ -234,27 +275,27 @@ export default function Availability() {
                 const isRange = rEnd && rEnd !== r.date;
                 const blockedLabel = formatBlockedShifts(r);
                 return (
-                  <div key={r.id} className="flex items-center justify-between rounded-lg border p-3">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium">
+                  <div key={r.id} className="flex items-start md:items-center justify-between rounded-lg border p-2 md:p-3 gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+                        <p className="text-xs md:text-sm font-medium">
                           {format(new Date(r.date), "EEE, MMM d")}
                           {isRange && ` → ${format(new Date(rEnd), "EEE, MMM d")}`}
                         </p>
-                        <Badge variant="outline" className="text-[10px] capitalize">
+                        <Badge variant="outline" className="text-[9px] md:text-[10px] capitalize">
                           {typeIcons[rType]}
                           <span className="ml-1">{rType}</span>
                         </Badge>
                         {blockedLabel && (
-                          <Badge variant="outline" className="text-[10px]">
+                          <Badge variant="outline" className="text-[9px] md:text-[10px]">
                             {blockedLabel} only
                           </Badge>
                         )}
                       </div>
-                      {r.reason && <p className="text-xs text-muted-foreground">{r.reason}</p>}
+                      {r.reason && <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{r.reason}</p>}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={statusColors[r.status]}>{r.status}</Badge>
+                    <div className="flex items-center gap-1 md:gap-2 shrink-0">
+                      <Badge variant="outline" className={`text-[9px] md:text-xs ${statusColors[r.status]}`}>{r.status}</Badge>
                       {r.status === "pending" && (
                         <Button
                           variant="ghost"
@@ -276,9 +317,9 @@ export default function Availability() {
 
       {/* New request dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] md:max-w-lg">
           <DialogHeader>
-            <DialogTitle>New Availability Request</DialogTitle>
+            <DialogTitle className="text-base md:text-lg">New Availability Request</DialogTitle>
           </DialogHeader>
           {selectedDate && (
             <div className="space-y-4">
@@ -353,9 +394,9 @@ export default function Availability() {
                 />
               </div>
 
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={closeDialog}>Cancel</Button>
-                <Button onClick={() => createRequest.mutate()} disabled={createRequest.isPending}>
+              <div className="flex flex-col-reverse md:flex-row gap-2 md:justify-end">
+                <Button variant="outline" onClick={closeDialog} className="w-full md:w-auto">Cancel</Button>
+                <Button onClick={() => createRequest.mutate()} disabled={createRequest.isPending} className="w-full md:w-auto">
                   Submit Request
                 </Button>
               </div>
