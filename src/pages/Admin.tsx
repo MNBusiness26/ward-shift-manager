@@ -20,6 +20,7 @@ export default function Admin() {
   const queryClient = useQueryClient();
 
   const [enforceFullWeek, setEnforceFullWeek] = useState(true);
+  const [greetingFormat, setGreetingFormat] = useState<"formal" | "first_name">("formal");
   const [morningLimit, setMorningLimit] = useState(6);
   const [eveningLimit, setEveningLimit] = useState(4);
   const [nightLimit, setNightLimit] = useState(3);
