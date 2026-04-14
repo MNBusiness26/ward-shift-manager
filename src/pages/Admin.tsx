@@ -20,6 +20,7 @@ export default function Admin() {
   const queryClient = useQueryClient();
 
   const [enforceFullWeek, setEnforceFullWeek] = useState(true);
+  const [greetingFormat, setGreetingFormat] = useState<"formal" | "first_name">("formal");
   const [morningLimit, setMorningLimit] = useState(6);
   const [eveningLimit, setEveningLimit] = useState(4);
   const [nightLimit, setNightLimit] = useState(3);
@@ -54,6 +55,9 @@ export default function Admin() {
   useEffect(() => {
     const efwSetting = settings.find((s: any) => s.key === "enforce_full_week");
     if (efwSetting) setEnforceFullWeek(efwSetting.value === "true" || efwSetting.value === true);
+
+    const gfSetting = settings.find((s: any) => s.key === "greeting_format");
+    if (gfSetting) setGreetingFormat(gfSetting.value === "first_name" ? "first_name" : "formal");
 
     const hcSetting = settings.find((s: any) => s.key === "headcount_limits");
     if (hcSetting && typeof hcSetting.value === "object") {
@@ -136,6 +140,12 @@ export default function Admin() {
   const handleToggleFullWeek = (checked: boolean) => {
     setEnforceFullWeek(checked);
     saveSetting.mutate({ key: "enforce_full_week", value: checked ? "true" : "false" });
+  };
+
+  const handleToggleGreetingFormat = (checked: boolean) => {
+    const val = checked ? "first_name" : "formal";
+    setGreetingFormat(val);
+    saveSetting.mutate({ key: "greeting_format", value: val });
   };
 
   const handleSaveHeadcounts = () => {
@@ -269,6 +279,15 @@ export default function Admin() {
               </p>
             </div>
             <Switch checked={enforceFullWeek} onCheckedChange={handleToggleFullWeek} />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <Label className="text-sm font-medium">Dashboard Greeting: First Name Only</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                When active, the dashboard shows "Hello, Jane" instead of "Hello, Nurse Jane Doe".
+              </p>
+            </div>
+            <Switch checked={greetingFormat === "first_name"} onCheckedChange={handleToggleGreetingFormat} />
           </div>
         </CardContent>
       </Card>
