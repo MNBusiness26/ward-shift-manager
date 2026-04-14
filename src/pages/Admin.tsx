@@ -280,6 +280,15 @@ export default function Admin() {
             </div>
             <Switch checked={enforceFullWeek} onCheckedChange={handleToggleFullWeek} />
           </div>
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <Label className="text-sm font-medium">Dashboard Greeting: First Name Only</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                When active, the dashboard shows "Hello, Jane" instead of "Hello, Nurse Jane Doe".
+              </p>
+            </div>
+            <Switch checked={greetingFormat === "first_name"} onCheckedChange={handleToggleGreetingFormat} />
+          </div>
         </CardContent>
       </Card>
 
