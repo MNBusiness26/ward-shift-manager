@@ -56,6 +56,9 @@ export default function Admin() {
     const efwSetting = settings.find((s: any) => s.key === "enforce_full_week");
     if (efwSetting) setEnforceFullWeek(efwSetting.value === "true" || efwSetting.value === true);
 
+    const gfSetting = settings.find((s: any) => s.key === "greeting_format");
+    if (gfSetting) setGreetingFormat(gfSetting.value === "first_name" ? "first_name" : "formal");
+
     const hcSetting = settings.find((s: any) => s.key === "headcount_limits");
     if (hcSetting && typeof hcSetting.value === "object") {
       const v = hcSetting.value as any;
