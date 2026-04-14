@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,6 +29,7 @@ export default function Staff() {
   const navigate = useNavigate();
   const [editDialog, setEditDialog] = useState(false);
   const [editMember, setEditMember] = useState<any>(null);
+  const [activateConfirm, setActivateConfirm] = useState<any>(null);
   const [editForm, setEditForm] = useState({
     full_name: "",
     target_fte_percent: 1,
@@ -204,7 +206,7 @@ export default function Staff() {
                       <Pencil className="mr-1 h-3 w-3" />
                       Edit
                     </Button>
-                    <Button size="sm" onClick={() => toggleActive.mutate({ id: member.id, isActive: true })}>
+                    <Button size="sm" onClick={() => setActivateConfirm(member)}>
                       <UserCheck className="mr-1 h-3 w-3" />
                       Activate
                     </Button>
@@ -385,12 +387,38 @@ export default function Staff() {
               </div>
             </div>
 
-            <Button className="w-full" onClick={() => updateProfile.mutate()} disabled={updateProfile.isPending}>
-              Save Changes
-            </Button>
+            <div className="flex gap-2 justify-end">
+              <Button variant="ghost" onClick={() => setEditDialog(false)}>Cancel</Button>
+              <Button onClick={() => updateProfile.mutate()} disabled={updateProfile.isPending}>
+                Save Changes
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Activate confirmation */}
+      <AlertDialog open={!!activateConfirm} onOpenChange={(open) => !open && setActivateConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Activation</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will grant <strong>{activateConfirm?.full_name || "this user"}</strong> access to the ward roster and dashboard.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (activateConfirm) {
+                toggleActive.mutate({ id: activateConfirm.id, isActive: true });
+                setActivateConfirm(null);
+              }
+            }}>
+              Activate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

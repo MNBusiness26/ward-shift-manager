@@ -290,17 +290,30 @@ export default function Roster() {
 
   const clearWeek = useMutation({
     mutationFn: async () => {
+      const draftShifts = shifts.filter((s) => s.is_draft);
+      const publishedShifts = shifts.filter((s) => !s.is_draft);
+      if (draftShifts.length === 0) {
+        // Nothing to clear — all published
+        return { hadPublished: publishedShifts.length > 0, deletedCount: 0 };
+      }
+      const draftIds = draftShifts.map((s) => s.id);
       const { error } = await supabase
         .from("shifts")
         .delete()
-        .gte("date", format(viewStart, "yyyy-MM-dd"))
-        .lte("date", format(viewEnd, "yyyy-MM-dd"));
+        .in("id", draftIds);
       if (error) throw error;
+      return { hadPublished: publishedShifts.length > 0, deletedCount: draftShifts.length };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
-      toast.success("Week cleared");
       setClearWeekConfirmOpen(false);
+      if (result?.deletedCount === 0) {
+        toast.info("No draft shifts to remove. Published shifts remain for safety.");
+      } else if (result?.hadPublished) {
+        toast.info("Only draft shifts were removed. Published shifts remain for safety.");
+      } else {
+        toast.success("All draft shifts cleared");
+      }
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -927,7 +940,8 @@ export default function Roster() {
               <Label>Version Name</Label>
               <Input value={saveAsName} onChange={(e) => setSaveAsName(e.target.value)} placeholder="draft_2026-04-06_v1" />
             </div>
-            <div className="flex justify-end">
+            <div className="flex gap-2 justify-end">
+              <Button variant="ghost" onClick={() => setSaveAsOpen(false)}>Cancel</Button>
               <Button onClick={handleSaveAs} disabled={!saveAsName.trim()}>Save</Button>
             </div>
           </div>
@@ -1068,6 +1082,7 @@ export default function Roster() {
                   Delete
                 </Button>
               )}
+              <Button variant="ghost" onClick={() => { setDialogOpen(false); setSaveError(null); }}>Cancel</Button>
               <Button onClick={handleSaveWithFriction} disabled={saveShift.isPending}>
                 {editingShift ? "Update" : "Create"} Shift
               </Button>
@@ -1077,28 +1092,40 @@ export default function Roster() {
       </Dialog>
 
       {/* Clear Week Confirmation */}
-      <AlertDialog open={clearWeekConfirmOpen} onOpenChange={setClearWeekConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-destructive" />
-              Clear entire week?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete <strong>{shifts.length}</strong> shift{shifts.length !== 1 ? "s" : ""} from {format(viewStart, "MMM d")} to {format(viewEnd, "MMM d, yyyy")}. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => clearWeek.mutate()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete {shifts.length} Shift{shifts.length !== 1 ? "s" : ""}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {(() => {
+        const draftCount2 = shifts.filter((s) => s.is_draft).length;
+        const publishedCount = shifts.filter((s) => !s.is_draft).length;
+        return (
+          <AlertDialog open={clearWeekConfirmOpen} onOpenChange={setClearWeekConfirmOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <Trash2 className="h-5 w-5 text-destructive" />
+                  Clear draft shifts?
+                </AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div>
+                    <p>This will remove <strong>{draftCount2}</strong> draft shift{draftCount2 !== 1 ? "s" : ""} from {format(viewStart, "MMM d")} to {format(viewEnd, "MMM d, yyyy")}.</p>
+                    {publishedCount > 0 && (
+                      <p className="mt-2 text-sm font-medium text-foreground">{publishedCount} published shift{publishedCount !== 1 ? "s" : ""} will remain untouched for safety.</p>
+                    )}
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => clearWeek.mutate()}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={draftCount2 === 0}
+                >
+                  {draftCount2 === 0 ? "No drafts to clear" : `Delete ${draftCount2} Draft${draftCount2 !== 1 ? "s" : ""}`}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        );
+      })()}
 
       <FrictionDialog
         open={frictionOpen}

@@ -54,9 +54,9 @@ export default function Requests() {
       const { error } = await supabase.from("availability_requests").update({ status }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["manager-avail-requests"] });
-      toast.success("Request updated");
+      toast.success(`Request updated — ${variables.status === "approved" ? "Approved" : "Declined"}`);
     },
   });
 
@@ -74,10 +74,10 @@ export default function Requests() {
         }
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["manager-swap-requests"] });
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
-      toast.success("Swap request handled");
+      toast.success(`Request updated — ${variables.status === "manager_approved" ? "Approved" : "Declined"}`);
     },
   });
 
