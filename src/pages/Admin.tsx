@@ -148,7 +148,7 @@ export default function Admin() {
     saveSetting.mutate({ key: "greeting_format", value: val });
   };
 
-
+  const handleSaveHeadcounts = () => {
     saveSetting.mutate({
       key: "headcount_limits",
       value: { morning: morningLimit, evening: eveningLimit, night: nightLimit },
