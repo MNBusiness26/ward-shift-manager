@@ -142,7 +142,13 @@ export default function Admin() {
     saveSetting.mutate({ key: "enforce_full_week", value: checked ? "true" : "false" });
   };
 
-  const handleSaveHeadcounts = () => {
+  const handleToggleGreetingFormat = (checked: boolean) => {
+    const val = checked ? "first_name" : "formal";
+    setGreetingFormat(val);
+    saveSetting.mutate({ key: "greeting_format", value: val });
+  };
+
+
     saveSetting.mutate({
       key: "headcount_limits",
       value: { morning: morningLimit, evening: eveningLimit, night: nightLimit },
