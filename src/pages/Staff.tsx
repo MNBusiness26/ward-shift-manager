@@ -1,3 +1,4 @@
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,7 @@ const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function Staff() {
+  const { isManager } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [editDialog, setEditDialog] = useState(false);
@@ -31,6 +33,7 @@ export default function Staff() {
     target_fte_percent: 1,
     role: "nurse" as AppRole,
     is_responsible: false,
+    is_assistant_manager: false,
     no_nights: false,
     no_weekends: false,
     excluded_shifts: [] as string[],
@@ -86,12 +89,21 @@ export default function Staff() {
         .eq("id", editMember.id);
       if (error) throw error;
 
+      // Handle primary role
       const currentRole = editMember.roles?.[0];
       if (currentRole !== editForm.role) {
         if (currentRole) {
           await supabase.from("user_roles").delete().eq("user_id", editMember.id).eq("role", currentRole);
         }
         await supabase.from("user_roles").insert({ user_id: editMember.id, role: editForm.role });
+      }
+
+      // Handle assistant_manager toggle
+      const hadAM = (editMember.roles ?? []).includes("assistant_manager");
+      if (editForm.is_assistant_manager && !hadAM) {
+        await supabase.from("user_roles").insert({ user_id: editMember.id, role: "assistant_manager" as AppRole });
+      } else if (!editForm.is_assistant_manager && hadAM) {
+        await supabase.from("user_roles").delete().eq("user_id", editMember.id).eq("role", "assistant_manager");
       }
     },
     onSuccess: () => {
@@ -110,6 +122,7 @@ export default function Staff() {
       target_fte_percent: member.target_fte_percent ?? 1,
       role: member.roles?.[0] || "nurse",
       is_responsible: !!member.is_responsible,
+      is_assistant_manager: (member.roles ?? []).includes("assistant_manager"),
       no_nights: !!(constraints as any).no_nights,
       no_weekends: !!(constraints as any).no_weekends,
       excluded_shifts: (constraints as any).excluded_shifts || [],
@@ -310,6 +323,12 @@ export default function Staff() {
                 <span className="text-sm">Can be Responsible Nurse</span>
                 <Switch checked={editForm.is_responsible} onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_responsible: v }))} />
               </div>
+              {isManager && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Assistant Manager</span>
+                  <Switch checked={editForm.is_assistant_manager} onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_assistant_manager: v }))} />
+                </div>
+              )}
             </div>
 
             {/* Work Exclusions */}
