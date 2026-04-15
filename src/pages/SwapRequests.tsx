@@ -2,6 +2,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatLocale } from "@/i18n/dateLocale";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,13 +42,15 @@ const statusColors: Record<string, string> = {
   denied: "bg-red-100 text-red-800",
 };
 
-function formatShift(shift: any) {
+function formatShiftFn(shift: any, locale?: string) {
   if (!shift) return "";
-  return `${format(new Date(shift.date), "EEE, MMM d")} · ${shift.type} (${shift.start_time?.slice(0, 5)}–${shift.end_time?.slice(0, 5)})`;
+  return `${formatLocale(new Date(shift.date), "EEE, MMM d", locale)} · ${shift.type} (${shift.start_time?.slice(0, 5)}–${shift.end_time?.slice(0, 5)})`;
 }
 
 export default function SwapRequests() {
   const { user } = useAuth();
+  const { t, locale } = useTranslation();
+  const formatShift = (shift: any) => formatShiftFn(shift, locale);
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedShiftId, setSelectedShiftId] = useState("");
@@ -134,7 +138,7 @@ export default function SwapRequests() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["swap-requests"] });
-      toast.success(swapType === "pool" ? "Posted to swap pool" : "Swap request sent");
+      toast.success(swapType === "pool" ? t("swap.postedPool") : t("swap.requestSent"));
       setDialogOpen(false);
       resetForm();
     },
@@ -151,7 +155,7 @@ export default function SwapRequests() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["swap-requests"] });
-      toast.success("Swap accepted — waiting for manager approval");
+      toast.success(t("swap.accepted"));
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -172,7 +176,7 @@ export default function SwapRequests() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["swap-requests"] });
-      toast.success(poolTakeOnly ? "Offered to cover — waiting for manager approval" : "Swap offer sent — waiting for manager approval");
+      toast.success(poolTakeOnly ? t("swap.offered") : t("swap.offerSent"));
       setPoolRespondId(null);
       setPoolOfferShiftId("");
       setPoolTakeOnly(false);
@@ -191,7 +195,7 @@ export default function SwapRequests() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["swap-requests"] });
-      toast.success("Swap request cancelled");
+      toast.success(t("swap.cancelled"));
       setCancelId(null);
     },
     onError: (e: any) => {
@@ -213,10 +217,10 @@ export default function SwapRequests() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Swap Requests</h1>
+        <h1 className="text-2xl font-bold">{t("page.swapRequests")}</h1>
         <Button onClick={() => setDialogOpen(true)}>
-          <ArrowLeftRight className="mr-2 h-4 w-4" />
-          New Swap
+          <ArrowLeftRight className="me-2 h-4 w-4" />
+          {t("swap.newSwap")}
         </Button>
       </div>
 
@@ -225,12 +229,12 @@ export default function SwapRequests() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" />
-            Pool Offers
+            {t("swap.poolOffers")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {swapRequests.filter((s) => s.is_pool_request && s.status === "pending" && s.requesting_user_id !== user?.id).length === 0 ? (
-            <p className="text-sm text-muted-foreground">No pool offers available.</p>
+            <p className="text-sm text-muted-foreground">{t("swap.noPoolOffers")}</p>
           ) : (
             <div className="space-y-2">
               {swapRequests
@@ -245,11 +249,11 @@ export default function SwapRequests() {
                         {formatShift((swap as any).requesting_shift)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        From: {(swap as any).requesting_profile?.full_name || "Unknown"}
+                        {t("swap.from")}: {(swap as any).requesting_profile?.full_name || t("common.unknown")}
                       </p>
                     </div>
                     <Button size="sm" onClick={() => setPoolRespondId(swap.id)}>
-                      Respond
+                      {t("swap.respond")}
                     </Button>
                   </div>
                 ))}
@@ -261,11 +265,11 @@ export default function SwapRequests() {
       {/* My swap requests */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">My Requests</CardTitle>
+          <CardTitle className="text-base">{t("swap.myRequests")}</CardTitle>
         </CardHeader>
         <CardContent>
           {swapRequests.filter((s) => s.requesting_user_id === user?.id || s.covering_user_id === user?.id).length === 0 ? (
-            <p className="text-sm text-muted-foreground">No swap requests yet.</p>
+            <p className="text-sm text-muted-foreground">{t("swap.noRequests")}</p>
           ) : (
             <div className="space-y-2">
               {swapRequests
@@ -274,22 +278,22 @@ export default function SwapRequests() {
                   <div key={swap.id} className="flex items-center justify-between rounded-lg border p-3">
                     <div>
                       <p className="text-sm font-medium">
-                        {swap.is_pool_request ? "Pool Offer" : "Direct Swap"}
+                        {swap.is_pool_request ? t("swap.poolOffer") : t("swap.directSwap")}
                         {!swap.is_pool_request && (swap as any).covering_profile?.full_name && (
                           <span className="font-normal text-muted-foreground">
-                            {" "}with {(swap as any).covering_profile.full_name}
+                            {" "}{t("swap.with")} {(swap as any).covering_profile.full_name}
                           </span>
                         )}
                         {swap.is_take_only && (
-                          <Badge variant="outline" className="ml-2 text-[10px]">Take Only</Badge>
+                          <Badge variant="outline" className="ms-2 text-[10px]">{t("swap.takeOnly")}</Badge>
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Offering: {formatShift((swap as any).requesting_shift)}
+                        {t("swap.offering")}: {formatShift((swap as any).requesting_shift)}
                       </p>
                       {(swap as any).target_shift && (
                         <p className="text-xs text-muted-foreground">
-                          In return: {formatShift((swap as any).target_shift)}
+                          {t("swap.inReturn")}: {formatShift((swap as any).target_shift)}
                         </p>
                       )}
                     </div>
@@ -300,7 +304,7 @@ export default function SwapRequests() {
                       {/* Peer accept for direct swaps targeting current user */}
                       {swap.covering_user_id === user?.id && swap.status === "pending" && !swap.is_pool_request && (
                         <Button size="sm" variant="outline" onClick={() => acceptSwap.mutate(swap.id)}>
-                          Accept
+                          {t("swap.accept")}
                         </Button>
                       )}
                       {canCancel(swap) && (
@@ -325,18 +329,18 @@ export default function SwapRequests() {
       <AlertDialog open={!!cancelId} onOpenChange={(open) => !open && setCancelId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel swap request?</AlertDialogTitle>
+            <AlertDialogTitle>{t("swap.cancelTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel this swap request? This action cannot be undone.
+              {t("swap.cancelDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>No, keep it</AlertDialogCancel>
+            <AlertDialogCancel>{t("swap.cancelNo")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => cancelId && cancelSwap.mutate(cancelId)}
             >
-              Yes, cancel swap
+              {t("swap.cancelYes")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -352,7 +356,7 @@ export default function SwapRequests() {
       }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Respond to Pool Offer</DialogTitle>
+            <DialogTitle>{t("swap.respondTitle")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -365,16 +369,16 @@ export default function SwapRequests() {
                 }}
               />
               <label htmlFor="take-only" className="text-sm font-medium">
-                Take without swap (cover the shift only)
+                {t("swap.takeWithout")}
               </label>
             </div>
 
             {!poolTakeOnly && (
               <div>
-                <p className="text-sm text-muted-foreground mb-2">Or offer one of your shifts in exchange:</p>
+                <p className="text-sm text-muted-foreground mb-2">{t("swap.offerShift")}</p>
                 <Select value={poolOfferShiftId} onValueChange={setPoolOfferShiftId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select your shift to offer" />
+                    <SelectValue placeholder={t("swap.selectShift")} />
                   </SelectTrigger>
                   <SelectContent>
                     {myShifts.map((s) => (
@@ -388,12 +392,12 @@ export default function SwapRequests() {
             )}
 
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setPoolRespondId(null)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setPoolRespondId(null)}>{t("common.cancel")}</Button>
               <Button
                 onClick={() => respondToPool.mutate()}
                 disabled={(!poolTakeOnly && !poolOfferShiftId) || respondToPool.isPending}
               >
-                Submit
+                {t("common.submit")}
               </Button>
             </div>
           </div>
@@ -407,12 +411,12 @@ export default function SwapRequests() {
       }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Request a Swap</DialogTitle>
+            <DialogTitle>{t("swap.requestSwap")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <Select value={selectedShiftId} onValueChange={setSelectedShiftId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select your shift to swap" />
+                <SelectValue placeholder={t("swap.selectShift")} />
               </SelectTrigger>
               <SelectContent>
                 {myShifts.map((s) => (
@@ -429,14 +433,14 @@ export default function SwapRequests() {
                 size="sm"
                 onClick={() => { setSwapType("pool"); setTargetUserId(""); setTargetShiftId(""); }}
               >
-                Pool Offer
+                {t("swap.poolOffer")}
               </Button>
               <Button
                 variant={swapType === "direct" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSwapType("direct")}
               >
-                Direct Request
+                {t("swap.directRequest")}
               </Button>
             </div>
 
@@ -444,7 +448,7 @@ export default function SwapRequests() {
               <>
                 <Select value={targetUserId} onValueChange={(v) => { setTargetUserId(v); setTargetShiftId(""); }}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select colleague" />
+                    <SelectValue placeholder={t("swap.selectColleague")} />
                   </SelectTrigger>
                   <SelectContent>
                     {colleagues.map((c) => (
@@ -458,11 +462,11 @@ export default function SwapRequests() {
                 {targetUserId && (
                   <Select value={targetShiftId} onValueChange={setTargetShiftId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select their shift you want" />
+                      <SelectValue placeholder={t("swap.selectTheirShift")} />
                     </SelectTrigger>
                     <SelectContent>
                       {targetUserShifts.length === 0 ? (
-                        <SelectItem value="__none" disabled>No upcoming shifts</SelectItem>
+                        <SelectItem value="__none" disabled>{t("swap.noShiftsAvail")}</SelectItem>
                       ) : (
                         targetUserShifts.map((s) => (
                           <SelectItem key={s.id} value={s.id}>
@@ -477,12 +481,12 @@ export default function SwapRequests() {
             )}
 
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
               <Button
                 onClick={() => createSwap.mutate()}
                 disabled={!selectedShiftId || (swapType === "direct" && (!targetUserId || !targetShiftId)) || createSwap.isPending}
               >
-                Submit
+                {t("common.submit")}
               </Button>
             </div>
           </div>
