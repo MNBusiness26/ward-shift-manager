@@ -554,26 +554,26 @@ export default function ManagementCalendar() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Start</Label>
+                <Label>{t("roster.startTime")}</Label>
                 <Input type="time" value={form.start_time} onChange={(e) => setForm((f) => ({ ...f, start_time: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <Label>End</Label>
+                <Label>{t("roster.endTime")}</Label>
                 <Input type="time" value={form.end_time} onChange={(e) => setForm((f) => ({ ...f, end_time: e.target.value }))} />
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <Label>On Call Shift</Label>
+              <Label>{t("roster.onCallShift")}</Label>
               <Switch checked={form.is_standby} onCheckedChange={(v) => setForm((f) => ({ ...f, is_standby: v, assigned_user_id: "" }))} />
             </div>
 
             <div className="space-y-2">
-              <Label>Assign to Staff</Label>
+              <Label>{t("roster.assignToStaff")}</Label>
               <Select value={form.assigned_user_id || "__unassigned__"} onValueChange={(v) => setForm((f) => ({ ...f, assigned_user_id: v === "__unassigned__" ? "" : v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                  <SelectItem value="__unassigned__">{t("roster.unassigned")}</SelectItem>
                   {getStaffForDropdown().map((s) => {
                     const userBlocked = blockedDates.some((b) => {
                       if (b.user_id !== s.id) return false;
@@ -582,21 +582,21 @@ export default function ManagementCalendar() {
                     });
                     return (
                       <SelectItem key={s.id} value={s.id} disabled={userBlocked}>
-                        {s.full_name} {userBlocked ? "🚫 Blocked" : ""}
+                        {s.full_name} {userBlocked ? `🚫 ${t("roster.blocked")}` : ""}
                       </SelectItem>
                     );
                   })}
                 </SelectContent>
               </Select>
-              {form.is_standby && <p className="text-xs text-muted-foreground">Only managers and responsible nurses shown for on call shifts.</p>}
+              {form.is_standby && <p className="text-xs text-muted-foreground">{t("roster.onCallHint")}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label>Manager on Duty</Label>
+              <Label>{t("roster.managerOnDuty")}</Label>
               <Select value={form.manager_on_duty_id || "__none__"} onValueChange={(v) => setForm((f) => ({ ...f, manager_on_duty_id: v === "__none__" ? "" : v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">None</SelectItem>
+                  <SelectItem value="__none__">{t("roster.none")}</SelectItem>
                   {managerStaff.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>
                   ))}
@@ -605,17 +605,17 @@ export default function ManagementCalendar() {
             </div>
 
             <div className="flex items-center justify-between">
-              <Label>Responsible on Shift</Label>
+              <Label>{t("roster.responsibleNurse")}</Label>
               <Switch checked={form.is_responsible_on_shift} onCheckedChange={(v) => setForm((f) => ({ ...f, is_responsible_on_shift: v }))} />
             </div>
 
             <div className="flex items-center justify-between">
-              <Label>Draft</Label>
+              <Label>{t("roster.draft")}</Label>
               <Switch checked={form.is_draft} onCheckedChange={(v) => setForm((f) => ({ ...f, is_draft: v }))} />
             </div>
 
             <div className="space-y-2">
-              <Label>Comments</Label>
+              <Label>{t("roster.comments")}</Label>
               <Textarea value={form.comments} onChange={(e) => setForm((f) => ({ ...f, comments: e.target.value }))} />
             </div>
 
@@ -630,11 +630,12 @@ export default function ManagementCalendar() {
               {editingShift && (
                 <Button variant="destructive" size="sm" onClick={() => { removeShift.mutate(editingShift); setDialogOpen(false); setEditingShift(null); }}>
                   <Trash2 className="mr-1 h-4 w-4" />
-                  Delete
+                  {t("roster.delete")}
                 </Button>
               )}
               <Button className="flex-1" onClick={handleSaveWithFriction} disabled={saveShift.isPending}>
-                {editingShift ? "Update" : "Create"} Shift
+                {editingShift ? t("roster.update") : t("roster.create")} {t("roster.shift")}
+              </Button>
               </Button>
             </div>
           </div>
