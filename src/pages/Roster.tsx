@@ -88,7 +88,7 @@ interface CopiedWeek {
 }
 
 export default function Roster() {
-  const { locale } = useTranslation();
+  const { t, locale } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [viewStart, setViewStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
@@ -671,7 +671,7 @@ export default function Roster() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-xl md:text-2xl font-bold">Shift Manager</h1>
+        <h1 className="text-xl md:text-2xl font-bold">{t("roster.shiftManager")}</h1>
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <TooltipProvider>
             {draftCount > 0 && (
@@ -684,7 +684,7 @@ export default function Roster() {
                       disabled={publishDrafts.isPending || (enforceFullWeek && !isFullWeek)}
                     >
                       <Eye className="h-4 w-4 md:mr-1" />
-                      <span className="hidden sm:inline">Publish {draftCount}</span>
+                      <span className="hidden sm:inline">{t("roster.publishCount")} {draftCount}</span>
                     </Button>
                   </span>
                 </TooltipTrigger>
@@ -703,7 +703,7 @@ export default function Roster() {
                     disabled={shifts.length === 0 || (enforceFullWeek && !isFullWeek)}
                   >
                     <Trash2 className="h-4 w-4 md:mr-1" />
-                    <span className="hidden sm:inline">Clear Week</span>
+                    <span className="hidden sm:inline">{t("roster.clearWeek")}</span>
                   </Button>
                 </span>
               </TooltipTrigger>
@@ -714,7 +714,7 @@ export default function Roster() {
           </TooltipProvider>
           <Button size="sm" onClick={() => openCreate()}>
             <Plus className="h-4 w-4 md:mr-1" />
-            <span className="hidden sm:inline">Add Shift</span>
+            <span className="hidden sm:inline">{t("roster.addShift")}</span>
           </Button>
         </div>
       </div>
@@ -722,7 +722,7 @@ export default function Roster() {
       {missingResponsible.length > 0 && !dismissedWarningKeys.has(warningDismissKey) && (
         <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
           <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
-          <span className="flex-1">{missingResponsible.length} published shift(s) missing a Responsible Nurse</span>
+          <span className="flex-1">{missingResponsible.length} {t("roster.missingRN")}</span>
           <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={dismissWarning}>
             <X className="h-3.5 w-3.5" />
           </Button>
@@ -734,22 +734,22 @@ export default function Roster() {
         {enforceFullWeek && !isFullWeek && (
           <div className="flex items-center gap-2 mr-4 border-r pr-4">
             <Settings className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-destructive">Full week mode enforced</span>
+            <span className="text-xs text-destructive">{t("roster.fullWeekEnforced")}</span>
           </div>
         )}
         <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
           <Users className="h-4 w-4 md:mr-1" />
-          <span className="hidden sm:inline">Bulk Assign</span>
+          <span className="hidden sm:inline">{t("roster.bulkAssign")}</span>
         </Button>
         {!copiedWeek ? (
           <Button variant="outline" size="sm" onClick={handleCopyWeek} disabled={shifts.length === 0}>
             <Copy className="h-4 w-4 md:mr-1" />
-            <span className="hidden sm:inline">Copy Week</span>
+            <span className="hidden sm:inline">{t("roster.copyWeek")}</span>
           </Button>
         ) : (
           <Button variant="outline" size="sm" onClick={() => pasteWeek.mutate()} disabled={pasteWeek.isPending}>
             <ClipboardPaste className="h-4 w-4 md:mr-1" />
-            <span className="hidden sm:inline">Paste Week</span>
+            <span className="hidden sm:inline">{t("roster.pasteWeek")}</span>
           </Button>
         )}
       </div>
@@ -785,7 +785,7 @@ export default function Roster() {
             <table className="w-max min-w-full border-separate border-spacing-0 text-xs md:text-sm">
             <thead>
               <tr>
-                <th className="sticky left-0 z-30 w-[100px] min-w-[100px] border-r border-b border-border/30 bg-card py-4 px-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:py-5 md:px-2">Staff</th>
+                <th className="sticky left-0 z-30 w-[100px] min-w-[100px] border-r border-b border-border/30 bg-card py-4 px-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:py-5 md:px-2">{t("roster.staff")}</th>
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
@@ -816,7 +816,7 @@ export default function Roster() {
                                   : "text-muted-foreground"
                               }`}
                             >
-                              {t.charAt(0).toUpperCase()}: {count}/{target}
+                              {t(`shift.${t}`).charAt(0)}: {count}/{target}
                               {met && !over && " ✓"}
                             </div>
                           );
