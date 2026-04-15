@@ -39,7 +39,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { isManager, isAssistantManager, profile, signOut } = useAuth();
   const isMobile = useIsMobile();
-  const { t } = useTranslation();
+  const { t, dir } = useTranslation();
 
   const nurseItems = [
     { title: t("nav.dashboard"), url: "/", icon: LayoutDashboard },
@@ -68,8 +68,10 @@ export function AppSidebar() {
   const isActive = (url: string) =>
     url === "/" ? location.pathname === "/" : location.pathname.startsWith(url);
 
+  const sidebarSide = dir === "rtl" ? "right" : "left";
+
   return (
-    <Sidebar collapsible="icon" className="border-e border-sidebar-border/80">
+    <Sidebar collapsible="icon" side={sidebarSide} className="border-e border-sidebar-border/80">
       <SidebarContent>
         <div className="flex items-center gap-2 px-4 py-4">
           {!collapsed && (
@@ -83,7 +85,7 @@ export function AppSidebar() {
             className="ms-auto h-7 w-7 text-sidebar-foreground hover:bg-sidebar-accent"
             onClick={toggleSidebar}
           >
-            <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
+            <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""} ${dir === "rtl" ? "rotate-180" : ""} ${collapsed && dir === "rtl" ? "!rotate-0" : ""}`} />
           </Button>
         </div>
 

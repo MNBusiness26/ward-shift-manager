@@ -5,6 +5,7 @@ import { Calendar, Sun, Sunset, Moon, Users, ArrowLeftRight, Ban, Palmtree, Star
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { format, addDays, startOfToday, isSameDay } from "date-fns";
+import { formatLocale } from "@/i18n/dateLocale";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTranslation } from "@/i18n/useTranslation";
 
@@ -35,7 +36,7 @@ const shiftColorClass: Record<string, { bg: string; border: string; icon: string
 export default function Index() {
   const { user, profile, roles } = useAuth();
   const { settings } = useAppSettings();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const today = startOfToday();
   const weekEnd = addDays(today, 6);
   const todayStr = format(today, "yyyy-MM-dd");
@@ -200,7 +201,7 @@ export default function Index() {
               <div key={dateStr} className="space-y-2">
                 <div className="flex items-center gap-2">
                   <h2 className={`text-sm font-semibold ${isToday ? "text-primary" : "text-muted-foreground"}`}>
-                    {format(day, "EEEE, MMMM d")}
+                    {formatLocale(day, "EEEE, MMMM d", locale)}
                   </h2>
                   {isToday && (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">
