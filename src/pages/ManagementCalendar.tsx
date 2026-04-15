@@ -341,13 +341,13 @@ export default function ManagementCalendar() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <Button variant="ghost" size="icon" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
           </Button>
           <CardTitle className="text-base">
             {formatLocale(weekStart, "MMM d", locale)} — {formatLocale(weekEnd, "MMM d, yyyy", locale)}
           </CardTitle>
           <Button variant="ghost" size="icon" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4 rtl:rotate-180" />
           </Button>
         </CardHeader>
         <CardContent className="overflow-hidden p-0">
