@@ -43,14 +43,14 @@
     --shift-evening: 262 83% 58%;
     --shift-night: 221 83% 33%;
 
-    /* Deep Navy sidebar */
-    --sidebar-background: 220 40% 13%;
-    --sidebar-foreground: 0 0% 90%;
+    /* Clalit Deep Navy sidebar */
+    --sidebar-background: 226 70% 20%;
+    --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 199 89% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 30% 20%;
+    --sidebar-accent: 226 60% 28%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 220 30% 20%;
+    --sidebar-border: 226 50% 30%;
     --sidebar-ring: 199 89% 48%;
   }
 
@@ -76,13 +76,13 @@
     --border: 0 0% 18%;
     --input: 0 0% 18%;
     --ring: 199 89% 55%;
-    --sidebar-background: 220 40% 8%;
-    --sidebar-foreground: 0 0% 85%;
+    --sidebar-background: 226 70% 14%;
+    --sidebar-foreground: 0 0% 92%;
     --sidebar-primary: 199 89% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 30% 15%;
+    --sidebar-accent: 226 60% 22%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 220 30% 15%;
+    --sidebar-border: 226 50% 24%;
     --sidebar-ring: 199 89% 55%;
   }
 }
