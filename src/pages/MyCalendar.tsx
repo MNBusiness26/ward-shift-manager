@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sun, Sunset, Moon, Users, RefreshCw } from "lucide-react";
+import { Sun, Sunset, Moon, Users, RefreshCw, Star } from "lucide-react";
 import { CalendarSyncDialog } from "@/components/calendar/CalendarSyncDialog";
 import {
   format,
@@ -37,9 +37,9 @@ const shiftDot: Record<string, string> = {
 };
 
 const shiftBadgeColors: Record<string, string> = {
-  morning: "bg-shift-morning/15 text-shift-morning border-shift-morning/30",
-  evening: "bg-shift-evening/15 text-shift-evening border-shift-evening/30",
-  night: "bg-shift-night/15 text-shift-night border-shift-night/30",
+  morning: "bg-shift-morning/10 text-shift-morning border-s-2 border-s-shift-morning",
+  evening: "bg-shift-evening/10 text-shift-evening border-s-2 border-s-shift-evening",
+  night: "bg-shift-night/10 text-shift-night border-s-2 border-s-shift-night",
 };
 
 export default function MyCalendar() {
@@ -212,7 +212,7 @@ export default function MyCalendar() {
                                 {shiftLabels[s.type]?.slice(0, 3)}
                               </span>
                               {s.is_responsible_on_shift && (
-                                <span className="text-primary font-bold flex-shrink-0">★</span>
+                                <Star className="h-2.5 w-2.5 fill-primary text-primary flex-shrink-0" />
                               )}
                             </div>
                             {colleagues.length > 0 && (
@@ -281,7 +281,7 @@ export default function MyCalendar() {
                               {shift.start_time.slice(0, 5)} — {shift.end_time.slice(0, 5)}
                             </span>
                             {shift.is_responsible_on_shift && (
-                              <span className="text-xs text-primary font-medium">★ Responsible</span>
+                              <Star className="h-3 w-3 fill-primary text-primary" />
                             )}
                           </div>
                           {colleagues.length > 0 && (
