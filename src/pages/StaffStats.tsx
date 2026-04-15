@@ -65,6 +65,7 @@ export default function StaffStats() {
 
   // Verify dialog
   const [verifyShift, setVerifyShift] = useState<any>(null);
+  const [reauditConfirm, setReauditConfirm] = useState<any>(null);
 
   // Proxy request dialog state
   const [proxyOpen, setProxyOpen] = useState(false);
@@ -460,18 +461,25 @@ export default function StaffStats() {
                                 {s.is_responsible_on_shift && <Star className="h-3 w-3 text-shift-morning fill-shift-morning" />}
                               </div>
                               <div className="flex items-center gap-1">
-                                {isVerified ? (
+                                {isVerified && (
                                   <Badge variant="outline" className="gap-1 text-xs text-green-700 border-green-200">
                                     <Lock className="h-3 w-3" /> Verified
                                   </Badge>
-                                ) : isPast ? (
+                                )}
+                                {isPast ? (
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     className="h-7 text-xs gap-1"
-                                    onClick={() => setVerifyShift(s)}
+                                    onClick={() => {
+                                      if (isVerified) {
+                                        setReauditConfirm(s);
+                                      } else {
+                                        setVerifyShift(s);
+                                      }
+                                    }}
                                   >
-                                    <ClipboardCheck className="h-3 w-3" /> Audit
+                                    <ClipboardCheck className="h-3 w-3" /> {isVerified ? "Re-Audit" : "Audit"}
                                   </Button>
                                 ) : (
                                   <span className="text-xs text-muted-foreground">Upcoming</span>
