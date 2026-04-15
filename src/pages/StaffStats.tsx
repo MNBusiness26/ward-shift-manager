@@ -472,7 +472,6 @@ export default function StaffStats() {
                                    <Badge variant="outline" className="gap-1 text-xs text-green-700 border-green-200">
                                     <Lock className="h-3 w-3" /> {t("roster.verified")}
                                   </Badge>
-                                  </Badge>
                                 )}
                                 {isPast ? (
                                   <Button
