@@ -78,6 +78,9 @@ export default function ManagementCalendar() {
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const shiftLabels: Record<string, string> = {
+    morning: t("shift.morning"), evening: t("shift.evening"), night: t("shift.night"),
+  };
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingShift, setEditingShift] = useState<string | null>(null);
@@ -356,8 +359,8 @@ export default function ManagementCalendar() {
             <thead>
               <tr>
                 <th className="sticky left-0 z-30 w-[50px] min-w-[50px] border-b border-r bg-card p-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[90px] md:min-w-[90px] md:p-2">
-                  <span className="hidden md:inline">Shift</span>
-                  <span className="md:hidden">Type</span>
+                  <span className="hidden md:inline">{t("roster.shift")}</span>
+                  <span className="md:hidden">{t("roster.type")}</span>
                 </th>
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
@@ -441,26 +444,26 @@ export default function ManagementCalendar() {
 
       <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
         <div className="flex items-center gap-1">
-          <Badge variant="default" className="text-[10px] font-bold">Name ★</Badge>
-          <span>Responsible Nurse</span>
+          <Badge variant="default" className="text-[10px] font-bold">{t("common.name")} ★</Badge>
+          <span>{t("roster.responsibleNurse")}</span>
         </div>
         <div className="flex items-center gap-1">
-          <Badge variant="secondary" className="text-[10px]">Name</Badge>
-          <span>Assigned</span>
+          <Badge variant="secondary" className="text-[10px]">{t("common.name")}</Badge>
+          <span>{t("roster.assigned") || "Assigned"}</span>
         </div>
         <div className="flex items-center gap-1">
           <Badge variant="secondary" className="text-[10px]">
-            Name <span className="bg-amber-500/20 text-amber-700 rounded-sm px-0.5">S</span>
+            {t("common.name")} <span className="bg-amber-500/20 text-amber-700 rounded-sm px-0.5">S</span>
           </Badge>
-          <span>On Call</span>
+          <span>{t("calendar.onCall")}</span>
         </div>
         <div className="flex items-center gap-1">
-          <Badge variant="secondary" className="text-[10px] opacity-60 border-dashed">Name D</Badge>
-          <span>Draft</span>
+          <Badge variant="secondary" className="text-[10px] opacity-60 border-dashed">{t("common.name")} D</Badge>
+          <span>{t("roster.draft")}</span>
         </div>
         <div className="flex items-center gap-1">
           <Lock className="h-3 w-3" />
-          <span>Blocked Date</span>
+          <span>{t("roster.blockedDate") || "Blocked Date"}</span>
         </div>
       </div>
 
