@@ -72,7 +72,7 @@ const defaultForm = (date?: string, type?: ShiftType): ShiftFormData => ({
 });
 
 export default function ManagementCalendar() {
-  const { locale } = useTranslation();
+  const { t, locale } = useTranslation();
   const { headcountLimits } = useAppSettings();
   const queryClient = useQueryClient();
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
