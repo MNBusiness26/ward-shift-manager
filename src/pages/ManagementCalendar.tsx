@@ -636,7 +636,6 @@ export default function ManagementCalendar() {
               <Button className="flex-1" onClick={handleSaveWithFriction} disabled={saveShift.isPending}>
                 {editingShift ? t("roster.update") : t("roster.create")} {t("roster.shift")}
               </Button>
-              </Button>
             </div>
           </div>
         </DialogContent>
