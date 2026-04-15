@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -65,6 +69,7 @@ export default function StaffStats() {
 
   // Verify dialog
   const [verifyShift, setVerifyShift] = useState<any>(null);
+  const [reauditConfirm, setReauditConfirm] = useState<any>(null);
 
   // Proxy request dialog state
   const [proxyOpen, setProxyOpen] = useState(false);
@@ -460,18 +465,25 @@ export default function StaffStats() {
                                 {s.is_responsible_on_shift && <Star className="h-3 w-3 text-shift-morning fill-shift-morning" />}
                               </div>
                               <div className="flex items-center gap-1">
-                                {isVerified ? (
+                                {isVerified && (
                                   <Badge variant="outline" className="gap-1 text-xs text-green-700 border-green-200">
                                     <Lock className="h-3 w-3" /> Verified
                                   </Badge>
-                                ) : isPast ? (
+                                )}
+                                {isPast ? (
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     className="h-7 text-xs gap-1"
-                                    onClick={() => setVerifyShift(s)}
+                                    onClick={() => {
+                                      if (isVerified) {
+                                        setReauditConfirm(s);
+                                      } else {
+                                        setVerifyShift(s);
+                                      }
+                                    }}
                                   >
-                                    <ClipboardCheck className="h-3 w-3" /> Audit
+                                    <ClipboardCheck className="h-3 w-3" /> {isVerified ? "Re-Audit" : "Audit"}
                                   </Button>
                                 ) : (
                                   <span className="text-xs text-muted-foreground">Upcoming</span>
@@ -705,6 +717,27 @@ export default function StaffStats() {
         onOpenChange={(open) => { if (!open) setVerifyShift(null); }}
         shift={verifyShift}
       />
+
+      {/* Re-audit confirmation */}
+      <AlertDialog open={!!reauditConfirm} onOpenChange={(open) => { if (!open) setReauditConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Shift Already Finalized
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This shift has already been verified and locked. Do you want to audit it again? Any previous actual hours will be overwritten.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setVerifyShift(reauditConfirm); setReauditConfirm(null); }}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
