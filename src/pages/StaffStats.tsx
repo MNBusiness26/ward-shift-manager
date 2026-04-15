@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -713,6 +717,27 @@ export default function StaffStats() {
         onOpenChange={(open) => { if (!open) setVerifyShift(null); }}
         shift={verifyShift}
       />
+
+      {/* Re-audit confirmation */}
+      <AlertDialog open={!!reauditConfirm} onOpenChange={(open) => { if (!open) setReauditConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Shift Already Finalized
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This shift has already been verified and locked. Do you want to audit it again? Any previous actual hours will be overwritten.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setVerifyShift(reauditConfirm); setReauditConfirm(null); }}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
