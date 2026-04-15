@@ -1,4 +1,4 @@
-import { createContext, useState, ReactNode } from "react";
+import { createContext, useState, useEffect, ReactNode } from "react";
 
 type Locale = "en" | "he";
 
@@ -13,6 +13,12 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocale] = useState<Locale>(
     () => (localStorage.getItem("wardwise-locale") as Locale) || "en"
   );
+
+  useEffect(() => {
+    const dir = locale === "he" ? "rtl" : "ltr";
+    document.documentElement.setAttribute("dir", dir);
+    document.documentElement.setAttribute("lang", locale);
+  }, [locale]);
 
   const handleSet = (l: Locale) => {
     setLocale(l);

@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Shield, Save, UserPlus, Trash2, Check, X } from "lucide-react";
+import { Shield, Save, UserPlus, Trash2, Check, X, Globe } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -12,12 +12,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import { useTranslation } from "@/i18n/useTranslation";
 
 const ADMIN_EMAIL = "michael.nejman@gmail.com";
 
 export default function Admin() {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
+  const { t, locale, setLocale } = useTranslation();
 
   const [enforceFullWeek, setEnforceFullWeek] = useState(true);
   const [greetingFormat, setGreetingFormat] = useState<"formal" | "first_name">("formal");
@@ -78,7 +80,6 @@ export default function Admin() {
 
   const saveSetting = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
-      // Upsert: try update, if no rows affected, insert
       const { data: existing } = await supabase.from("app_settings").select("id").eq("key", key).maybeSingle();
       if (existing) {
         const { error } = await supabase
@@ -188,32 +189,52 @@ export default function Admin() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold flex items-center gap-2">
         <Shield className="h-6 w-6" />
-        Admin Settings
+        {t("admin.title")}
       </h1>
+
+      {/* System Language */}
+      <Card className="shadow-md">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            {t("admin.systemLanguage")}
+          </CardTitle>
+          <CardDescription>{t("admin.systemLanguageDesc")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Select value={locale} onValueChange={(v) => setLocale(v as "en" | "he")}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="he">עברית (Hebrew)</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
 
       {/* Staff Directory */}
       <Card className="shadow-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
-            Staff Directory (Pre-Seed)
+            {t("admin.staffDirectory")}
           </CardTitle>
-          <CardDescription>
-            Add staff members before they sign up. When they register with the matching email, their account will be automatically linked with the correct role and FTE.
-          </CardDescription>
+          <CardDescription>{t("admin.staffDirectoryDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <div className="space-y-1">
-              <Label className="text-xs">Full Name</Label>
+              <Label className="text-xs">{t("admin.fullName")}</Label>
               <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Jane Doe" />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Email</Label>
+              <Label className="text-xs">{t("admin.email")}</Label>
               <Input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="jane@hospital.com" type="email" />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Role</Label>
+              <Label className="text-xs">{t("admin.role")}</Label>
               <Select value={newRole} onValueChange={setNewRole}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -225,13 +246,13 @@ export default function Admin() {
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">FTE %</Label>
+              <Label className="text-xs">{t("admin.fte")}</Label>
               <Input type="number" min={10} max={100} step={5} value={newFte} onChange={(e) => setNewFte(e.target.value)} />
             </div>
             <div className="flex items-end">
               <Button onClick={handleAddStaff} disabled={addStaff.isPending} className="w-full gap-1">
                 <UserPlus className="h-4 w-4" />
-                Add
+                {t("admin.add")}
               </Button>
             </div>
           </div>
@@ -239,10 +260,10 @@ export default function Admin() {
           {directory.length > 0 && (
             <div className="rounded-lg border">
               <div className="grid grid-cols-[1fr_1fr_auto_auto_auto] gap-2 border-b bg-muted/50 p-2 text-xs font-medium text-muted-foreground">
-                <span>Name</span>
-                <span>Email</span>
-                <span>Role</span>
-                <span>FTE</span>
+                <span>{t("common.name")}</span>
+                <span>{t("common.email")}</span>
+                <span>{t("admin.role")}</span>
+                <span>{t("admin.fte")}</span>
                 <span></span>
               </div>
               {directory.map((entry: any) => (
@@ -286,25 +307,21 @@ export default function Admin() {
       {/* Operational Toggles */}
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle>Operational Toggles</CardTitle>
-          <CardDescription>Global settings that affect roster operations.</CardDescription>
+          <CardTitle>{t("admin.operationalToggles")}</CardTitle>
+          <CardDescription>{t("admin.operationalTogglesDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <Label className="text-sm font-medium">Enforce Full Week Operations</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                When active, "Publish" and "Clear" buttons on the Roster are disabled unless viewing a full Sun–Sat week.
-              </p>
+              <Label className="text-sm font-medium">{t("admin.enforceFullWeek")}</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("admin.enforceFullWeekDesc")}</p>
             </div>
             <Switch checked={enforceFullWeek} onCheckedChange={handleToggleFullWeek} />
           </div>
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <Label className="text-sm font-medium">Dashboard Greeting: First Name Only</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                When active, the dashboard shows "Hello, Jane" instead of "Hello, Nurse Jane Doe". Overridden by custom template below.
-              </p>
+              <Label className="text-sm font-medium">{t("admin.greetingFirstName")}</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("admin.greetingFirstNameDesc")}</p>
             </div>
             <Switch checked={greetingFormat === "first_name"} onCheckedChange={handleToggleGreetingFormat} />
           </div>
@@ -314,14 +331,12 @@ export default function Admin() {
       {/* Greeting Template */}
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle>Dashboard Greeting Template</CardTitle>
-          <CardDescription>
-            Customize the dashboard greeting using template variables. Leave empty to use the default toggle above.
-          </CardDescription>
+          <CardTitle>{t("admin.greetingTemplate")}</CardTitle>
+          <CardDescription>{t("admin.greetingTemplateDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-sm">Greeting Template</Label>
+            <Label className="text-sm">{t("admin.greetingTemplate")}</Label>
             <Input
               value={greetingTemplate}
               onChange={(e) => setGreetingTemplate(e.target.value)}
@@ -329,7 +344,7 @@ export default function Admin() {
             />
           </div>
           <div className="flex flex-wrap gap-1.5">
-            <span className="text-xs text-muted-foreground">Available variables:</span>
+            <span className="text-xs text-muted-foreground">{t("admin.availableVars")}</span>
             {templateVars.map((v) => (
               <Badge
                 key={v}
@@ -343,7 +358,7 @@ export default function Admin() {
           </div>
           <Button onClick={handleSaveGreetingTemplate} className="gap-2">
             <Save className="h-4 w-4" />
-            Save Template
+            {t("admin.saveTemplate")}
           </Button>
         </CardContent>
       </Card>
@@ -351,29 +366,27 @@ export default function Admin() {
       {/* Headcount Limits */}
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle>Target Headcount Limits</CardTitle>
-          <CardDescription>
-            Maximum number of non-on-call staff per shift type. Exceeding triggers a yellow warning.
-          </CardDescription>
+          <CardTitle>{t("admin.headcountLimits")}</CardTitle>
+          <CardDescription>{t("admin.headcountLimitsDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label className="text-sm">Morning Max</Label>
+              <Label className="text-sm">{t("admin.morningMax")}</Label>
               <Input type="number" min={1} max={20} value={morningLimit} onChange={(e) => setMorningLimit(Number(e.target.value))} />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm">Evening Max</Label>
+              <Label className="text-sm">{t("admin.eveningMax")}</Label>
               <Input type="number" min={1} max={20} value={eveningLimit} onChange={(e) => setEveningLimit(Number(e.target.value))} />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm">Night Max</Label>
+              <Label className="text-sm">{t("admin.nightMax")}</Label>
               <Input type="number" min={1} max={20} value={nightLimit} onChange={(e) => setNightLimit(Number(e.target.value))} />
             </div>
           </div>
           <Button onClick={handleSaveHeadcounts} className="gap-2">
             <Save className="h-4 w-4" />
-            Save Headcount Limits
+            {t("admin.saveHeadcount")}
           </Button>
         </CardContent>
       </Card>
