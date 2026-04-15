@@ -607,11 +607,9 @@ export default function StaffStats() {
                 <CardTitle className="flex items-center gap-2 text-base">
                   <CalendarOff className="h-4 w-4" /> {t("staffStats.availRequests")}
                 </CardTitle>
-                 <Button size="sm" variant="outline" onClick={() => setProxyOpen(true)}>
+                <Button size="sm" variant="outline" onClick={() => setProxyOpen(true)}>
                   <UserPlus className="me-1 h-4 w-4" />
                   {t("staffStats.requestOnBehalf")}
-                </Button>
-                  Request on Behalf
                 </Button>
               </div>
             </CardHeader>
@@ -733,7 +731,6 @@ export default function StaffStats() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {t("staffStats.shiftAlreadyFinalizedDesc")}
-            </AlertDialogDescription>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
