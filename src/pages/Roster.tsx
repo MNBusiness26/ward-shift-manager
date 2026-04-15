@@ -88,6 +88,7 @@ interface CopiedWeek {
 }
 
 export default function Roster() {
+  const { locale } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [viewStart, setViewStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
