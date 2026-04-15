@@ -344,7 +344,7 @@ export default function ManagementCalendar() {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <CardTitle className="text-base">
-            {format(weekStart, "MMM d")} — {format(weekEnd, "MMM d, yyyy")}
+            {formatLocale(weekStart, "MMM d", locale)} — {formatLocale(weekEnd, "MMM d, yyyy", locale)}
           </CardTitle>
           <Button variant="ghost" size="icon" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
             <ChevronRight className="h-4 w-4" />
@@ -369,10 +369,10 @@ export default function ManagementCalendar() {
                   return (
                     <th key={d.toISOString()} className={`relative z-10 min-w-[80px] md:min-w-[140px] border-b p-1.5 text-center font-medium text-muted-foreground md:p-2 ${blocked ? "bg-muted/50" : ""}`}>
                       <div className="flex items-center justify-center gap-1">
-                        {format(d, "EEE")}
+                        {formatLocale(d, "EEE", locale)}
                         {blocked && <Lock className="h-3 w-3 text-muted-foreground" />}
                       </div>
-                      <div className="text-[10px] md:text-xs">{format(d, "MMM d")}</div>
+                      <div className="text-[10px] md:text-xs">{formatLocale(d, "MMM d", locale)}</div>
                     </th>
                   );
                 })}
