@@ -96,6 +96,32 @@
   }
 }
 
+/* RTL-aware sticky column: flip left→right */
+[dir="rtl"] .sticky.left-0 {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .inset-y-0.left-0 {
+  left: auto;
+  right: 0;
+}
+
+/* Flip box-shadow direction in RTL */
+[dir="rtl"] .shadow-\[2px_0_8px_-4px_hsl\(var\(--foreground\)\/0\.18\)\] {
+  box-shadow: -2px 0 8px -4px hsl(var(--foreground) / 0.18);
+}
+
+/* Extra vertical padding for Hebrew (Heebo) font */
+[dir="rtl"] td,
+[dir="rtl"] th,
+[dir="rtl"] input,
+[dir="rtl"] select,
+[dir="rtl"] textarea {
+  padding-top: calc(var(--cell-padding-y, 0.375rem) * 1.15);
+  padding-bottom: calc(var(--cell-padding-y, 0.375rem) * 1.15);
+}
+
 /* Ghosted hatch pattern for roster exclusions */
 .roster-ghosted {
   background-image: repeating-linear-gradient(
