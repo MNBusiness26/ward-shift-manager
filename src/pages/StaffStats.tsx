@@ -16,15 +16,43 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Sun, Sunset, Moon, TrendingUp, ArrowLeftRight, CalendarOff,
   Calendar, Users, Star, ChevronLeft, ChevronRight, UserPlus,
+  Lock, CheckCircle, AlertTriangle, Check, X, ClipboardCheck,
 } from "lucide-react";
 import {
   format, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
   addWeeks, subWeeks, addMonths, subMonths, addDays,
-  differenceInCalendarDays, getDay,
+  differenceInCalendarDays, getDay, isBefore, startOfDay,
 } from "date-fns";
 import { toast } from "sonner";
+import { VerifyShiftDialog } from "@/components/staff/VerifyShiftDialog";
 
 const SHIFT_TYPES = ["morning", "evening", "night"] as const;
+
+const SHIFT_ICON: Record<string, React.ReactNode> = {
+  morning: <Sun className="h-4 w-4 text-shift-morning" />,
+  evening: <Sunset className="h-4 w-4 text-shift-evening" />,
+  night: <Moon className="h-4 w-4 text-shift-night" />,
+};
+
+const SHIFT_BORDER: Record<string, string> = {
+  morning: "border-s-2 border-s-shift-morning",
+  evening: "border-s-2 border-s-shift-evening",
+  night: "border-s-2 border-s-shift-night",
+};
+
+const SHIFT_BG: Record<string, string> = {
+  morning: "bg-shift-morning/10",
+  evening: "bg-shift-evening/10",
+  night: "bg-shift-night/10",
+};
+
+function parseHoursFromTime(start: string, end: string): number {
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  let diff = (eh * 60 + em) - (sh * 60 + sm);
+  if (diff < 0) diff += 24 * 60; // overnight
+  return diff / 60;
+}
 
 export default function StaffStats() {
   const { user } = useAuth();
@@ -35,6 +63,9 @@ export default function StaffStats() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
 
+  // Verify dialog
+  const [verifyShift, setVerifyShift] = useState<any>(null);
+
   // Proxy request dialog state
   const [proxyOpen, setProxyOpen] = useState(false);
   const [proxyType, setProxyType] = useState<"block" | "vacation">("block");
@@ -43,24 +74,20 @@ export default function StaffStats() {
   const [proxyReason, setProxyReason] = useState("");
   const [proxyBlockedShifts, setProxyBlockedShifts] = useState<string[]>([]);
 
-  // Pre-select from URL param
   useEffect(() => {
     const idFromUrl = searchParams.get("id");
-    if (idFromUrl && !selectedId) {
-      setSelectedId(idFromUrl);
-    }
+    if (idFromUrl && !selectedId) setSelectedId(idFromUrl);
   }, [searchParams, selectedId]);
 
   const now = new Date();
+  const today = startOfDay(now);
 
   const baseWeek = addWeeks(startOfWeek(now, { weekStartsOn: 0 }), weekOffset);
   const weekStart = baseWeek;
   const weekEnd = endOfWeek(baseWeek, { weekStartsOn: 0 });
-
   const baseMonth = addMonths(now, monthOffset);
   const monthStart = startOfMonth(baseMonth);
   const monthEnd = endOfMonth(baseMonth);
-
   const rangeStart = mode === "weekly" ? weekStart : monthStart;
   const rangeEnd = mode === "weekly" ? weekEnd : monthEnd;
 
@@ -134,21 +161,20 @@ export default function StaffStats() {
     enabled: !!selectedId,
   });
 
-  const { data: upcoming = [] } = useQuery({
-    queryKey: ["staff-stats-agenda", selectedId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shifts")
-        .select("*")
-        .eq("assigned_user_id", selectedId)
-        .gte("date", format(now, "yyyy-MM-dd"))
-        .lte("date", format(addDays(now, 14), "yyyy-MM-dd"))
-        .order("date")
-        .order("start_time");
+  // Approve/decline availability mutation
+  const updateAvailStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: "approved" | "declined" }) => {
+      const { error } = await supabase
+        .from("availability_requests")
+        .update({ status })
+        .eq("id", id);
       if (error) throw error;
-      return data;
     },
-    enabled: !!selectedId,
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["staff-stats-avail"] });
+      toast.success(`Request ${vars.status}`);
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   // Proxy request mutation
@@ -193,7 +219,6 @@ export default function StaffStats() {
   };
 
   const fte = selectedProfile?.target_fte_percent ?? 1;
-
   let expectedShifts: number;
   if (mode === "weekly") {
     expectedShifts = 5 * fte;
@@ -212,7 +237,18 @@ export default function StaffStats() {
   const morningCount = rangeShifts.filter((s) => s.type === "morning").length;
   const eveningCount = rangeShifts.filter((s) => s.type === "evening").length;
   const nightCount = rangeShifts.filter((s) => s.type === "night").length;
-  const completedShifts = rangeShifts.filter((s) => new Date(s.date) < now).length;
+
+  // Calculate total hours using actuals when verified
+  const totalHours = rangeShifts.reduce((sum, s) => {
+    const raw = s as any;
+    if (raw.is_verified && raw.actual_start_time && raw.actual_end_time) {
+      return sum + parseHoursFromTime(raw.actual_start_time, raw.actual_end_time);
+    }
+    return sum + parseHoursFromTime(s.start_time, s.end_time);
+  }, 0);
+
+  const verifiedCount = rangeShifts.filter((s) => (s as any).is_verified).length;
+  const pastUnverified = rangeShifts.filter((s) => isBefore(new Date(s.date), today) && !(s as any).is_verified);
 
   const shiftLabel: Record<string, string> = { morning: "Morning", evening: "Evening", night: "Night" };
   const statusColor: Record<string, string> = {
@@ -237,6 +273,14 @@ export default function StaffStats() {
     if (shifts.length === 0) return null;
     return shifts.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(" & ");
   };
+
+  // Group shifts by date for day-by-day view
+  const shiftsByDate = rangeShifts.reduce<Record<string, any[]>>((acc, s) => {
+    (acc[s.date] = acc[s.date] || []).push(s);
+    return acc;
+  }, {});
+
+  const pendingAvail = availRequests.filter((ar) => ar.status === "pending");
 
   return (
     <div className="space-y-6">
@@ -274,7 +318,7 @@ export default function StaffStats() {
 
       {selectedId && selectedProfile && (
         <>
-          {/* Profile summary + proxy button */}
+          {/* Profile summary */}
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3 flex-wrap">
@@ -282,13 +326,9 @@ export default function StaffStats() {
                 {staffRoles.map((r) => (
                   <Badge key={r} variant="outline" className="capitalize">{r}</Badge>
                 ))}
-                <span className="text-sm text-muted-foreground">
-                  {(fte * 100).toFixed(0)}% FTE
-                </span>
+                <span className="text-sm text-muted-foreground">{(fte * 100).toFixed(0)}% FTE</span>
                 {selectedProfile.is_responsible && (
-                  <Badge className="gap-1">
-                    <Star className="h-3 w-3 fill-current" /> Resp. Nurse
-                  </Badge>
+                  <Badge className="gap-1"><Star className="h-3 w-3 fill-current" /> Resp. Nurse</Badge>
                 )}
               </div>
             </CardContent>
@@ -296,19 +336,15 @@ export default function StaffStats() {
 
           {/* Period navigation */}
           <div className="flex items-center justify-center gap-2">
-            <Button variant="outline" size="icon" onClick={handlePrev}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
+            <Button variant="outline" size="icon" onClick={handlePrev}><ChevronLeft className="h-4 w-4" /></Button>
             <Button variant="outline" size="sm" onClick={handleToday}>
               {mode === "weekly" ? "This Week" : "This Month"}
             </Button>
             <span className="text-sm font-medium min-w-[180px] text-center">{rangeLabel}</span>
-            <Button variant="outline" size="icon" onClick={handleNext}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+            <Button variant="outline" size="icon" onClick={handleNext}><ChevronRight className="h-4 w-4" /></Button>
           </div>
 
-          {/* Fulfillment */}
+          {/* ===== PRIMARY: Fulfillment ===== */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -319,21 +355,35 @@ export default function StaffStats() {
             <CardContent>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {rangeShifts.length} of {expectedShifts} shifts
-                  </span>
+                  <span className="text-muted-foreground">{rangeShifts.length} of {expectedShifts} shifts</span>
                   <span className="font-semibold">{fulfillment}%</span>
                 </div>
                 <Progress value={Math.min(fulfillment, 100)} className="h-3" />
               </div>
+              {/* Total hours */}
+              <div className="mt-3 flex items-center gap-3 text-sm">
+                <span className="font-medium">{totalHours.toFixed(1)}h total</span>
+                {verifiedCount > 0 && (
+                  <Badge variant="outline" className="gap-1 text-xs">
+                    <CheckCircle className="h-3 w-3 text-green-600" />
+                    {verifiedCount} verified
+                  </Badge>
+                )}
+                {pastUnverified.length > 0 && (
+                  <Badge variant="outline" className="gap-1 text-xs text-amber-600 border-amber-200">
+                    <AlertTriangle className="h-3 w-3" />
+                    {pastUnverified.length} unverified
+                  </Badge>
+                )}
+              </div>
             </CardContent>
           </Card>
 
-          {/* Shift type breakdown */}
+          {/* ===== SECONDARY: Shift Type Breakdown ===== */}
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
               <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-shift-morning/15">
+                <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-shift-morning/15">
                   <Sun className="h-5 w-5 text-shift-morning" />
                 </div>
                 <div>
@@ -344,7 +394,7 @@ export default function StaffStats() {
             </Card>
             <Card>
               <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-shift-evening/15">
+                <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-shift-evening/15">
                   <Sunset className="h-5 w-5 text-shift-evening" />
                 </div>
                 <div>
@@ -355,7 +405,7 @@ export default function StaffStats() {
             </Card>
             <Card>
               <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-shift-night/15">
+                <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-shift-night/15">
                   <Moon className="h-5 w-5 text-shift-night" />
                 </div>
                 <div>
@@ -366,54 +416,130 @@ export default function StaffStats() {
             </Card>
           </div>
 
-          {/* Summary */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">
-                {mode === "weekly" ? "Week" : "Month"} Summary — {rangeLabel}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-lg border p-4 text-center">
-                  <p className="text-3xl font-bold">{rangeShifts.length}</p>
-                  <p className="text-sm text-muted-foreground">Total Booked</p>
-                </div>
-                <div className="rounded-lg border p-4 text-center">
-                  <p className="text-3xl font-bold">{completedShifts}</p>
-                  <p className="text-sm text-muted-foreground">Completed</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Upcoming agenda */}
+          {/* ===== TERTIARY: Day-by-Day Shift List with Audit ===== */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
-                <Calendar className="h-4 w-4" /> Upcoming Agenda (14 days)
+                <ClipboardCheck className="h-4 w-4" /> Day-by-Day Shifts
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {upcoming.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No upcoming shifts.</p>
+              {Object.keys(shiftsByDate).length === 0 ? (
+                <p className="text-sm text-muted-foreground">No shifts in this period.</p>
               ) : (
-                <div className="space-y-2">
-                  {upcoming.map((s) => (
-                    <div key={s.id} className="flex items-center justify-between rounded-lg border p-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{format(new Date(s.date), "EEE, MMM d")}</span>
-                        <Badge variant="outline" className="capitalize text-xs">{shiftLabel[s.type] || s.type}</Badge>
+                <div className="space-y-3">
+                  {Object.entries(shiftsByDate).sort(([a], [b]) => a.localeCompare(b)).map(([date, shifts]) => (
+                    <div key={date}>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">
+                        {format(new Date(date), "EEE, MMM d")}
+                      </p>
+                      <div className="space-y-1">
+                        {shifts.map((s: any) => {
+                          const isPast = isBefore(new Date(s.date), today);
+                          const isVerified = s.is_verified;
+                          const hours = isVerified && s.actual_start_time && s.actual_end_time
+                            ? parseHoursFromTime(s.actual_start_time, s.actual_end_time)
+                            : parseHoursFromTime(s.start_time, s.end_time);
+                          return (
+                            <div
+                              key={s.id}
+                              className={`flex items-center justify-between rounded-sm p-3 ${SHIFT_BORDER[s.type]} ${SHIFT_BG[s.type]} ${
+                                s.is_draft ? "border-dashed opacity-70" : ""
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                {SHIFT_ICON[s.type]}
+                                <span className="text-sm font-medium capitalize">{shiftLabel[s.type]}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {isVerified && s.actual_start_time && s.actual_end_time
+                                    ? `${s.actual_start_time} — ${s.actual_end_time}`
+                                    : `${s.start_time?.slice(0, 5)} — ${s.end_time?.slice(0, 5)}`
+                                  }
+                                </span>
+                                <span className="text-xs text-muted-foreground">({hours.toFixed(1)}h)</span>
+                                {s.is_responsible_on_shift && <Star className="h-3 w-3 text-shift-morning fill-shift-morning" />}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {isVerified ? (
+                                  <Badge variant="outline" className="gap-1 text-xs text-green-700 border-green-200">
+                                    <Lock className="h-3 w-3" /> Verified
+                                  </Badge>
+                                ) : isPast ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs gap-1"
+                                    onClick={() => setVerifyShift(s)}
+                                  >
+                                    <ClipboardCheck className="h-3 w-3" /> Audit
+                                  </Button>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">Upcoming</span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                      <span className="text-sm text-muted-foreground">
-                        {s.start_time.slice(0, 5)} — {s.end_time.slice(0, 5)}
-                      </span>
                     </div>
                   ))}
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {/* ===== Pending Availability Requests (Quick Actions) ===== */}
+          {pendingAvail.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <CalendarOff className="h-4 w-4" /> Pending Availability Requests
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {pendingAvail.map((ar) => {
+                    const blockedLabel = formatBlockedShifts(ar);
+                    return (
+                      <div key={ar.id} className="flex items-center justify-between rounded-sm border p-3">
+                        <div className="text-sm">
+                          <span className="font-medium">{format(new Date(ar.date), "MMM d")}</span>
+                          {ar.end_date && ar.end_date !== ar.date && (
+                            <span className="text-muted-foreground"> — {format(new Date(ar.end_date), "MMM d")}</span>
+                          )}
+                          <Badge variant="outline" className="ms-2 capitalize text-xs">{ar.request_type}</Badge>
+                          {blockedLabel && (
+                            <span className="ms-2 text-xs text-muted-foreground">({blockedLabel} only)</span>
+                          )}
+                          {ar.reason && <span className="ms-2 text-xs text-muted-foreground italic">{ar.reason}</span>}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => updateAvailStatus.mutate({ id: ar.id, status: "approved" })}
+                            disabled={updateAvailStatus.isPending}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-destructive hover:text-destructive hover:bg-red-50"
+                            onClick={() => updateAvailStatus.mutate({ id: ar.id, status: "declined" })}
+                            disabled={updateAvailStatus.isPending}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Swap requests */}
           <Card>
@@ -431,23 +557,21 @@ export default function StaffStats() {
                     const shift = sr.shift as any;
                     const coveringProfile = sr.covering_profile as any;
                     return (
-                      <div key={sr.id} className="flex items-center justify-between rounded-lg border p-3">
+                      <div key={sr.id} className="flex items-center justify-between rounded-sm border p-3">
                         <div className="text-sm">
                           <span className="font-medium">
                             {shift?.date ? format(new Date(shift.date), "MMM d") : "—"}
                           </span>
                           {shift && (
-                            <span className="ml-2 text-muted-foreground capitalize">
+                            <span className="ms-2 text-muted-foreground capitalize">
                               {shiftLabel[shift.type] || shift.type} {shift.start_time?.slice(0, 5)}–{shift.end_time?.slice(0, 5)}
                             </span>
                           )}
                           {!sr.is_pool_request && coveringProfile?.full_name && (
-                            <span className="ml-2 text-muted-foreground">
-                              with {coveringProfile.full_name}
-                            </span>
+                            <span className="ms-2 text-muted-foreground">with {coveringProfile.full_name}</span>
                           )}
                           {sr.is_pool_request && (
-                            <span className="ml-2 text-muted-foreground italic">Pool</span>
+                            <span className="ms-2 text-muted-foreground italic">Pool</span>
                           )}
                         </div>
                         <Badge variant="outline" className={statusColor[sr.status] || ""}>
@@ -461,7 +585,7 @@ export default function StaffStats() {
             </CardContent>
           </Card>
 
-          {/* Availability */}
+          {/* All Availability Requests */}
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -469,7 +593,7 @@ export default function StaffStats() {
                   <CalendarOff className="h-4 w-4" /> Availability Requests
                 </CardTitle>
                 <Button size="sm" variant="outline" onClick={() => setProxyOpen(true)}>
-                  <UserPlus className="mr-1 h-4 w-4" />
+                  <UserPlus className="me-1 h-4 w-4" />
                   Request on Behalf
                 </Button>
               </div>
@@ -482,18 +606,18 @@ export default function StaffStats() {
                   {availRequests.map((ar) => {
                     const blockedLabel = formatBlockedShifts(ar);
                     return (
-                      <div key={ar.id} className="flex items-center justify-between rounded-lg border p-3">
+                      <div key={ar.id} className="flex items-center justify-between rounded-sm border p-3">
                         <div className="text-sm">
                           <span className="font-medium">{format(new Date(ar.date), "MMM d")}</span>
                           {ar.end_date && ar.end_date !== ar.date && (
                             <span className="text-muted-foreground"> — {format(new Date(ar.end_date), "MMM d")}</span>
                           )}
-                          <Badge variant="outline" className="ml-2 capitalize text-xs">{ar.request_type}</Badge>
+                          <Badge variant="outline" className="ms-2 capitalize text-xs">{ar.request_type}</Badge>
                           {blockedLabel && (
-                            <span className="ml-2 text-xs text-muted-foreground">({blockedLabel} only)</span>
+                            <span className="ms-2 text-xs text-muted-foreground">({blockedLabel} only)</span>
                           )}
                           {(ar as any).created_by_manager_id && (
-                            <Badge variant="outline" className="ml-2 text-[10px]">Manager</Badge>
+                            <Badge variant="outline" className="ms-2 text-[10px]">Manager</Badge>
                           )}
                         </div>
                         <Badge variant="outline" className={statusColor[ar.status] || ""}>
@@ -530,7 +654,6 @@ export default function StaffStats() {
                 </SelectContent>
               </Select>
             </div>
-
             {proxyType === "block" ? (
               <>
                 <div className="space-y-2">
@@ -543,10 +666,7 @@ export default function StaffStats() {
                   <div className="flex gap-3">
                     {SHIFT_TYPES.map((type) => (
                       <label key={type} className="flex items-center gap-2 text-sm cursor-pointer">
-                        <Checkbox
-                          checked={proxyBlockedShifts.includes(type)}
-                          onCheckedChange={() => toggleProxyShift(type)}
-                        />
+                        <Checkbox checked={proxyBlockedShifts.includes(type)} onCheckedChange={() => toggleProxyShift(type)} />
                         <span className="capitalize">{type}</span>
                       </label>
                     ))}
@@ -561,37 +681,30 @@ export default function StaffStats() {
                 </div>
                 <div className="space-y-2">
                   <Label>End Date</Label>
-                  <Input
-                    type="date"
-                    value={proxyEndDate || proxyDate}
-                    min={proxyDate}
-                    onChange={(e) => setProxyEndDate(e.target.value)}
-                  />
+                  <Input type="date" value={proxyEndDate || proxyDate} min={proxyDate} onChange={(e) => setProxyEndDate(e.target.value)} />
                 </div>
               </div>
             )}
-
             <div className="space-y-2">
               <Label>Reason (optional)</Label>
-              <Input
-                placeholder="Reason for request"
-                value={proxyReason}
-                onChange={(e) => setProxyReason(e.target.value)}
-              />
+              <Input placeholder="Reason for request" value={proxyReason} onChange={(e) => setProxyReason(e.target.value)} />
             </div>
-
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={closeProxyDialog}>Cancel</Button>
-              <Button
-                onClick={() => createProxyRequest.mutate()}
-                disabled={!proxyDate || createProxyRequest.isPending}
-              >
+              <Button onClick={() => createProxyRequest.mutate()} disabled={!proxyDate || createProxyRequest.isPending}>
                 Submit Request
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Verify shift dialog */}
+      <VerifyShiftDialog
+        open={!!verifyShift}
+        onOpenChange={(open) => { if (!open) setVerifyShift(null); }}
+        shift={verifyShift}
+      />
     </div>
   );
 }
