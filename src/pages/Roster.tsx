@@ -668,7 +668,7 @@ export default function Roster() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-xl md:text-2xl font-bold">Master Roster</h1>
+        <h1 className="text-xl md:text-2xl font-bold">Shift Manager</h1>
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <TooltipProvider>
             {draftCount > 0 && (
@@ -782,7 +782,7 @@ export default function Roster() {
             <table className="w-max min-w-full border-separate border-spacing-0 text-xs md:text-sm">
             <thead>
               <tr>
-                <th className="sticky left-0 z-30 w-[100px] min-w-[100px] border-r bg-card p-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:p-2">Staff</th>
+                <th className="sticky left-0 z-30 w-[100px] min-w-[100px] border-r bg-card py-3 px-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:py-4 md:px-2">Staff</th>
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
@@ -827,7 +827,7 @@ export default function Roster() {
             <tbody>
               {staff.map((member) => (
                 <tr key={member.id} className="border-t">
-                  <td className="sticky left-0 z-20 w-[100px] min-w-[100px] overflow-hidden border-r bg-card p-1.5 font-medium shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:p-2">
+                  <td className="sticky left-0 z-20 w-[100px] min-w-[100px] overflow-hidden border-r bg-card py-3 px-1.5 font-medium shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:py-4 md:px-2">
                     <div className="max-w-[100px] md:max-w-[160px]">
                       <span className="truncate block text-xs md:text-sm">{member.full_name}</span>
                       <div className="flex items-center gap-1 mt-0.5">
@@ -846,7 +846,7 @@ export default function Roster() {
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`relative z-0 p-1 text-center transition-colors border-b border-r border-border/20 ${dateBlocked || blocked ? "bg-destructive/5 cursor-not-allowed" : "cursor-pointer hover:bg-accent/30"}`}
+                        className={`relative z-0 py-3 px-1 text-center transition-colors border-b border-r border-border/20 ${dateBlocked || blocked ? "bg-muted/20 roster-ghosted cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-accent/30"}`}
                         onClick={() => {
                           if (dateBlocked || blocked) return;
                           if (dayShifts.length === 0) {
@@ -866,19 +866,21 @@ export default function Roster() {
                           <div
                             key={s.id}
                             onClick={(e) => { e.stopPropagation(); openEdit(s); }}
-                            className={`mb-1 rounded border px-1.5 py-1 text-xs ${dateBlocked ? "cursor-not-allowed" : "cursor-pointer hover:ring-1 hover:ring-primary/50"} transition-all ${
+                            className={`relative mb-1 rounded border-s-2 px-1.5 py-1.5 text-xs ${dateBlocked ? "cursor-not-allowed" : "cursor-pointer hover:ring-1 hover:ring-primary/50"} transition-all ${
                               (s as any).is_standby
-                                ? `bg-transparent border-2 border-dashed ${s.type === "morning" ? "border-shift-morning text-shift-morning" : s.type === "evening" ? "border-shift-evening text-shift-evening" : "border-shift-night text-shift-night"}`
-                                : s.is_draft ? shiftBgDraft[s.type] + " opacity-60" : shiftBgPublished[s.type]
-                            }`}
+                                ? `bg-transparent border-2 border-dashed ${s.type === "morning" ? "border-s-shift-morning text-shift-morning" : s.type === "evening" ? "border-s-shift-evening text-shift-evening" : "border-s-shift-night text-shift-night"}`
+                                : s.is_draft
+                                  ? `${shiftBgDraft[s.type]} opacity-70 border-dashed`
+                                  : `${shiftBgPublished[s.type]} border-solid`
+                            } ${s.type === "morning" ? "border-s-shift-morning" : s.type === "evening" ? "border-s-shift-evening" : "border-s-shift-night"}`}
                           >
+                            {s.is_responsible_on_shift && (
+                              <Star className="absolute top-0.5 end-0.5 h-3 w-3 fill-primary text-primary" />
+                            )}
                             <div className="flex items-center justify-center gap-0.5">
                               <span className="capitalize font-medium">{s.type.charAt(0)}</span>
-                              {s.is_responsible_on_shift && (
-                                <span className="text-[9px] font-bold bg-primary/20 text-primary rounded px-0.5">RN</span>
-                              )}
                               {(s as any).is_standby && (
-                                <span className="text-[9px] font-bold bg-amber-500/20 text-amber-700 rounded px-0.5">OC</span>
+                                <span className="text-[9px] font-bold bg-shift-morning/20 text-shift-morning rounded px-0.5">OC</span>
                               )}
                               {s.is_draft ? <EyeOff className="h-2.5 w-2.5 opacity-60" /> : <Lock className="h-2.5 w-2.5 opacity-40" />}
                             </div>
