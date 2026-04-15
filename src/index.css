@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
+    --background: 0 0% 100%;
     --foreground: 0 0% 14%;
 
     --card: 0 0% 100%;
@@ -43,14 +43,15 @@
     --shift-evening: 262 83% 58%;
     --shift-night: 221 83% 33%;
 
-    --sidebar-background: 199 89% 48%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 199 89% 48%;
-    --sidebar-accent: 199 89% 55%;
+    /* Deep Navy sidebar */
+    --sidebar-background: 220 40% 13%;
+    --sidebar-foreground: 210 20% 78%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 30% 20%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 199 89% 42%;
-    --sidebar-ring: 0 0% 100%;
+    --sidebar-border: 220 30% 20%;
+    --sidebar-ring: 199 89% 48%;
   }
 
   .dark {
@@ -75,13 +76,13 @@
     --border: 0 0% 18%;
     --input: 0 0% 18%;
     --ring: 199 89% 55%;
-    --sidebar-background: 199 89% 15%;
-    --sidebar-foreground: 0 0% 91%;
+    --sidebar-background: 220 40% 8%;
+    --sidebar-foreground: 210 20% 70%;
     --sidebar-primary: 199 89% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 199 89% 22%;
+    --sidebar-accent: 220 30% 15%;
     --sidebar-accent-foreground: 0 0% 91%;
-    --sidebar-border: 199 89% 22%;
+    --sidebar-border: 220 30% 15%;
     --sidebar-ring: 199 89% 55%;
   }
 }
@@ -93,4 +94,15 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
+}
+
+/* Ghosted hatch pattern for roster exclusions */
+.roster-ghosted {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 4px,
+    hsl(0 0% 50% / 0.06) 4px,
+    hsl(0 0% 50% / 0.06) 8px
+  );
 }

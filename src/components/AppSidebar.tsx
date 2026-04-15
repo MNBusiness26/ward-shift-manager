@@ -65,12 +65,15 @@ export function AppSidebar() {
   const showManagement = isManager || isAssistantManager;
   const showAdmin = isManager && profile?.email === ADMIN_EMAIL;
 
+  const isActive = (url: string) =>
+    url === "/" ? location.pathname === "/" : location.pathname.startsWith(url);
+
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
         <div className="flex items-center gap-2 px-4 py-4">
           {!collapsed && (
-            <span className="text-lg font-bold text-sidebar-foreground">
+            <span className="text-lg font-bold text-sidebar-primary">
               WardWise
             </span>
           )}
@@ -85,59 +88,83 @@ export function AppSidebar() {
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/60">{t("nav.menu")}</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider">{t("nav.menu")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {nurseItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/"}
-                      className="hover:bg-sidebar-accent text-base md:text-sm"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      onClick={handleLinkClick}
-                    >
-                      <item.icon className="me-2 h-5 w-5 md:h-4 md:w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {nurseItems.map((item) => {
+                const active = isActive(item.url);
+                return (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/"}
+                        className={`text-base md:text-sm transition-colors ${
+                          active
+                            ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                            : "text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        }`}
+                        activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                        onClick={handleLinkClick}
+                      >
+                        <item.icon className={`me-2 h-5 w-5 md:h-4 md:w-4 transition-colors ${
+                          active ? "text-sidebar-primary" : "text-sidebar-foreground/40"
+                        }`} />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         {showManagement && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/60">{t("nav.management")}</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider">{t("nav.management")}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {managerItems.map((item) => (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild>
-                      <NavLink
-                        to={item.url}
-                        className="hover:bg-sidebar-accent text-base md:text-sm"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                        onClick={handleLinkClick}
-                      >
-                        <item.icon className="me-2 h-5 w-5 md:h-4 md:w-4" />
-                        {!collapsed && <span>{item.title}</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {managerItems.map((item) => {
+                  const active = isActive(item.url);
+                  return (
+                    <SidebarMenuItem key={item.url}>
+                      <SidebarMenuButton asChild>
+                        <NavLink
+                          to={item.url}
+                          className={`text-base md:text-sm transition-colors ${
+                            active
+                              ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                              : "text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                          }`}
+                          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                          onClick={handleLinkClick}
+                        >
+                          <item.icon className={`me-2 h-5 w-5 md:h-4 md:w-4 transition-colors ${
+                            active ? "text-sidebar-primary" : "text-sidebar-foreground/40"
+                          }`} />
+                          {!collapsed && <span>{item.title}</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
                 {showAdmin && (
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
                       <NavLink
                         to="/admin"
-                        className="hover:bg-sidebar-accent text-base md:text-sm"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        className={`text-base md:text-sm transition-colors ${
+                          isActive("/admin")
+                            ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                            : "text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        }`}
+                        activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                         onClick={handleLinkClick}
                       >
-                        <Shield className="me-2 h-5 w-5 md:h-4 md:w-4" />
+                        <Shield className={`me-2 h-5 w-5 md:h-4 md:w-4 transition-colors ${
+                          isActive("/admin") ? "text-sidebar-primary" : "text-sidebar-foreground/40"
+                        }`} />
                         {!collapsed && <span>{t("nav.admin")}</span>}
                       </NavLink>
                     </SidebarMenuButton>
@@ -151,14 +178,14 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-3">
         {!collapsed && profile && (
-          <p className="mb-2 truncate text-xs text-sidebar-foreground/70">
+          <p className="mb-2 truncate text-xs text-sidebar-foreground/50">
             {profile.full_name}
           </p>
         )}
         <SidebarMenuButton asChild>
           <button
             onClick={signOut}
-            className="flex w-full items-center gap-2 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            className="flex w-full items-center gap-2 text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
           >
             <LogOut className="h-4 w-4" />
             {!collapsed && <span>{t("nav.signOut")}</span>}
