@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { format, addDays, startOfToday, isSameDay } from "date-fns";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import { useTranslation } from "@/i18n/useTranslation";
 
 const shiftIcons: Record<string, React.ElementType> = {
   morning: Sun,
@@ -19,17 +20,17 @@ const shiftBadgeColors: Record<string, string> = {
   night: "bg-shift-night/15 text-shift-night border-shift-night/30",
 };
 
-const shiftLabels: Record<string, string> = { morning: "Morning", evening: "Evening", night: "Night" };
-
 export default function Index() {
   const { user, profile, roles } = useAuth();
   const { settings } = useAppSettings();
+  const { t } = useTranslation();
   const today = startOfToday();
   const weekEnd = addDays(today, 6);
   const todayStr = format(today, "yyyy-MM-dd");
   const endStr = format(weekEnd, "yyyy-MM-dd");
 
-  // Greeting format from admin setting
+  // Greeting template from admin setting
+  const greetingTemplate = settings.find((s: any) => s.key === "greeting_template")?.value as string | undefined;
   const greetingFormat = settings.find((s: any) => s.key === "greeting_format")?.value ?? "formal";
 
   const roleLabel = (() => {
@@ -39,12 +40,30 @@ export default function Index() {
     return "Nurse";
   })();
 
+  const shiftLabels: Record<string, string> = {
+    morning: t("shift.morning"),
+    evening: t("shift.evening"),
+    night: t("shift.night"),
+  };
+
   const greeting = (() => {
     const name = profile?.full_name || "there";
-    if (greetingFormat === "first_name") {
-      return `Hello, ${name.split(" ")[0]}`;
+    const firstName = name.split(" ")[0];
+    const lastName = name.split(" ").slice(1).join(" ") || firstName;
+
+    // If a custom template exists, parse it
+    if (greetingTemplate && typeof greetingTemplate === "string" && greetingTemplate.trim()) {
+      return greetingTemplate
+        .replace(/\{\{title\}\}/g, roleLabel)
+        .replace(/\{\{first_name\}\}/g, firstName)
+        .replace(/\{\{last_name\}\}/g, lastName);
     }
-    return `Hello, ${roleLabel} ${name}`;
+
+    // Fallback to toggle-based
+    if (greetingFormat === "first_name") {
+      return `${t("dashboard.greeting")}, ${firstName}`;
+    }
+    return `${t("dashboard.greeting")}, ${roleLabel} ${name}`;
   })();
 
   // Personal shifts for next 7 days
@@ -92,7 +111,6 @@ export default function Index() {
         .or(`requesting_user_id.eq.${user!.id},covering_user_id.eq.${user!.id}`)
         .in("status", ["pending", "peer_accepted"]);
       if (error) throw error;
-      // Filter to shifts within 7-day window
       return (data || []).filter((s: any) => {
         const d = s.shift?.date;
         return d && d >= todayStr && d <= endStr;
@@ -118,7 +136,6 @@ export default function Index() {
     enabled: !!user,
   });
 
-  // Build 7-day agenda
   const days = Array.from({ length: 7 }, (_, i) => addDays(today, i));
 
   const getTeammates = (date: string, type: string) =>
@@ -140,13 +157,13 @@ export default function Index() {
       {/* Personalized Greeting */}
       <div>
         <h1 className="text-xl md:text-2xl font-bold">{greeting}</h1>
-        <p className="text-sm text-muted-foreground">Your next 7 days at a glance</p>
+        <p className="text-sm text-muted-foreground">{t("dashboard.subtitle")}</p>
       </div>
 
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
+            <Card key={i} className="animate-pulse shadow-md">
               <CardContent className="h-20 p-4" />
             </Card>
           ))}
@@ -163,30 +180,28 @@ export default function Index() {
 
             return (
               <div key={dateStr} className="space-y-2">
-                {/* Day header */}
                 <div className="flex items-center gap-2">
                   <h2 className={`text-sm font-semibold ${isToday ? "text-primary" : "text-muted-foreground"}`}>
                     {format(day, "EEEE, MMMM d")}
                   </h2>
                   {isToday && (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">
-                      Today
+                      {t("dashboard.today")}
                     </Badge>
                   )}
                 </div>
 
                 {!hasContent ? (
-                  <Card className="border-dashed">
+                  <Card className="border-dashed shadow-md">
                     <CardContent className="flex items-center gap-3 py-4 px-4">
                       <Calendar className="h-4 w-4 text-muted-foreground/50" />
-                      <span className="text-sm text-muted-foreground">No shifts scheduled</span>
+                      <span className="text-sm text-muted-foreground">{t("dashboard.noShifts")}</span>
                     </CardContent>
                   </Card>
                 ) : (
                   <>
-                    {/* Absence card */}
                     {absence && dayShifts.length === 0 && (
-                      <Card className="border-muted bg-muted/30">
+                      <Card className="border-muted bg-muted/30 shadow-md">
                         <CardContent className="flex items-center gap-3 py-4 px-4">
                           {absence.request_type === "vacation" ? (
                             <Palmtree className="h-5 w-5 text-muted-foreground" />
@@ -197,10 +212,10 @@ export default function Index() {
                             <span className="text-sm font-medium capitalize">
                               {absence.request_type === "vacation" ? "Vacation" : "Blocked"}
                             </span>
-                            <span className="text-sm text-muted-foreground ml-1.5">— All Day</span>
+                            <span className="text-sm text-muted-foreground ms-1.5">— {t("dashboard.allDay")}</span>
                           </div>
                           {absence.reason && (
-                            <span className="text-xs text-muted-foreground ml-auto hidden sm:inline">
+                            <span className="text-xs text-muted-foreground ms-auto hidden sm:inline">
                               {absence.reason}
                             </span>
                           )}
@@ -208,7 +223,6 @@ export default function Index() {
                       </Card>
                     )}
 
-                    {/* Shift cards */}
                     {dayShifts.map((shift) => {
                       const Icon = shiftIcons[shift.type] || Sun;
                       const teammates = getTeammates(dateStr, shift.type);
@@ -217,18 +231,16 @@ export default function Index() {
                       return (
                         <Card
                           key={shift.id}
-                          className={`overflow-hidden ${isToday ? "border-primary/30 shadow-sm" : ""}`}
+                          className={`overflow-hidden shadow-md ${isToday ? "border-primary/30" : ""}`}
                         >
                           <CardContent className="p-0">
                             <div className="flex">
-                              {/* Color accent strip */}
                               <div className={`w-1.5 flex-shrink-0 ${
                                 shift.type === "morning" ? "bg-shift-morning" :
                                 shift.type === "evening" ? "bg-shift-evening" : "bg-shift-night"
                               }`} />
 
                               <div className="flex-1 p-3 md:p-4 space-y-2">
-                                {/* Top row: shift type, time, badges */}
                                 <div className="flex items-center justify-between flex-wrap gap-2">
                                   <div className="flex items-center gap-2">
                                     <Badge variant="outline" className={`gap-1 ${shiftBadgeColors[shift.type]}`}>
@@ -243,39 +255,37 @@ export default function Index() {
                                     {shift.is_responsible_on_shift && (
                                       <Badge className="gap-1 text-xs">
                                         <Star className="h-3 w-3 fill-current" />
-                                        Responsible
+                                        {t("dashboard.responsible")}
                                       </Badge>
                                     )}
                                     <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                      Published
+                                      {t("dashboard.published")}
                                     </Badge>
                                     {hasSwap && (
                                       <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-400/30 text-amber-600 dark:text-amber-400">
-                                        <ArrowLeftRight className="h-2.5 w-2.5 mr-0.5" />
-                                        Pending Swap
+                                        <ArrowLeftRight className="h-2.5 w-2.5 me-0.5" />
+                                        {t("dashboard.pendingSwap")}
                                       </Badge>
                                     )}
                                   </div>
                                 </div>
 
-                                {/* Role */}
                                 <div className="text-xs text-muted-foreground">
                                   Role: <span className="font-medium text-foreground capitalize">{roleLabel}</span>
                                 </div>
 
-                                {/* Teammates */}
                                 <div className="flex items-start gap-1.5 text-xs">
                                   <Users className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
                                   <div className="flex-1">
-                                    <span className="text-muted-foreground font-medium">On shift with: </span>
+                                    <span className="text-muted-foreground font-medium">{t("dashboard.onShiftWith")} </span>
                                     {teammates.length === 0 ? (
-                                      <span className="text-muted-foreground">No other staff</span>
+                                      <span className="text-muted-foreground">{t("dashboard.noOtherStaff")}</span>
                                     ) : (
                                       <span className="flex flex-wrap gap-x-1.5 gap-y-0.5">
-                                        {teammates.map((t) => (
-                                          <span key={t.id} className="inline-flex items-center gap-0.5">
-                                            {(t.profiles as any)?.full_name?.split(" ")[0] || "?"}
-                                            {t.is_responsible_on_shift && (
+                                        {teammates.map((tm) => (
+                                          <span key={tm.id} className="inline-flex items-center gap-0.5">
+                                            {(tm.profiles as any)?.full_name?.split(" ")[0] || "?"}
+                                            {tm.is_responsible_on_shift && (
                                               <Star className="h-2.5 w-2.5 fill-primary text-primary" />
                                             )}
                                           </span>
@@ -285,7 +295,6 @@ export default function Index() {
                                   </div>
                                 </div>
 
-                                {/* Comments */}
                                 {shift.comments && (
                                   <p className="text-xs text-muted-foreground border-t border-border pt-1.5 mt-1">
                                     {shift.comments}
@@ -298,9 +307,8 @@ export default function Index() {
                       );
                     })}
 
-                    {/* Swap-only entries (swaps on days without own shift) */}
                     {dayShifts.length === 0 && daySwaps.length > 0 && !absence && (
-                      <Card className="border-dashed">
+                      <Card className="border-dashed shadow-md">
                         <CardContent className="flex items-center gap-3 py-4 px-4">
                           <ArrowLeftRight className="h-4 w-4 text-amber-500" />
                           <span className="text-sm text-muted-foreground">
