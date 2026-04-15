@@ -798,16 +798,16 @@ export default function Roster() {
                       <div className="text-[10px] md:text-xs mb-1">{formatLocale(d, "MMM d", locale)}</div>
                       {/* Fulfillment summary per shift type */}
                       <div className="flex flex-col gap-0.5">
-                        {(["morning", "evening", "night"] as const).map((t) => {
-                          const target = getHeadcountTarget(t, dateStr, headcountLimits);
+                        {(["morning", "evening", "night"] as const).map((st) => {
+                          const target = getHeadcountTarget(st, dateStr, headcountLimits);
                           const count = shifts.filter(
-                            (s) => s.date === dateStr && s.type === t && s.assigned_user_id && !(s as any).is_standby
+                            (s) => s.date === dateStr && s.type === st && s.assigned_user_id && !(s as any).is_standby
                           ).length;
                           const met = count >= target;
                           const over = count > target;
                           return (
                             <div
-                              key={t}
+                              key={st}
                               className={`text-[8px] md:text-[9px] rounded-sm px-0.5 md:px-1 py-px font-medium ${
                                 over
                                   ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
@@ -816,7 +816,7 @@ export default function Roster() {
                                   : "text-muted-foreground"
                               }`}
                             >
-                              {t(`shift.${t}`).charAt(0)}: {count}/{target}
+                              {t(`shift.${st}`).charAt(0)}: {count}/{target}
                               {met && !over && " ✓"}
                             </div>
                           );
