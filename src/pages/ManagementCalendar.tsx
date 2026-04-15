@@ -449,7 +449,7 @@ export default function ManagementCalendar() {
         </div>
         <div className="flex items-center gap-1">
           <Badge variant="secondary" className="text-[10px]">{t("common.name")}</Badge>
-          <span>{t("roster.assigned") || "Assigned"}</span>
+          <span>{t("roster.assigned")}</span>
         </div>
         <div className="flex items-center gap-1">
           <Badge variant="secondary" className="text-[10px]">
@@ -463,7 +463,7 @@ export default function ManagementCalendar() {
         </div>
         <div className="flex items-center gap-1">
           <Lock className="h-3 w-3" />
-          <span>{t("roster.blockedDate") || "Blocked Date"}</span>
+          <span>{t("roster.blockedDate")}</span>
         </div>
       </div>
 
