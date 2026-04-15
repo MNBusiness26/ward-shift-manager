@@ -8,34 +8,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  getDay,
-  isSameDay,
-  addMonths,
-  subMonths,
-  isWithinInterval,
-  parseISO,
-  isToday,
+  format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay,
+  addMonths, subMonths, isWithinInterval, parseISO, isToday,
 } from "date-fns";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, X, CalendarOff, Palmtree } from "lucide-react";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatLocale } from "@/i18n/dateLocale";
 
 const SHIFT_TYPES = ["morning", "evening", "night"] as const;
 
@@ -52,6 +38,7 @@ const typeIcons: Record<string, React.ReactNode> = {
 
 export default function Availability() {
   const { user } = useAuth();
+  const { t, locale } = useTranslation();
   const queryClient = useQueryClient();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -63,6 +50,11 @@ export default function Availability() {
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
+
+  const dayHeaders = [
+    t("calendar.sun"), t("calendar.mon"), t("calendar.tue"),
+    t("calendar.wed"), t("calendar.thu"), t("calendar.fri"), t("calendar.sat"),
+  ];
 
   const { data: requests = [] } = useQuery({
     queryKey: ["availability-requests", user?.id, format(monthStart, "yyyy-MM")],
@@ -87,18 +79,15 @@ export default function Availability() {
       const isBlock = requestType === "block";
       const endStr = isBlock ? startStr : (endDate || startStr);
       const { error } = await supabase.from("availability_requests").insert({
-        user_id: user.id,
-        date: startStr,
-        end_date: endStr,
-        reason: reason || null,
-        request_type: requestType,
+        user_id: user.id, date: startStr, end_date: endStr,
+        reason: reason || null, request_type: requestType,
         blocked_shifts: isBlock ? blockedShifts : [],
       } as any);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["availability-requests"] });
-      toast.success("Request submitted");
+      toast.success(t("avail.submitRequest"));
       closeDialog();
     },
     onError: (e: any) => toast.error(e.message),
@@ -117,12 +106,8 @@ export default function Availability() {
   });
 
   const closeDialog = () => {
-    setDialogOpen(false);
-    setReason("");
-    setEndDate("");
-    setRequestType("block");
-    setBlockedShifts([]);
-    setSelectedDate(null);
+    setDialogOpen(false); setReason(""); setEndDate("");
+    setRequestType("block"); setBlockedShifts([]); setSelectedDate(null);
   };
 
   const toggleShift = (shift: string) => {
@@ -146,65 +131,61 @@ export default function Availability() {
     const req = dayReqs[0];
     const type = (req as any).request_type || "block";
     if (type === "vacation") {
-      return req.status === "approved"
-        ? "bg-blue-100 border-blue-300"
-        : "bg-blue-50 border-blue-200";
+      return req.status === "approved" ? "bg-blue-100 border-blue-300" : "bg-blue-50 border-blue-200";
     }
-    return req.status === "approved"
-      ? "bg-destructive/10 border-destructive/30"
-      : "bg-yellow-50 border-yellow-200";
+    return req.status === "approved" ? "bg-destructive/10 border-destructive/30" : "bg-yellow-50 border-yellow-200";
   };
 
   const formatBlockedShifts = (req: any) => {
     const shifts: string[] = (req as any).blocked_shifts || [];
     if (shifts.length === 0) return null;
-    return shifts.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(" & ");
+    return shifts.map((s: string) => t(`shift.${s}`)).join(" & ");
+  };
+
+  const statusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      pending: t("common.pending"), approved: t("common.approved"), declined: t("common.declined"),
+    };
+    return map[status] || status;
   };
 
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl md:text-2xl font-bold">Availability</h1>
+        <h1 className="text-xl md:text-2xl font-bold">{t("page.availability")}</h1>
       </div>
 
-      {/* Legend */}
       <div className="flex flex-wrap gap-2 md:gap-3 text-[11px] md:text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1">
-          <span className="h-3 w-3 rounded-sm border bg-yellow-50 border-yellow-200" /> Pending
+          <span className="h-3 w-3 rounded-sm border bg-yellow-50 border-yellow-200" /> {t("avail.legend.pending")}
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="h-3 w-3 rounded-sm border bg-destructive/10 border-destructive/30" /> Blocked
+          <span className="h-3 w-3 rounded-sm border bg-destructive/10 border-destructive/30" /> {t("avail.legend.blocked")}
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="h-3 w-3 rounded-sm border bg-blue-100 border-blue-300" /> Vacation
+          <span className="h-3 w-3 rounded-sm border bg-blue-100 border-blue-300" /> {t("avail.legend.vacation")}
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="h-3 w-3 rounded-sm border bg-green-100 border-green-200" /> Approved
+          <span className="h-3 w-3 rounded-sm border bg-green-100 border-green-200" /> {t("avail.legend.approved")}
         </span>
       </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2 px-2 md:px-6">
           <Button variant="ghost" size="icon" className="h-8 w-8 md:h-9 md:w-9" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
           </Button>
-          <CardTitle className="text-sm md:text-base">{format(currentMonth, "MMMM yyyy")}</CardTitle>
+          <CardTitle className="text-sm md:text-base">{formatLocale(currentMonth, "MMMM yyyy", locale)}</CardTitle>
           <Button variant="ghost" size="icon" className="h-8 w-8 md:h-9 md:w-9" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4 rtl:rotate-180" />
           </Button>
         </CardHeader>
         <CardContent className="px-1 md:px-6">
-          {/* Day headers */}
           <div className="grid grid-cols-7 text-center text-[10px] md:text-xs font-medium text-muted-foreground mb-0.5 md:mb-1">
-            {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-              <div key={i} className="py-1 md:py-2 md:hidden">{d}</div>
-            ))}
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-              <div key={d} className="py-1 md:py-2 hidden md:block">{d}</div>
+            {dayHeaders.map((d, i) => (
+              <div key={i} className="py-1 md:py-2">{d}</div>
             ))}
           </div>
-
-          {/* Calendar grid */}
           <div className="grid grid-cols-7 gap-[2px] md:gap-px">
             {Array.from({ length: startPad }).map((_, i) => (
               <div key={`pad-${i}`} className="aspect-square md:h-20" />
@@ -216,22 +197,8 @@ export default function Availability() {
               return (
                 <div
                   key={day.toISOString()}
-                  onClick={() => {
-                    if (!hasBlock) {
-                      setSelectedDate(day);
-                      setDialogOpen(true);
-                    }
-                  }}
-                  className={`
-                    aspect-square md:aspect-auto md:h-20
-                    rounded-md border p-0.5 md:p-1
-                    cursor-pointer transition-colors
-                    flex flex-col items-center justify-center md:justify-start
-                    min-h-[40px]
-                    active:ring-2 active:ring-primary/50 active:border-primary
-                    ${today ? "ring-1 ring-primary/30" : ""}
-                    ${getDayCellStyle(dayReqs)}
-                  `}
+                  onClick={() => { if (!hasBlock) { setSelectedDate(day); setDialogOpen(true); } }}
+                  className={`aspect-square md:aspect-auto md:h-20 rounded-md border p-0.5 md:p-1 cursor-pointer transition-colors flex flex-col items-center justify-center md:justify-start min-h-[40px] active:ring-2 active:ring-primary/50 active:border-primary ${today ? "ring-1 ring-primary/30" : ""} ${getDayCellStyle(dayReqs)}`}
                 >
                   <span className={`text-[clamp(0.6rem,2.5vw,0.8rem)] md:text-xs leading-none ${today ? "font-bold text-primary" : "text-muted-foreground"}`}>
                     {format(day, "d")}
@@ -239,16 +206,8 @@ export default function Availability() {
                   {dayReqs.map((r) => (
                     <div key={r.id} className="flex flex-col items-center gap-0 mt-0.5">
                       <span className="hidden md:inline-flex">{typeIcons[(r as any).request_type || "block"]}</span>
-                      <Badge
-                        variant="outline"
-                        className={`
-                          text-[clamp(0.4rem,1.8vw,0.625rem)] md:text-[10px]
-                          px-0.5 md:px-1 py-0
-                          leading-none whitespace-nowrap truncate max-w-full
-                          ${statusColors[r.status]}
-                        `}
-                      >
-                        {r.status}
+                      <Badge variant="outline" className={`text-[clamp(0.4rem,1.8vw,0.625rem)] md:text-[10px] px-0.5 md:px-1 py-0 leading-none whitespace-nowrap truncate max-w-full ${statusColors[r.status]}`}>
+                        {statusLabel(r.status)}
                       </Badge>
                     </div>
                   ))}
@@ -259,14 +218,13 @@ export default function Availability() {
         </CardContent>
       </Card>
 
-      {/* Requests list */}
       <Card>
         <CardHeader className="px-3 md:px-6">
-          <CardTitle className="text-sm md:text-base">Your Requests</CardTitle>
+          <CardTitle className="text-sm md:text-base">{t("avail.yourRequests")}</CardTitle>
         </CardHeader>
         <CardContent className="px-3 md:px-6">
           {requests.length === 0 ? (
-            <p className="text-xs md:text-sm text-muted-foreground">No availability requests this month.</p>
+            <p className="text-xs md:text-sm text-muted-foreground">{t("avail.noRequests")}</p>
           ) : (
             <div className="space-y-2">
               {requests.map((r) => {
@@ -279,30 +237,25 @@ export default function Availability() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
                         <p className="text-xs md:text-sm font-medium">
-                          {format(new Date(r.date), "EEE, MMM d")}
-                          {isRange && ` → ${format(new Date(rEnd), "EEE, MMM d")}`}
+                          {formatLocale(new Date(r.date), "EEE, MMM d", locale)}
+                          {isRange && ` → ${formatLocale(new Date(rEnd), "EEE, MMM d", locale)}`}
                         </p>
                         <Badge variant="outline" className="text-[9px] md:text-[10px] capitalize">
                           {typeIcons[rType]}
-                          <span className="ml-1">{rType}</span>
+                          <span className="ms-1">{rType === "vacation" ? t("avail.vacationLabel") : t("avail.blockDates")}</span>
                         </Badge>
                         {blockedLabel && (
                           <Badge variant="outline" className="text-[9px] md:text-[10px]">
-                            {blockedLabel} only
+                            {blockedLabel} {t("avail.only")}
                           </Badge>
                         )}
                       </div>
                       {r.reason && <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{r.reason}</p>}
                     </div>
                     <div className="flex items-center gap-1 md:gap-2 shrink-0">
-                      <Badge variant="outline" className={`text-[9px] md:text-xs ${statusColors[r.status]}`}>{r.status}</Badge>
+                      <Badge variant="outline" className={`text-[9px] md:text-xs ${statusColors[r.status]}`}>{statusLabel(r.status)}</Badge>
                       {r.status === "pending" && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => deleteRequest.mutate(r.id)}
-                        >
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteRequest.mutate(r.id)}>
                           <X className="h-3 w-3" />
                         </Button>
                       )}
@@ -315,24 +268,23 @@ export default function Availability() {
         </CardContent>
       </Card>
 
-      {/* New request dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
         <DialogContent className="max-w-[95vw] md:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-base md:text-lg">New Availability Request</DialogTitle>
+            <DialogTitle className="text-base md:text-lg">{t("avail.newRequest")}</DialogTitle>
           </DialogHeader>
           {selectedDate && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label>{t("common.type")}</Label>
                 <Select value={requestType} onValueChange={(v: any) => { setRequestType(v); setBlockedShifts([]); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="block">
-                      <span className="flex items-center gap-2"><CalendarOff className="h-3 w-3" /> Block Dates</span>
+                      <span className="flex items-center gap-2"><CalendarOff className="h-3 w-3" /> {t("avail.blockDates")}</span>
                     </SelectItem>
                     <SelectItem value="vacation">
-                      <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> Vacation</span>
+                      <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.vacationLabel")}</span>
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -341,27 +293,20 @@ export default function Availability() {
               {requestType === "block" ? (
                 <>
                   <div className="space-y-2">
-                    <Label>Date</Label>
-                    <Input
-                      type="date"
-                      value={format(selectedDate, "yyyy-MM-dd")}
-                      onChange={(e) => {
-                        const d = new Date(e.target.value + "T00:00:00");
-                        if (!isNaN(d.getTime())) setSelectedDate(d);
-                      }}
-                    />
+                    <Label>{t("common.date")}</Label>
+                    <Input type="date" value={format(selectedDate, "yyyy-MM-dd")} onChange={(e) => {
+                      const d = new Date(e.target.value + "T00:00:00");
+                      if (!isNaN(d.getTime())) setSelectedDate(d);
+                    }} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Block specific shifts (optional)</Label>
-                    <p className="text-xs text-muted-foreground">Leave unchecked to block the entire day</p>
+                    <Label>{t("avail.blockShifts")}</Label>
+                    <p className="text-xs text-muted-foreground">{t("avail.blockShiftsHint")}</p>
                     <div className="flex gap-3">
                       {SHIFT_TYPES.map((type) => (
                         <label key={type} className="flex items-center gap-2 text-sm cursor-pointer">
-                          <Checkbox
-                            checked={blockedShifts.includes(type)}
-                            onCheckedChange={() => toggleShift(type)}
-                          />
-                          <span className="capitalize">{type}</span>
+                          <Checkbox checked={blockedShifts.includes(type)} onCheckedChange={() => toggleShift(type)} />
+                          <span>{t(`shift.${type}`)}</span>
                         </label>
                       ))}
                     </div>
@@ -370,34 +315,25 @@ export default function Availability() {
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label>Start Date</Label>
+                    <Label>{t("avail.startDate")}</Label>
                     <Input type="date" value={format(selectedDate, "yyyy-MM-dd")} readOnly className="bg-muted" />
                   </div>
                   <div className="space-y-2">
-                    <Label>End Date</Label>
-                    <Input
-                      type="date"
-                      value={endDate || format(selectedDate, "yyyy-MM-dd")}
-                      min={format(selectedDate, "yyyy-MM-dd")}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
+                    <Label>{t("avail.endDate")}</Label>
+                    <Input type="date" value={endDate || format(selectedDate, "yyyy-MM-dd")} min={format(selectedDate, "yyyy-MM-dd")} onChange={(e) => setEndDate(e.target.value)} />
                   </div>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label>Reason (optional)</Label>
-                <Input
-                  placeholder="Reason for request"
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                />
+                <Label>{t("avail.reasonOptional")}</Label>
+                <Input placeholder={t("avail.reasonPlaceholder")} value={reason} onChange={(e) => setReason(e.target.value)} />
               </div>
 
               <div className="flex flex-col-reverse md:flex-row gap-2 md:justify-end">
-                <Button variant="outline" onClick={closeDialog} className="w-full md:w-auto">Cancel</Button>
+                <Button variant="outline" onClick={closeDialog} className="w-full md:w-auto">{t("common.cancel")}</Button>
                 <Button onClick={() => createRequest.mutate()} disabled={createRequest.isPending} className="w-full md:w-auto">
-                  Submit Request
+                  {t("avail.submitRequest")}
                 </Button>
               </div>
             </div>

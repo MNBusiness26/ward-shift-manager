@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/dialog";
 import { ShiftDetailCard } from "@/components/calendar/ShiftDetailCard";
 import { useMyShifts, useMyRole, useDayShifts, useAllShiftsInRange, type Shift } from "@/components/calendar/useMyCalendarData";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatLocale } from "@/i18n/dateLocale";
 
 const shiftDot: Record<string, string> = {
   morning: "bg-shift-morning",
@@ -44,6 +46,7 @@ const shiftBadgeColors: Record<string, string> = {
 
 export default function MyCalendar() {
   const { user, profile } = useAuth();
+  const { t, locale } = useTranslation();
   const [view, setView] = useState<"month" | "week">("month");
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
@@ -51,7 +54,6 @@ export default function MyCalendar() {
   const [syncOpen, setSyncOpen] = useState(false);
   const hasSyncLink = !!(profile as any)?.calendar_token;
 
-  // Compute range based on view
   const rangeStart = view === "month" ? startOfMonth(currentMonth) : currentWeek;
   const rangeEnd = view === "month" ? endOfMonth(currentMonth) : endOfWeek(currentWeek, { weekStartsOn: 0 });
 
@@ -62,6 +64,8 @@ export default function MyCalendar() {
   const { data: dayAllShifts = [] } = useDayShifts(selectedDateStr);
 
   const myRole = myRoles[0] || "nurse";
+
+  const shiftLabels: Record<string, string> = { morning: t("shift.morning"), evening: t("shift.evening"), night: t("shift.night") };
 
   const getShiftsForDay = (day: Date) =>
     shifts.filter((s) => isSameDay(new Date(s.date), day));
@@ -80,15 +84,16 @@ export default function MyCalendar() {
 
   const myDayShifts = selectedDay ? getShiftsForDay(selectedDay) : [];
 
-  // Month view grid
   const monthDays = eachDayOfInterval({ start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) });
   const startPad = getDay(startOfMonth(currentMonth));
-
-  // Week view days
   const weekDays = eachDayOfInterval({ start: currentWeek, end: endOfWeek(currentWeek, { weekStartsOn: 0 }) });
 
   const shiftIcons: Record<string, React.ElementType> = { morning: Sun, evening: Sunset, night: Moon };
-  const shiftLabels: Record<string, string> = { morning: "Morning", evening: "Evening", night: "Night" };
+
+  const dayHeaders = [
+    t("calendar.sun"), t("calendar.mon"), t("calendar.tue"),
+    t("calendar.wed"), t("calendar.thu"), t("calendar.fri"), t("calendar.sat"),
+  ];
 
   const generateIcs = () => {
     const events = shifts.map((s) => {
@@ -97,22 +102,17 @@ export default function MyCalendar() {
       const startM = s.start_time.slice(3, 5);
       const endH = s.end_time.slice(0, 2);
       const endM = s.end_time.slice(3, 5);
-      // For night shifts ending next day
       let endDate = dateClean;
       if (parseInt(endH) < parseInt(startH)) {
         const d = new Date(s.date);
         d.setDate(d.getDate() + 1);
         endDate = format(d, "yyyyMMdd");
       }
-
-      // Get colleagues for this shift
       const colleagues = allShifts
         .filter((a) => a.date === s.date && a.type === s.type && a.assigned_user_id !== user?.id)
         .map((a) => (a.profiles as any)?.full_name || "Unknown");
-
       const teamList = colleagues.length > 0 ? `\\nTeam: ${colleagues.join(", ")}` : "";
       const desc = `${shiftLabels[s.type] || s.type} Shift${s.is_responsible_on_shift ? " (Responsible)" : ""}${teamList}`;
-
       return [
         "BEGIN:VEVENT",
         `DTSTART:${dateClean}T${startH}${startM}00`,
@@ -123,16 +123,10 @@ export default function MyCalendar() {
         "END:VEVENT",
       ].join("\r\n");
     });
-
     const ics = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "PRODID:-//WardWise//Shifts//EN",
-      "CALSCALE:GREGORIAN",
-      ...events,
-      "END:VCALENDAR",
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//WardWise//Shifts//EN", "CALSCALE:GREGORIAN",
+      ...events, "END:VCALENDAR",
     ].join("\r\n");
-
     const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -145,17 +139,17 @@ export default function MyCalendar() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-bold">My Calendar</h1>
+        <h1 className="text-2xl font-bold">{t("page.myCalendar")}</h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setSyncOpen(true)}>
             <RefreshCw className="h-4 w-4" />
-            <span className="hidden sm:inline">{hasSyncLink ? "Manage Sync" : "Sync Calendar"}</span>
-            <span className="sm:hidden">{hasSyncLink ? "Sync" : "Sync"}</span>
+            <span className="hidden sm:inline">{hasSyncLink ? t("calendar.manageSync") : t("calendar.syncCalendar")}</span>
+            <span className="sm:hidden">{t("calendar.sync")}</span>
           </Button>
           <Tabs value={view} onValueChange={(v) => setView(v as "month" | "week")}>
             <TabsList>
-              <TabsTrigger value="month">Month</TabsTrigger>
-              <TabsTrigger value="week">Week</TabsTrigger>
+              <TabsTrigger value="month">{t("calendar.month")}</TabsTrigger>
+              <TabsTrigger value="week">{t("calendar.week")}</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -165,17 +159,17 @@ export default function MyCalendar() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
             </Button>
-            <CardTitle className="text-base">{format(currentMonth, "MMMM yyyy")}</CardTitle>
+            <CardTitle className="text-base">{formatLocale(currentMonth, "MMMM yyyy", locale)}</CardTitle>
             <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4 rtl:rotate-180" />
             </Button>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-7 gap-px text-center text-xs font-medium text-muted-foreground mb-1">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                <div key={d} className="py-2">{d}</div>
+              {dayHeaders.map((d, i) => (
+                <div key={i} className="py-2">{d}</div>
               ))}
             </div>
             <div className="grid grid-cols-7 gap-px">
@@ -202,21 +196,17 @@ export default function MyCalendar() {
                           <div key={s.id}>
                             <div
                               className={`flex items-center gap-0.5 rounded px-0.5 py-px text-[9px] leading-tight border ${shiftBadgeColors[s.type]}`}
-                              title={`${shiftLabels[s.type]} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${s.is_responsible_on_shift ? " ★ Responsible" : ""}`}
+                              title={`${shiftLabels[s.type]} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${s.is_responsible_on_shift ? ` ★ ${t("calendar.responsible")}` : ""}`}
                             >
                               <Icon className="h-2.5 w-2.5 flex-shrink-0" />
-                              <span className="truncate hidden md:inline">
-                                {s.start_time.slice(0, 5)}
-                              </span>
-                              <span className="truncate md:hidden">
-                                {shiftLabels[s.type]?.slice(0, 3)}
-                              </span>
+                              <span className="truncate hidden md:inline">{s.start_time.slice(0, 5)}</span>
+                              <span className="truncate md:hidden">{shiftLabels[s.type]?.slice(0, 3)}</span>
                               {s.is_responsible_on_shift && (
                                 <Star className="h-2.5 w-2.5 fill-primary text-primary flex-shrink-0" />
                               )}
                             </div>
                             {colleagues.length > 0 && (
-                              <div className="flex flex-col pl-0.5 mt-px">
+                              <div className="flex flex-col ps-0.5 mt-px">
                                 {colleagues.map((c) => (
                                   <span key={c.id} className="text-[8px] leading-[1.3] text-muted-foreground truncate">
                                     {(c.profiles as any)?.full_name?.split(" ")[0] || "?"}
@@ -235,17 +225,16 @@ export default function MyCalendar() {
           </CardContent>
         </Card>
       ) : (
-        /* Weekly View */
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <Button variant="ghost" size="icon" onClick={() => setCurrentWeek(subWeeks(currentWeek, 1))}>
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
             </Button>
             <CardTitle className="text-base">
-              {format(currentWeek, "MMM d")} — {format(endOfWeek(currentWeek, { weekStartsOn: 0 }), "MMM d, yyyy")}
+              {formatLocale(currentWeek, "MMM d", locale)} — {formatLocale(endOfWeek(currentWeek, { weekStartsOn: 0 }), "MMM d, yyyy", locale)}
             </CardTitle>
             <Button variant="ghost" size="icon" onClick={() => setCurrentWeek(addWeeks(currentWeek, 1))}>
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4 rtl:rotate-180" />
             </Button>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -258,11 +247,11 @@ export default function MyCalendar() {
                   className={`rounded-lg border p-3 space-y-2 ${isToday ? "bg-primary/5 border-primary/30" : ""}`}
                 >
                   <div className="font-medium text-sm">
-                    {format(day, "EEEE, MMM d")}
-                    {isToday && <span className="ml-2 text-xs text-primary font-normal">(Today)</span>}
+                    {formatLocale(day, "EEEE, MMM d", locale)}
+                    {isToday && <span className="ms-2 text-xs text-primary font-normal">({t("dashboard.today")})</span>}
                   </div>
                   {dayShifts.length === 0 ? (
-                    <p className="text-xs text-muted-foreground pl-2">No shifts</p>
+                    <p className="text-xs text-muted-foreground ps-2">{t("common.noShifts")}</p>
                   ) : (
                     dayShifts.map((shift) => {
                       const Icon = shiftIcons[shift.type] || Sun;
@@ -270,13 +259,13 @@ export default function MyCalendar() {
                       return (
                         <div
                           key={shift.id}
-                          className="pl-2 py-1.5 rounded hover:bg-accent/50 cursor-pointer space-y-1"
+                          className="ps-2 py-1.5 rounded hover:bg-accent/50 cursor-pointer space-y-1"
                           onClick={() => setSelectedDay(day)}
                         >
                           <div className="flex items-center gap-3 text-sm">
                             <div className={`h-2.5 w-2.5 rounded-full ${shiftDot[shift.type]}`} />
                             <Icon className="h-4 w-4 text-muted-foreground" />
-                            <span>{shiftLabels[shift.type]} Shift</span>
+                            <span>{shiftLabels[shift.type]}</span>
                             <span className="text-muted-foreground">
                               {shift.start_time.slice(0, 5)} — {shift.end_time.slice(0, 5)}
                             </span>
@@ -285,10 +274,10 @@ export default function MyCalendar() {
                             )}
                           </div>
                           {colleagues.length > 0 && (
-                            <div className="flex items-center gap-1.5 pl-7 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1.5 ps-7 text-xs text-muted-foreground">
                               <Users className="h-3 w-3 flex-shrink-0" />
                               <span>
-                                {colleagues.map((c) => (c.profiles as any)?.full_name || "Unknown").join(", ")}
+                                {colleagues.map((c) => (c.profiles as any)?.full_name || t("common.unknown")).join(", ")}
                               </span>
                             </div>
                           )}
@@ -303,18 +292,16 @@ export default function MyCalendar() {
         </Card>
       )}
 
-      {/* Day Detail Dialog */}
       <Dialog open={!!selectedDay} onOpenChange={() => setSelectedDay(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{selectedDay && format(selectedDay, "EEEE, MMMM d, yyyy")}</DialogTitle>
+            <DialogTitle>{selectedDay && formatLocale(selectedDay, "EEEE, MMMM d, yyyy", locale)}</DialogTitle>
             <DialogDescription>
-              Your role: <span className="capitalize font-medium text-foreground">{myRole}</span>
+              {t("calendar.yourRole")}: <span className="capitalize font-medium text-foreground">{myRole}</span>
             </DialogDescription>
           </DialogHeader>
-
           {myDayShifts.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">No shifts scheduled for this day.</p>
+            <p className="text-sm text-muted-foreground py-4 text-center">{t("calendar.noShiftsDay")}</p>
           ) : (
             <div className="space-y-4">
               {myDayShifts.map((shift) => (

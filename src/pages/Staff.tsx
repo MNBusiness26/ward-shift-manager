@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { UserCheck, UserX, Pencil, Users, Clock, Shield, Star, X, ChartLine } from "lucide-react";
+import { useTranslation } from "@/i18n/useTranslation";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
@@ -25,6 +26,7 @@ const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function Staff() {
   const { isManager } = useAuth();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [editDialog, setEditDialog] = useState(false);
@@ -170,16 +172,16 @@ export default function Staff() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Staff Management</h1>
+        <h1 className="text-2xl font-bold">{t("staff.title")}</h1>
         <div className="flex gap-2">
           <Badge variant="outline">
-            <Users className="mr-1 h-3 w-3" />
-            {activeStaff.length} active
+            <Users className="me-1 h-3 w-3" />
+            {activeStaff.length} {t("staff.active")}
           </Badge>
           {pendingStaff.length > 0 && (
             <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
-              <Clock className="mr-1 h-3 w-3" />
-              {pendingStaff.length} pending
+              <Clock className="me-1 h-3 w-3" />
+              {pendingStaff.length} {t("staff.pending")}
             </Badge>
           )}
         </div>
@@ -190,7 +192,7 @@ export default function Staff() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Clock className="h-4 w-4 text-amber-600" />
-              Pending Activation ({pendingStaff.length})
+              {t("staff.pendingActivation")} ({pendingStaff.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -202,13 +204,13 @@ export default function Staff() {
                     <p className="text-xs text-muted-foreground">{member.roles?.join(", ") || "nurse"}</p>
                   </div>
                   <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(member)}>
-                      <Pencil className="mr-1 h-3 w-3" />
-                      Edit
-                    </Button>
-                    <Button size="sm" onClick={() => setActivateConfirm(member)}>
-                      <UserCheck className="mr-1 h-3 w-3" />
-                      Activate
+                      <Button size="sm" variant="ghost" onClick={() => openEdit(member)}>
+                        <Pencil className="me-1 h-3 w-3" />
+                        {t("staff.edit")}
+                      </Button>
+                      <Button size="sm" onClick={() => setActivateConfirm(member)}>
+                        <UserCheck className="me-1 h-3 w-3" />
+                        {t("staff.activate")}
                     </Button>
                   </div>
                 </div>
@@ -220,13 +222,13 @@ export default function Staff() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Active Staff ({activeStaff.length})</CardTitle>
+          <CardTitle className="text-base">{t("staff.activeStaff")} ({activeStaff.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {activeStaff.length === 0 ? (
             <div className="flex flex-col items-center py-8 text-muted-foreground">
               <Users className="h-8 w-8 mb-2 opacity-50" />
-              <p className="text-sm">No active staff yet.</p>
+              <p className="text-sm">{t("staff.noActiveStaff")}</p>
             </div>
           ) : (
             <div className="space-y-2">

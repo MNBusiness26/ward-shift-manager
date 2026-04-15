@@ -5,9 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Sun, Sunset, Moon, TrendingUp } from "lucide-react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatLocale } from "@/i18n/dateLocale";
 
 export default function MyStats() {
   const { user, profile } = useAuth();
+  const { t, locale } = useTranslation();
   const now = new Date();
   const weekStart = startOfWeek(now);
   const weekEnd = endOfWeek(now);
@@ -58,21 +61,20 @@ export default function MyStats() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">My Stats</h1>
+      <h1 className="text-2xl font-bold">{t("page.myStats")}</h1>
 
-      {/* Fulfillment */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <TrendingUp className="h-4 w-4" />
-            Weekly Fulfillment
+            {t("stats.weeklyFulfillment")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">
-                {weekShifts.length} of {expectedWeekly} shifts ({fte * 100}% FTE)
+                {weekShifts.length} {t("stats.of")} {expectedWeekly} {t("stats.shifts")} ({fte * 100}% FTE)
               </span>
               <span className="font-semibold">{fulfillment}%</span>
             </div>
@@ -81,7 +83,6 @@ export default function MyStats() {
         </CardContent>
       </Card>
 
-      {/* Monthly breakdown */}
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
@@ -90,7 +91,7 @@ export default function MyStats() {
             </div>
             <div>
               <p className="text-2xl font-bold">{morningCount}</p>
-              <p className="text-xs text-muted-foreground">Morning</p>
+              <p className="text-xs text-muted-foreground">{t("shift.morning")}</p>
             </div>
           </CardContent>
         </Card>
@@ -101,7 +102,7 @@ export default function MyStats() {
             </div>
             <div>
               <p className="text-2xl font-bold">{eveningCount}</p>
-              <p className="text-xs text-muted-foreground">Evening</p>
+              <p className="text-xs text-muted-foreground">{t("shift.evening")}</p>
             </div>
           </CardContent>
         </Card>
@@ -112,26 +113,25 @@ export default function MyStats() {
             </div>
             <div>
               <p className="text-2xl font-bold">{nightCount}</p>
-              <p className="text-xs text-muted-foreground">Night</p>
+              <p className="text-xs text-muted-foreground">{t("shift.night")}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Summary */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Month Summary — {format(now, "MMMM yyyy")}</CardTitle>
+          <CardTitle className="text-base">{t("stats.monthSummary")} — {formatLocale(now, "MMMM yyyy", locale)}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-lg border p-4 text-center">
               <p className="text-3xl font-bold">{monthShifts.length}</p>
-              <p className="text-sm text-muted-foreground">Total Booked</p>
+              <p className="text-sm text-muted-foreground">{t("stats.totalBooked")}</p>
             </div>
             <div className="rounded-lg border p-4 text-center">
               <p className="text-3xl font-bold">{completedShifts}</p>
-              <p className="text-sm text-muted-foreground">Completed</p>
+              <p className="text-sm text-muted-foreground">{t("stats.completed")}</p>
             </div>
           </div>
         </CardContent>

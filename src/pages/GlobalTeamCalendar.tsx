@@ -1,30 +1,17 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval,
-  addMonths,
-  subMonths,
-  isToday,
-  isSameMonth,
+  format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
+  eachDayOfInterval, addMonths, subMonths, isToday, isSameMonth,
 } from "date-fns";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Users, Star } from "lucide-react";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatLocale } from "@/i18n/dateLocale";
 
 const shiftTypes = ["morning", "evening", "night"] as const;
-
-const shiftLabels: Record<string, string> = {
-  morning: "Morning",
-  evening: "Evening",
-  night: "Night",
-};
 
 const shiftColors: Record<string, string> = {
   morning: "bg-shift-morning/10 border-shift-morning/30",
@@ -45,7 +32,17 @@ const shiftDotColors: Record<string, string> = {
 };
 
 export default function GlobalTeamCalendar() {
+  const { t, locale } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const shiftLabels: Record<string, string> = {
+    morning: t("shift.morning"), evening: t("shift.evening"), night: t("shift.night"),
+  };
+
+  const dayHeaders = [
+    t("calendar.sun"), t("calendar.mon"), t("calendar.tue"),
+    t("calendar.wed"), t("calendar.thu"), t("calendar.fri"), t("calendar.sat"),
+  ];
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -58,14 +55,11 @@ export default function GlobalTeamCalendar() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
-        .select(
-          "*, assigned_profile:assigned_user_id(full_name, is_responsible), manager_profile:manager_on_duty_id(full_name)"
-        )
+        .select("*, assigned_profile:assigned_user_id(full_name, is_responsible), manager_profile:manager_on_duty_id(full_name)")
         .eq("is_draft", false)
         .gte("date", format(calendarStart, "yyyy-MM-dd"))
         .lte("date", format(calendarEnd, "yyyy-MM-dd"))
-        .order("date")
-        .order("start_time");
+        .order("date").order("start_time");
       if (error) throw error;
       return data;
     },
@@ -84,17 +78,17 @@ export default function GlobalTeamCalendar() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Users className="h-6 w-6" />
-          Team Calendar
+          {t("page.teamCalendar")}
         </h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={() => setCurrentMonth((m) => subMonths(m, 1))}>
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
           </Button>
           <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>
-            This Month
+            {t("calendar.thisMonth")}
           </Button>
           <Button variant="outline" size="icon" onClick={() => setCurrentMonth((m) => addMonths(m, 1))}>
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4 rtl:rotate-180" />
           </Button>
         </div>
       </div>
@@ -102,15 +96,15 @@ export default function GlobalTeamCalendar() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base text-center">
-            {format(currentMonth, "MMMM yyyy")}
+            {formatLocale(currentMonth, "MMMM yyyy", locale)}
           </CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto p-2">
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr>
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                  <th key={d} className="p-1.5 text-center font-medium text-muted-foreground text-xs border-b min-w-[140px]">
+                {dayHeaders.map((d, i) => (
+                  <th key={i} className="p-1.5 text-center font-medium text-muted-foreground text-xs border-b min-w-[140px]">
                     {d}
                   </th>
                 ))}
@@ -123,13 +117,10 @@ export default function GlobalTeamCalendar() {
                     const dateStr = format(day, "yyyy-MM-dd");
                     const inMonth = isSameMonth(day, currentMonth);
                     const today = isToday(day);
-
                     return (
                       <td
                         key={dateStr}
-                        className={`p-1 border-l align-top h-[130px] ${
-                          !inMonth ? "bg-muted/30" : ""
-                        } ${today ? "ring-2 ring-inset ring-primary/40" : ""}`}
+                        className={`p-1 border-s align-top h-[130px] ${!inMonth ? "bg-muted/30" : ""} ${today ? "ring-2 ring-inset ring-primary/40" : ""}`}
                       >
                         <div className={`text-xs font-medium mb-1 ${!inMonth ? "text-muted-foreground/50" : today ? "text-primary font-bold" : "text-muted-foreground"}`}>
                           {format(day, "d")}
@@ -139,12 +130,8 @@ export default function GlobalTeamCalendar() {
                             {shiftTypes.map((type) => {
                               const typeShifts = getShifts(dateStr, type);
                               if (typeShifts.length === 0) return null;
-
                               return (
-                                <div
-                                  key={type}
-                                  className={`rounded border px-1 py-0.5 ${shiftColors[type]}`}
-                                >
+                                <div key={type} className={`rounded border px-1 py-0.5 ${shiftColors[type]}`}>
                                   <div className={`text-[9px] font-semibold ${shiftTextColors[type]} flex items-center gap-0.5`}>
                                     <span className={`w-1.5 h-1.5 rounded-full ${shiftDotColors[type]}`} />
                                     {shiftLabels[type]}
@@ -155,17 +142,11 @@ export default function GlobalTeamCalendar() {
                                       const isStandby = s.is_standby;
                                       const isResp = s.is_responsible_on_shift || profile?.is_responsible;
                                       const firstName = profile?.full_name?.split(" ")[0] || "?";
-
                                       return (
-                                        <span
-                                          key={s.id}
-                                          className={`text-[10px] leading-tight ${
-                                            isStandby ? "opacity-50 italic" : ""
-                                          } ${isResp ? "font-bold" : ""}`}
-                                        >
+                                        <span key={s.id} className={`text-[10px] leading-tight ${isStandby ? "opacity-50 italic" : ""} ${isResp ? "font-bold" : ""}`}>
                                           {firstName}
-                                          {isResp && <Star className="inline h-2 w-2 ml-0.5 -mt-0.5" />}
-                                          {isStandby && <span className="text-[8px] ml-0.5">OC</span>}
+                                          {isResp && <Star className="inline h-2 w-2 ms-0.5 -mt-0.5" />}
+                                          {isStandby && <span className="text-[8px] ms-0.5">OC</span>}
                                         </span>
                                       );
                                     })}
@@ -193,13 +174,13 @@ export default function GlobalTeamCalendar() {
           </div>
         ))}
         <div className="flex items-center gap-1">
-          <span className="font-bold text-foreground text-[11px]">Name</span>
+          <span className="font-bold text-foreground text-[11px]">{t("common.name")}</span>
           <Star className="h-2.5 w-2.5" />
-          <span>Responsible</span>
+          <span>{t("calendar.responsible")}</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="italic opacity-50 text-[11px]">Name OC</span>
-          <span>On Call</span>
+          <span className="italic opacity-50 text-[11px]">{t("common.name")} OC</span>
+          <span>{t("calendar.onCall")}</span>
         </div>
       </div>
     </div>

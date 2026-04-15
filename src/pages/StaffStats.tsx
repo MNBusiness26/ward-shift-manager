@@ -28,6 +28,8 @@ import {
   differenceInCalendarDays, getDay, isBefore, startOfDay,
 } from "date-fns";
 import { toast } from "sonner";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatLocale } from "@/i18n/dateLocale";
 import { VerifyShiftDialog } from "@/components/staff/VerifyShiftDialog";
 
 const SHIFT_TYPES = ["morning", "evening", "night"] as const;
@@ -60,6 +62,7 @@ function parseHoursFromTime(start: string, end: string): number {
 
 export default function StaffStats() {
   const { user } = useAuth();
+  const { t, locale } = useTranslation();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [selectedId, setSelectedId] = useState<string>("");
@@ -290,11 +293,11 @@ export default function StaffStats() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-bold">Staff Stats</h1>
+        <h1 className="text-2xl font-bold">{t("staffStats.title")}</h1>
         <Tabs value={mode} onValueChange={(v) => setMode(v as "weekly" | "monthly")}>
           <TabsList>
-            <TabsTrigger value="weekly">Weekly</TabsTrigger>
-            <TabsTrigger value="monthly">Monthly</TabsTrigger>
+            <TabsTrigger value="weekly">{t("staffStats.weekly")}</TabsTrigger>
+            <TabsTrigger value="monthly">{t("staffStats.monthly")}</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -341,12 +344,12 @@ export default function StaffStats() {
 
           {/* Period navigation */}
           <div className="flex items-center justify-center gap-2">
-            <Button variant="outline" size="icon" onClick={handlePrev}><ChevronLeft className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={handlePrev}><ChevronLeft className="h-4 w-4 rtl:rotate-180" /></Button>
             <Button variant="outline" size="sm" onClick={handleToday}>
-              {mode === "weekly" ? "This Week" : "This Month"}
+              {mode === "weekly" ? t("calendar.thisWeek") : t("calendar.thisMonth")}
             </Button>
             <span className="text-sm font-medium min-w-[180px] text-center">{rangeLabel}</span>
-            <Button variant="outline" size="icon" onClick={handleNext}><ChevronRight className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={handleNext}><ChevronRight className="h-4 w-4 rtl:rotate-180" /></Button>
           </div>
 
           {/* ===== PRIMARY: Fulfillment ===== */}
