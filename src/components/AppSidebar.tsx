@@ -69,7 +69,7 @@ export function AppSidebar() {
     url === "/" ? location.pathname === "/" : location.pathname.startsWith(url);
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="border-e border-sidebar-border">
       <SidebarContent>
         <div className="flex items-center gap-2 px-4 py-4">
           {!collapsed && (
@@ -99,12 +99,12 @@ export function AppSidebar() {
                       <NavLink
                         to={item.url}
                         end={item.url === "/"}
-                        className={`text-base md:text-sm transition-colors ${
+                        className={`text-base md:text-sm rounded-sm transition-colors ${
                           active
-                            ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                             : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }`}
-                        activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                         onClick={handleLinkClick}
                       >
                         <item.icon className={`me-2 h-5 w-5 md:h-4 md:w-4 transition-colors ${
@@ -132,12 +132,12 @@ export function AppSidebar() {
                       <SidebarMenuButton asChild>
                         <NavLink
                           to={item.url}
-                         className={`text-base md:text-sm transition-colors ${
+                         className={`text-base md:text-sm rounded-sm transition-colors ${
                             active
-                              ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                           }`}
-                          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                          activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                           onClick={handleLinkClick}
                         >
                           <item.icon className={`me-2 h-5 w-5 md:h-4 md:w-4 transition-colors ${
@@ -154,12 +154,12 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild>
                       <NavLink
                         to="/admin"
-                        className={`text-base md:text-sm transition-colors ${
+                        className={`text-base md:text-sm rounded-sm transition-colors ${
                           isActive("/admin")
-                            ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                             : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }`}
-                        activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                         onClick={handleLinkClick}
                       >
                         <Shield className={`me-2 h-5 w-5 md:h-4 md:w-4 transition-colors ${
