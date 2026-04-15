@@ -277,6 +277,8 @@
     "roster.load": "Load",
     "roster.none": "None",
     "roster.blocked": "Blocked",
+    "roster.blockedDate": "Blocked Date",
+    "roster.assigned": "Assigned",
     "roster.missingRN": "published shift(s) missing a Responsible Nurse",
     "roster.clearDrafts": "Clear draft shifts?",
     "roster.onCallHint": "Only managers and responsible nurses shown for on call shifts.",
