@@ -765,7 +765,7 @@ export default function Roster() {
             </Button>
           </div>
           <CardTitle className="text-base">
-            {format(viewStart, "MMM d")} — {format(viewEnd, "MMM d, yyyy")}
+            {formatLocale(viewStart, "MMM d", locale)} — {formatLocale(viewEnd, "MMM d, yyyy", locale)}
           </CardTitle>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" onClick={() => setViewStart(addDays(viewStart, 1))} title="Next day">
@@ -792,10 +792,10 @@ export default function Roster() {
                   return (
                     <th key={d.toISOString()} className={`relative z-10 min-w-[70px] md:min-w-[120px] py-4 px-1 md:py-5 md:px-2 text-center font-medium text-muted-foreground border-b border-r border-border/30 ${dateBlocked ? "bg-muted/50" : ""}`}>
                       <div className="flex items-center justify-center gap-1">
-                        {format(d, "EEE")}
+                        {formatLocale(d, "EEE", locale)}
                         {dateBlocked && <Lock className="h-3 w-3" />}
                       </div>
-                      <div className="text-[10px] md:text-xs mb-1">{format(d, "MMM d")}</div>
+                      <div className="text-[10px] md:text-xs mb-1">{formatLocale(d, "MMM d", locale)}</div>
                       {/* Fulfillment summary per shift type */}
                       <div className="flex flex-col gap-0.5">
                         {(["morning", "evening", "night"] as const).map((t) => {

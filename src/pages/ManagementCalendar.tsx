@@ -475,7 +475,7 @@ export default function ManagementCalendar() {
             <DialogTitle className="flex items-center gap-2">
               <span className={shiftTextColors[detailType]}>{shiftLabels[detailType]}</span>
               <span className="text-muted-foreground font-normal text-sm">
-                {detailDate && format(new Date(detailDate + "T00:00"), "EEE, MMM d")}
+                {detailDate && formatLocale(new Date(detailDate + "T00:00"), "EEE, MMM d", locale)}
               </span>
             </DialogTitle>
           </DialogHeader>
