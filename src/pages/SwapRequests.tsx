@@ -298,8 +298,8 @@ export default function SwapRequests() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={statusColors[swap.status]}>
-                        {swap.status.replace("_", " ")}
+                       <Badge variant="outline" className={statusColors[swap.status]}>
+                        {t(`status.${swap.status}`)}
                       </Badge>
                       {/* Peer accept for direct swaps targeting current user */}
                       {swap.covering_user_id === user?.id && swap.status === "pending" && !swap.is_pool_request && (
