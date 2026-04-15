@@ -782,12 +782,12 @@ export default function Roster() {
             <table className="w-max min-w-full border-separate border-spacing-0 text-xs md:text-sm">
             <thead>
               <tr>
-                <th className="sticky left-0 z-30 w-[100px] min-w-[100px] border-r bg-card py-3 px-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:py-4 md:px-2">Staff</th>
+                <th className="sticky left-0 z-30 w-[100px] min-w-[100px] border-r border-b border-border/30 bg-card py-4 px-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:py-5 md:px-2">Staff</th>
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
                   return (
-                    <th key={d.toISOString()} className={`relative z-10 min-w-[70px] md:min-w-[120px] p-1 md:p-2 text-center font-medium text-muted-foreground border-b border-r border-border/30 ${dateBlocked ? "bg-muted/50" : ""}`}>
+                    <th key={d.toISOString()} className={`relative z-10 min-w-[70px] md:min-w-[120px] py-4 px-1 md:py-5 md:px-2 text-center font-medium text-muted-foreground border-b border-r border-border/30 ${dateBlocked ? "bg-muted/50" : ""}`}>
                       <div className="flex items-center justify-center gap-1">
                         {format(d, "EEE")}
                         {dateBlocked && <Lock className="h-3 w-3" />}
@@ -805,7 +805,7 @@ export default function Roster() {
                           return (
                             <div
                               key={t}
-                              className={`text-[8px] md:text-[9px] rounded px-0.5 md:px-1 py-px font-medium ${
+                              className={`text-[8px] md:text-[9px] rounded-sm px-0.5 md:px-1 py-px font-medium ${
                                 over
                                   ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                                   : met
@@ -846,7 +846,7 @@ export default function Roster() {
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`relative z-0 py-3 px-1 text-center transition-colors border-b border-r border-border/20 ${dateBlocked || blocked ? "bg-muted/20 roster-ghosted cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-accent/30"}`}
+                        className={`relative z-0 py-3 px-1 text-center transition-colors border-b border-r border-border/20 ${dateBlocked || blocked ? "bg-muted/30 roster-ghosted cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-accent/30"}`}
                         onClick={() => {
                           if (dateBlocked || blocked) return;
                           if (dayShifts.length === 0) {
@@ -866,7 +866,7 @@ export default function Roster() {
                           <div
                             key={s.id}
                             onClick={(e) => { e.stopPropagation(); openEdit(s); }}
-                            className={`relative mb-1 rounded border-s-2 px-1.5 py-1.5 text-xs ${dateBlocked ? "cursor-not-allowed" : "cursor-pointer hover:ring-1 hover:ring-primary/50"} transition-all ${
+                            className={`relative mb-1 rounded-sm border-s-2 px-1.5 py-1.5 text-xs ${dateBlocked ? "cursor-not-allowed" : "cursor-pointer hover:ring-1 hover:ring-primary/50"} transition-all ${
                               (s as any).is_standby
                                 ? `bg-transparent border-2 border-dashed ${s.type === "morning" ? "border-s-shift-morning text-shift-morning" : s.type === "evening" ? "border-s-shift-evening text-shift-evening" : "border-s-shift-night text-shift-night"}`
                                 : s.is_draft
@@ -880,7 +880,7 @@ export default function Roster() {
                             <div className="flex items-center justify-center gap-0.5">
                               <span className="capitalize font-medium">{s.type.charAt(0)}</span>
                               {(s as any).is_standby && (
-                                <span className="text-[9px] font-bold bg-shift-morning/20 text-shift-morning rounded px-0.5">OC</span>
+                                <span className="text-[9px] font-bold bg-shift-morning/20 text-shift-morning rounded-sm px-0.5">OC</span>
                               )}
                               {s.is_draft ? <EyeOff className="h-2.5 w-2.5 opacity-60" /> : <Lock className="h-2.5 w-2.5 opacity-40" />}
                             </div>
@@ -904,7 +904,7 @@ export default function Roster() {
                           <div
                             key={s.id}
                             onClick={() => openEdit(s)}
-                            className={`mb-1 rounded border px-1.5 py-1 text-xs cursor-pointer hover:ring-1 hover:ring-primary/50 ${shiftBgDraft[s.type]} opacity-60`}
+                            className={`mb-1 rounded-sm border px-1.5 py-1 text-xs cursor-pointer hover:ring-1 hover:ring-primary/50 ${shiftBgDraft[s.type]} opacity-60`}
                           >
                             <span className="capitalize font-medium">{s.type.charAt(0)}</span>
                           </div>

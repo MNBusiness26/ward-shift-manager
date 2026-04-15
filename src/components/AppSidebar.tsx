@@ -88,7 +88,7 @@ export function AppSidebar() {
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider">{t("nav.menu")}</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/50 text-[10px] uppercase tracking-wider">{t("nav.menu")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {nurseItems.map((item) => {
@@ -102,13 +102,13 @@ export function AppSidebar() {
                         className={`text-base md:text-sm transition-colors ${
                           active
                             ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                            : "text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }`}
                         activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                         onClick={handleLinkClick}
                       >
                         <item.icon className={`me-2 h-5 w-5 md:h-4 md:w-4 transition-colors ${
-                          active ? "text-sidebar-primary" : "text-sidebar-foreground/40"
+                          active ? "text-sidebar-primary" : "text-sidebar-foreground/60"
                         }`} />
                         {!collapsed && <span>{item.title}</span>}
                       </NavLink>
@@ -122,7 +122,7 @@ export function AppSidebar() {
 
         {showManagement && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider">{t("nav.management")}</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sidebar-foreground/50 text-[10px] uppercase tracking-wider">{t("nav.management")}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {managerItems.map((item) => {
@@ -132,16 +132,16 @@ export function AppSidebar() {
                       <SidebarMenuButton asChild>
                         <NavLink
                           to={item.url}
-                          className={`text-base md:text-sm transition-colors ${
+                         className={`text-base md:text-sm transition-colors ${
                             active
                               ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                              : "text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                           }`}
                           activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                           onClick={handleLinkClick}
                         >
                           <item.icon className={`me-2 h-5 w-5 md:h-4 md:w-4 transition-colors ${
-                            active ? "text-sidebar-primary" : "text-sidebar-foreground/40"
+                            active ? "text-sidebar-primary" : "text-sidebar-foreground/60"
                           }`} />
                           {!collapsed && <span>{item.title}</span>}
                         </NavLink>
@@ -157,13 +157,13 @@ export function AppSidebar() {
                         className={`text-base md:text-sm transition-colors ${
                           isActive("/admin")
                             ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                            : "text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }`}
                         activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                         onClick={handleLinkClick}
                       >
                         <Shield className={`me-2 h-5 w-5 md:h-4 md:w-4 transition-colors ${
-                          isActive("/admin") ? "text-sidebar-primary" : "text-sidebar-foreground/40"
+                          isActive("/admin") ? "text-sidebar-primary" : "text-sidebar-foreground/60"
                         }`} />
                         {!collapsed && <span>{t("nav.admin")}</span>}
                       </NavLink>
@@ -178,14 +178,14 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-3">
         {!collapsed && profile && (
-          <p className="mb-2 truncate text-xs text-sidebar-foreground/50">
+          <p className="mb-2 truncate text-xs text-sidebar-foreground/70">
             {profile.full_name}
           </p>
         )}
         <SidebarMenuButton asChild>
           <button
             onClick={signOut}
-            className="flex w-full items-center gap-2 text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            className="flex w-full items-center gap-2 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
             <LogOut className="h-4 w-4" />
             {!collapsed && <span>{t("nav.signOut")}</span>}
