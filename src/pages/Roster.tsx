@@ -88,7 +88,7 @@ interface CopiedWeek {
 }
 
 export default function Roster() {
-  const { locale } = useTranslation();
+  const { t, locale } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [viewStart, setViewStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
@@ -671,7 +671,7 @@ export default function Roster() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-xl md:text-2xl font-bold">Shift Manager</h1>
+        <h1 className="text-xl md:text-2xl font-bold">{t("roster.shiftManager")}</h1>
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <TooltipProvider>
             {draftCount > 0 && (
@@ -684,7 +684,7 @@ export default function Roster() {
                       disabled={publishDrafts.isPending || (enforceFullWeek && !isFullWeek)}
                     >
                       <Eye className="h-4 w-4 md:mr-1" />
-                      <span className="hidden sm:inline">Publish {draftCount}</span>
+                      <span className="hidden sm:inline">{t("roster.publishCount")} {draftCount}</span>
                     </Button>
                   </span>
                 </TooltipTrigger>
@@ -703,7 +703,7 @@ export default function Roster() {
                     disabled={shifts.length === 0 || (enforceFullWeek && !isFullWeek)}
                   >
                     <Trash2 className="h-4 w-4 md:mr-1" />
-                    <span className="hidden sm:inline">Clear Week</span>
+                    <span className="hidden sm:inline">{t("roster.clearWeek")}</span>
                   </Button>
                 </span>
               </TooltipTrigger>
@@ -714,7 +714,7 @@ export default function Roster() {
           </TooltipProvider>
           <Button size="sm" onClick={() => openCreate()}>
             <Plus className="h-4 w-4 md:mr-1" />
-            <span className="hidden sm:inline">Add Shift</span>
+            <span className="hidden sm:inline">{t("roster.addShift")}</span>
           </Button>
         </div>
       </div>
@@ -722,7 +722,7 @@ export default function Roster() {
       {missingResponsible.length > 0 && !dismissedWarningKeys.has(warningDismissKey) && (
         <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
           <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
-          <span className="flex-1">{missingResponsible.length} published shift(s) missing a Responsible Nurse</span>
+          <span className="flex-1">{missingResponsible.length} {t("roster.missingRN")}</span>
           <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={dismissWarning}>
             <X className="h-3.5 w-3.5" />
           </Button>
@@ -734,22 +734,22 @@ export default function Roster() {
         {enforceFullWeek && !isFullWeek && (
           <div className="flex items-center gap-2 mr-4 border-r pr-4">
             <Settings className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-destructive">Full week mode enforced</span>
+            <span className="text-xs text-destructive">{t("roster.fullWeekEnforced")}</span>
           </div>
         )}
         <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
           <Users className="h-4 w-4 md:mr-1" />
-          <span className="hidden sm:inline">Bulk Assign</span>
+          <span className="hidden sm:inline">{t("roster.bulkAssign")}</span>
         </Button>
         {!copiedWeek ? (
           <Button variant="outline" size="sm" onClick={handleCopyWeek} disabled={shifts.length === 0}>
             <Copy className="h-4 w-4 md:mr-1" />
-            <span className="hidden sm:inline">Copy Week</span>
+            <span className="hidden sm:inline">{t("roster.copyWeek")}</span>
           </Button>
         ) : (
           <Button variant="outline" size="sm" onClick={() => pasteWeek.mutate()} disabled={pasteWeek.isPending}>
             <ClipboardPaste className="h-4 w-4 md:mr-1" />
-            <span className="hidden sm:inline">Paste Week</span>
+            <span className="hidden sm:inline">{t("roster.pasteWeek")}</span>
           </Button>
         )}
       </div>
@@ -785,7 +785,7 @@ export default function Roster() {
             <table className="w-max min-w-full border-separate border-spacing-0 text-xs md:text-sm">
             <thead>
               <tr>
-                <th className="sticky left-0 z-30 w-[100px] min-w-[100px] border-r border-b border-border/30 bg-card py-4 px-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:py-5 md:px-2">Staff</th>
+                <th className="sticky left-0 z-30 w-[100px] min-w-[100px] border-r border-b border-border/30 bg-card py-4 px-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:py-5 md:px-2">{t("roster.staff")}</th>
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
@@ -798,16 +798,16 @@ export default function Roster() {
                       <div className="text-[10px] md:text-xs mb-1">{formatLocale(d, "MMM d", locale)}</div>
                       {/* Fulfillment summary per shift type */}
                       <div className="flex flex-col gap-0.5">
-                        {(["morning", "evening", "night"] as const).map((t) => {
-                          const target = getHeadcountTarget(t, dateStr, headcountLimits);
+                        {(["morning", "evening", "night"] as const).map((st) => {
+                          const target = getHeadcountTarget(st, dateStr, headcountLimits);
                           const count = shifts.filter(
-                            (s) => s.date === dateStr && s.type === t && s.assigned_user_id && !(s as any).is_standby
+                            (s) => s.date === dateStr && s.type === st && s.assigned_user_id && !(s as any).is_standby
                           ).length;
                           const met = count >= target;
                           const over = count > target;
                           return (
                             <div
-                              key={t}
+                              key={st}
                               className={`text-[8px] md:text-[9px] rounded-sm px-0.5 md:px-1 py-px font-medium ${
                                 over
                                   ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
@@ -816,7 +816,7 @@ export default function Roster() {
                                   : "text-muted-foreground"
                               }`}
                             >
-                              {t.charAt(0).toUpperCase()}: {count}/{target}
+                              {t(`shift.${st}`).charAt(0)}: {count}/{target}
                               {met && !over && " ✓"}
                             </div>
                           );
@@ -863,7 +863,7 @@ export default function Roster() {
                           <span className="text-[10px] text-muted-foreground">🔒</span>
                         )}
                         {blocked && dayShifts.length === 0 && (
-                          <span className="text-[10px] text-destructive">Blocked</span>
+                          <span className="text-[10px] text-destructive">{t("roster.blocked")}</span>
                         )}
                         {dayShifts.map((s) => (
                           <div
@@ -897,7 +897,7 @@ export default function Roster() {
               {/* Unassigned shifts row */}
               {shifts.some((s) => !s.assigned_user_id) && (
                 <tr className="border-t bg-muted/30">
-                  <td className="sticky left-0 z-20 w-[100px] min-w-[100px] overflow-hidden border-r bg-muted/30 p-2 font-medium text-muted-foreground italic shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.12)] md:w-[140px] md:min-w-[140px]">Unassigned</td>
+                  <td className="sticky left-0 z-20 w-[100px] min-w-[100px] overflow-hidden border-r bg-muted/30 p-2 font-medium text-muted-foreground italic shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.12)] md:w-[140px] md:min-w-[140px]">{t("roster.unassigned")}</td>
                   {days.map((d) => {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const unassigned = shifts.filter((s) => !s.assigned_user_id && s.date === dateStr);
@@ -925,20 +925,20 @@ export default function Roster() {
 
       {/* Draft version management — bottom toolbar */}
       <div className="flex items-center gap-2 flex-wrap rounded-lg border bg-muted/30 p-3">
-        <span className="text-sm font-medium text-muted-foreground mr-2">
-          Versions{currentVersionName ? `: ${currentVersionName}` : ""}
+         <span className="text-sm font-medium text-muted-foreground mr-2">
+          {t("roster.versions")}{currentVersionName ? `: ${currentVersionName}` : ""}
         </span>
         <Button variant="outline" size="sm" onClick={handleSave} disabled={shifts.length === 0}>
           <Save className="mr-1 h-4 w-4" />
-          Save
+          {t("common.save")}
         </Button>
         <Button variant="outline" size="sm" onClick={handleOpenSaveAs} disabled={shifts.length === 0}>
           <Save className="mr-1 h-4 w-4" />
-          Save As…
+          {t("roster.saveAs")}
         </Button>
         <Button variant="outline" size="sm" onClick={() => { setLoadOpen(true); refetchVersions(); }}>
           <FolderOpen className="mr-1 h-4 w-4" />
-          Load Version
+          {t("roster.loadVersion")}
         </Button>
       </div>
 
@@ -948,16 +948,16 @@ export default function Roster() {
       <Dialog open={saveAsOpen} onOpenChange={setSaveAsOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Save Version As</DialogTitle>
+            <DialogTitle>{t("roster.saveVersionAs")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Version Name</Label>
+              <Label>{t("roster.versionName")}</Label>
               <Input value={saveAsName} onChange={(e) => setSaveAsName(e.target.value)} placeholder="draft_2026-04-06_v1" />
             </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="ghost" onClick={() => setSaveAsOpen(false)}>Cancel</Button>
-              <Button onClick={handleSaveAs} disabled={!saveAsName.trim()}>Save</Button>
+              <Button variant="ghost" onClick={() => setSaveAsOpen(false)}>{t("common.cancel")}</Button>
+              <Button onClick={handleSaveAs} disabled={!saveAsName.trim()}>{t("common.save")}</Button>
             </div>
           </div>
         </DialogContent>
@@ -967,11 +967,11 @@ export default function Roster() {
       <Dialog open={loadOpen} onOpenChange={setLoadOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Load Saved Version</DialogTitle>
+            <DialogTitle>{t("roster.loadSavedVersion")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
             {savedVersions.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No saved versions yet.</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">{t("roster.noVersions")}</p>
             ) : (
               savedVersions.map((v: any) => (
                 <div key={v.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/30 transition-colors">
@@ -981,8 +981,8 @@ export default function Roster() {
                       Week of {v.week_start_date} · {(v.shifts_data as any[]).length} shifts · {format(new Date(v.created_at), "MMM d, HH:mm")}
                     </p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => handleLoadVersionClick(v)} disabled={loadVersion.isPending}>
-                    Load
+                   <Button size="sm" variant="outline" onClick={() => handleLoadVersionClick(v)} disabled={loadVersion.isPending}>
+                    {t("roster.load")}
                   </Button>
                 </div>
               ))
@@ -995,22 +995,22 @@ export default function Roster() {
       <Dialog open={dialogOpen} onOpenChange={(v) => { setDialogOpen(v); if (!v) setSaveError(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingShift ? "Edit Shift" : "Create Shift"}</DialogTitle>
+            <DialogTitle>{editingShift ? t("roster.editShift") : t("roster.createShift")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Date</Label>
+                <Label>{t("roster.date")}</Label>
                 <Input type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label>{t("roster.type")}</Label>
                 <Select value={form.type} onValueChange={(v) => handleTypeChange(v as ShiftType)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="morning">Morning</SelectItem>
-                    <SelectItem value="evening">Evening</SelectItem>
-                    <SelectItem value="night">Night</SelectItem>
+                     <SelectItem value="morning">{t("shift.morning")}</SelectItem>
+                    <SelectItem value="evening">{t("shift.evening")}</SelectItem>
+                    <SelectItem value="night">{t("shift.night")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1018,45 +1018,45 @@ export default function Roster() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Start Time</Label>
+                <Label>{t("roster.startTime")}</Label>
                 <Input type="time" value={form.start_time} onChange={(e) => setForm((f) => ({ ...f, start_time: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <Label>End Time</Label>
+                <Label>{t("roster.endTime")}</Label>
                 <Input type="time" value={form.end_time} onChange={(e) => setForm((f) => ({ ...f, end_time: e.target.value }))} />
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <Label>On Call Shift</Label>
+              <Label>{t("roster.onCallShift")}</Label>
               <Switch checked={form.is_standby} onCheckedChange={(v) => setForm((f) => ({ ...f, is_standby: v, assigned_user_id: "" }))} />
             </div>
 
             <div className="space-y-2">
-              <Label>Assign to Staff</Label>
+              <Label>{t("roster.assignToStaff")}</Label>
               <Select value={form.assigned_user_id || "__unassigned__"} onValueChange={(v) => setForm((f) => ({ ...f, assigned_user_id: v === "__unassigned__" ? "" : v }))}>
-                <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                 <SelectTrigger><SelectValue placeholder={t("roster.unassigned")} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                  <SelectItem value="__unassigned__">{t("roster.unassigned")}</SelectItem>
                   {getStaffForDropdown().map((s) => {
                     const blocked = isBlocked(s.id, form.date);
                     return (
                       <SelectItem key={s.id} value={s.id} disabled={blocked}>
-                        {s.full_name} {blocked ? "🚫 Blocked" : ""}
+                        {s.full_name} {blocked ? `🚫 ${t("roster.blocked")}` : ""}
                       </SelectItem>
                     );
                   })}
                 </SelectContent>
               </Select>
-              {form.is_standby && <p className="text-xs text-muted-foreground">Only managers and responsible nurses shown for on call shifts.</p>}
+              {form.is_standby && <p className="text-xs text-muted-foreground">{t("roster.onCallHint")}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label>Manager on Duty</Label>
+              <Label>{t("roster.managerOnDuty")}</Label>
               <Select value={form.manager_on_duty_id || "__none__"} onValueChange={(v) => setForm((f) => ({ ...f, manager_on_duty_id: v === "__none__" ? "" : v }))}>
-                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                 <SelectTrigger><SelectValue placeholder={t("roster.none")} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">None</SelectItem>
+                  <SelectItem value="__none__">{t("roster.none")}</SelectItem>
                   {managerStaff.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>
                   ))}
@@ -1065,17 +1065,17 @@ export default function Roster() {
             </div>
 
             <div className="flex items-center justify-between">
-              <Label>Responsible Nurse</Label>
+              <Label>{t("roster.responsibleNurse")}</Label>
               <Switch checked={form.is_responsible_on_shift} onCheckedChange={(v) => setForm((f) => ({ ...f, is_responsible_on_shift: v }))} />
             </div>
 
             <div className="flex items-center justify-between">
-              <Label>Draft</Label>
+              <Label>{t("roster.draft")}</Label>
               <Switch checked={form.is_draft} onCheckedChange={(v) => setForm((f) => ({ ...f, is_draft: v }))} />
             </div>
 
             <div className="space-y-2">
-              <Label>Comments</Label>
+              <Label>{t("roster.comments")}</Label>
               <Textarea value={form.comments} onChange={(e) => setForm((f) => ({ ...f, comments: e.target.value }))} placeholder="Optional notes..." rows={2} />
             </div>
 
@@ -1093,13 +1093,13 @@ export default function Roster() {
                   size="sm"
                   onClick={() => { deleteShift.mutate(editingShift); setDialogOpen(false); }}
                 >
-                  <Trash2 className="mr-1 h-4 w-4" />
-                  Delete
+                   <Trash2 className="mr-1 h-4 w-4" />
+                  {t("roster.delete")}
                 </Button>
               )}
-              <Button variant="ghost" onClick={() => { setDialogOpen(false); setSaveError(null); }}>Cancel</Button>
+               <Button variant="ghost" onClick={() => { setDialogOpen(false); setSaveError(null); }}>{t("common.cancel")}</Button>
               <Button onClick={handleSaveWithFriction} disabled={saveShift.isPending}>
-                {editingShift ? "Update" : "Create"} Shift
+                {editingShift ? t("roster.update") : t("roster.create")} {t("roster.shift")}
               </Button>
             </div>
           </div>
@@ -1116,7 +1116,7 @@ export default function Roster() {
               <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2">
                   <Trash2 className="h-5 w-5 text-destructive" />
-                  Clear draft shifts?
+                  {t("roster.clearDrafts")}
                 </AlertDialogTitle>
                 <AlertDialogDescription asChild>
                   <div>
@@ -1128,7 +1128,7 @@ export default function Roster() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => clearWeek.mutate()}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

@@ -167,8 +167,8 @@ export default function Requests() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-medium">{(req.profiles as any)?.full_name}</p>
-                            <Badge variant="outline" className={`text-[10px] ${statusBadge(req.status)}`}>
-                              {req.status}
+                             <Badge variant="outline" className={`text-[10px] ${statusBadge(req.status)}`}>
+                              {t(`status.${req.status}`)}
                             </Badge>
                             {(req as any).created_by_manager_id && (
                               <Badge variant="outline" className="text-[10px]">{t("requests.managerProxy")}</Badge>
@@ -186,7 +186,7 @@ export default function Requests() {
                             </Badge>
                             {blockedLabel && (
                               <Badge variant="outline" className="text-[10px]">
-                                {blockedLabel} only
+                                {blockedLabel} {t("avail.only")}
                               </Badge>
                             )}
                           </div>
@@ -248,14 +248,14 @@ export default function Requests() {
                           <p className="text-sm font-medium">
                             {(swap.requester as any)?.full_name} → {(swap.coverer as any)?.full_name || "Pool"}
                           </p>
-                          <Badge variant="outline" className={`text-[10px] ${statusBadge(swap.status)}`}>
-                            {swap.status.replace("_", " ")}
+                           <Badge variant="outline" className={`text-[10px] ${statusBadge(swap.status)}`}>
+                            {t(`status.${swap.status}`)}
                           </Badge>
                           {swap.is_pool_request && (
-                            <Badge variant="outline" className="text-[10px]">Pool</Badge>
+                            <Badge variant="outline" className="text-[10px]">{t("common.pool")}</Badge>
                           )}
                           {swap.is_take_only && (
-                            <Badge variant="outline" className="text-[10px]">Take Only</Badge>
+                            <Badge variant="outline" className="text-[10px]">{t("common.takeOnly")}</Badge>
                           )}
                           {swap.status === "pending" && (
                             <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
