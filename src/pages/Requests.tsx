@@ -10,13 +10,17 @@ import { format } from "date-fns";
 import { Check, X, CalendarOff, ArrowLeftRight, Clock, Filter } from "lucide-react";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslation } from "@/i18n/useTranslation";
+import { formatLocale } from "@/i18n/dateLocale";
 
-function formatShift(shift: any) {
+function formatShiftFn(shift: any, locale?: string) {
   if (!shift) return "—";
-  return `${format(new Date(shift.date), "EEE, MMM d")} · ${shift.type} (${shift.start_time?.slice(0, 5)}–${shift.end_time?.slice(0, 5)})`;
+  return `${formatLocale(new Date(shift.date), "EEE, MMM d", locale)} · ${shift.type} (${shift.start_time?.slice(0, 5)}–${shift.end_time?.slice(0, 5)})`;
 }
 
 export default function Requests() {
+  const { t, locale } = useTranslation();
+  const formatShift = (shift: any) => formatShiftFn(shift, locale);
   const queryClient = useQueryClient();
   const [availFilter, setAvailFilter] = useState<"pending" | "all">("pending");
   const [swapFilter, setSwapFilter] = useState<"pending_all" | "peer_accepted" | "all">("pending_all");
@@ -58,7 +62,7 @@ export default function Requests() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["manager-avail-requests"] });
-      setInfoPopup({ title: "Request Updated", message: `Request updated — ${variables.status === "approved" ? "Approved" : "Declined"}.` });
+      setInfoPopup({ title: t("requests.requestUpdated"), message: `${t("requests.requestUpdated")} — ${variables.status === "approved" ? t("common.approved") : t("common.declined")}.` });
     },
   });
 
@@ -79,7 +83,7 @@ export default function Requests() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["manager-swap-requests"] });
       queryClient.invalidateQueries({ queryKey: ["roster-shifts"] });
-      setInfoPopup({ title: "Request Updated", message: `Request updated — ${variables.status === "manager_approved" ? "Approved" : "Declined"}.` });
+      setInfoPopup({ title: t("requests.requestUpdated"), message: `${t("requests.requestUpdated")} — ${variables.status === "manager_approved" ? t("common.approved") : t("common.declined")}.` });
     },
   });
 
@@ -101,24 +105,24 @@ export default function Requests() {
   const formatBlockedShifts = (req: any) => {
     const shifts: string[] = (req as any).blocked_shifts || [];
     if (shifts.length === 0) return null;
-    return shifts.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(" & ");
+    return shifts.map((s: string) => t(`shift.${s}`)).join(" & ");
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Request Management</h1>
+        <h1 className="text-2xl font-bold">{t("requests.title")}</h1>
         <div className="flex gap-2">
           {pendingAvail > 0 && (
             <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-              <CalendarOff className="mr-1 h-3 w-3" />
-              {pendingAvail} availability
+              <CalendarOff className="me-1 h-3 w-3" />
+              {pendingAvail} {t("requests.availability")}
             </Badge>
           )}
           {pendingSwaps > 0 && (
             <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
-              <ArrowLeftRight className="mr-1 h-3 w-3" />
-              {pendingSwaps} swap{pendingSwaps > 1 ? "s" : ""}
+              <ArrowLeftRight className="me-1 h-3 w-3" />
+              {pendingSwaps} {t("requests.swaps")}
             </Badge>
           )}
         </div>
@@ -127,12 +131,12 @@ export default function Requests() {
       <Tabs defaultValue="availability">
         <TabsList>
           <TabsTrigger value="availability">
-            <CalendarOff className="mr-1 h-4 w-4" />
-            Availability ({availRequests.length})
+            <CalendarOff className="me-1 h-4 w-4" />
+            {t("requests.availability")} ({availRequests.length})
           </TabsTrigger>
           <TabsTrigger value="swaps">
-            <ArrowLeftRight className="mr-1 h-4 w-4" />
-            Swaps ({swapRequests.length})
+            <ArrowLeftRight className="me-1 h-4 w-4" />
+            {t("requests.swaps")} ({swapRequests.length})
           </TabsTrigger>
         </TabsList>
 
@@ -142,8 +146,8 @@ export default function Requests() {
             <Select value={availFilter} onValueChange={(v: any) => setAvailFilter(v)}>
               <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="pending">Pending Only</SelectItem>
-                <SelectItem value="all">All Requests</SelectItem>
+                <SelectItem value="pending">{t("requests.pendingOnly")}</SelectItem>
+                <SelectItem value="all">{t("requests.allRequests")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -152,7 +156,7 @@ export default function Requests() {
               {availRequests.length === 0 ? (
                 <div className="flex flex-col items-center py-8 text-muted-foreground">
                   <CalendarOff className="h-8 w-8 mb-2 opacity-50" />
-                  <p className="text-sm">No availability requests.</p>
+                  <p className="text-sm">{t("requests.noAvailRequests")}</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -167,18 +171,18 @@ export default function Requests() {
                               {req.status}
                             </Badge>
                             {(req as any).created_by_manager_id && (
-                              <Badge variant="outline" className="text-[10px]">Manager Proxy</Badge>
+                              <Badge variant="outline" className="text-[10px]">{t("requests.managerProxy")}</Badge>
                             )}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             <p className="text-xs text-muted-foreground">
-                              <Clock className="inline mr-1 h-3 w-3" />
-                              {format(new Date(req.date), "EEE, MMM d, yyyy")}
-                              {(req as any).end_date && (req as any).end_date !== req.date && ` → ${format(new Date((req as any).end_date), "EEE, MMM d, yyyy")}`}
+                              <Clock className="inline me-1 h-3 w-3" />
+                              {formatLocale(new Date(req.date), "EEE, MMM d, yyyy", locale)}
+                              {(req as any).end_date && (req as any).end_date !== req.date && ` → ${formatLocale(new Date((req as any).end_date), "EEE, MMM d, yyyy", locale)}`}
                               {req.reason && ` — "${req.reason}"`}
                             </p>
                             <Badge variant="outline" className="text-[10px] capitalize">
-                              {(req as any).request_type === "vacation" ? "🌴 Vacation" : "🚫 Block"}
+                              {(req as any).request_type === "vacation" ? `🌴 ${t("avail.vacationLabel")}` : `🚫 ${t("avail.blockDates")}`}
                             </Badge>
                             {blockedLabel && (
                               <Badge variant="outline" className="text-[10px]">
@@ -222,9 +226,9 @@ export default function Requests() {
             <Select value={swapFilter} onValueChange={(v: any) => setSwapFilter(v)}>
               <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="pending_all">All Pending</SelectItem>
-                <SelectItem value="peer_accepted">Awaiting Manager</SelectItem>
-                <SelectItem value="all">All Requests</SelectItem>
+                <SelectItem value="pending_all">{t("requests.allPending")}</SelectItem>
+                <SelectItem value="peer_accepted">{t("requests.awaitingManager")}</SelectItem>
+                <SelectItem value="all">{t("requests.allRequests")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -233,7 +237,7 @@ export default function Requests() {
               {swapRequests.length === 0 ? (
                 <div className="flex flex-col items-center py-8 text-muted-foreground">
                   <ArrowLeftRight className="h-8 w-8 mb-2 opacity-50" />
-                  <p className="text-sm">No swap requests.</p>
+                  <p className="text-sm">{t("requests.noSwapRequests")}</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -255,17 +259,17 @@ export default function Requests() {
                           )}
                           {swap.status === "pending" && (
                             <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
-                              No peer response yet
+                              {t("requests.noPeerResponse")}
                             </Badge>
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          <Clock className="inline mr-1 h-3 w-3" />
-                          Offering: {formatShift((swap as any).requesting_shift)}
+                        <Clock className="inline me-1 h-3 w-3" />
+                          {t("swap.offering")}: {formatShift((swap as any).requesting_shift)}
                         </p>
                         {(swap as any).target_shift && (
                           <p className="text-xs text-muted-foreground">
-                            In return: {formatShift((swap as any).target_shift)}
+                            {t("swap.inReturn")}: {formatShift((swap as any).target_shift)}
                           </p>
                         )}
                       </div>
@@ -276,7 +280,7 @@ export default function Requests() {
                             size="icon"
                             variant="ghost"
                             className="h-8 w-8 text-green-600 hover:bg-green-50"
-                            title={swap.status === "pending" ? "Approve (override — no peer response yet)" : "Approve"}
+                            title={swap.status === "pending" ? t("requests.approveOverride") : t("requests.approve")}
                             onClick={() => handleSwap.mutate({ id: swap.id, status: "manager_approved" })}
                           >
                             <Check className="h-4 w-4" />
