@@ -258,7 +258,7 @@ export default function StaffStats() {
   const verifiedCount = rangeShifts.filter((s) => (s as any).is_verified).length;
   const pastUnverified = rangeShifts.filter((s) => isBefore(new Date(s.date), today) && !(s as any).is_verified);
 
-  const shiftLabel: Record<string, string> = { morning: "Morning", evening: "Evening", night: "Night" };
+  const shiftLabel: Record<string, string> = { morning: t("shift.morning"), evening: t("shift.evening"), night: t("shift.night") };
   const statusColor: Record<string, string> = {
     pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
     peer_accepted: "bg-blue-100 text-blue-800 border-blue-200",
@@ -273,8 +273,8 @@ export default function StaffStats() {
   const handleToday = () => { setWeekOffset(0); setMonthOffset(0); };
 
   const rangeLabel = mode === "weekly"
-    ? `${format(weekStart, "MMM d")} — ${format(weekEnd, "MMM d, yyyy")}`
-    : format(baseMonth, "MMMM yyyy");
+    ? `${formatLocale(weekStart, "MMM d", locale)} — ${formatLocale(weekEnd, "MMM d, yyyy", locale)}`
+    : formatLocale(baseMonth, "MMMM yyyy", locale);
 
   const formatBlockedShifts = (req: any) => {
     const shifts: string[] = req.blocked_shifts || [];
@@ -305,7 +305,7 @@ export default function StaffStats() {
       {/* Staff selector */}
       <Select value={selectedId} onValueChange={setSelectedId}>
         <SelectTrigger className="w-full sm:w-80">
-          <SelectValue placeholder="Select a staff member…" />
+          <SelectValue placeholder={t("staffStats.selectMember")} />
         </SelectTrigger>
         <SelectContent>
           {staff.map((s) => (
@@ -320,7 +320,7 @@ export default function StaffStats() {
       {!selectedId && (
         <div className="flex flex-col items-center py-12 text-muted-foreground">
           <Users className="h-10 w-10 mb-2 opacity-40" />
-          <p className="text-sm">Select a staff member to view their stats.</p>
+          <p className="text-sm">{t("staffStats.selectPrompt")}</p>
         </div>
       )}
 
@@ -357,30 +357,30 @@ export default function StaffStats() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <TrendingUp className="h-4 w-4" />
-                {mode === "weekly" ? "Weekly" : "Monthly"} Fulfillment
+                {mode === "weekly" ? t("stats.weeklyFulfillment") : t("stats.monthlyFulfillment")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{rangeShifts.length} of {expectedShifts} shifts</span>
+                  <span className="text-muted-foreground">{rangeShifts.length} {t("stats.of")} {expectedShifts} {t("stats.shifts")}</span>
                   <span className="font-semibold">{fulfillment}%</span>
                 </div>
                 <Progress value={Math.min(fulfillment, 100)} className="h-3" />
               </div>
               {/* Total hours */}
               <div className="mt-3 flex items-center gap-3 text-sm">
-                <span className="font-medium">{totalHours.toFixed(1)}h total</span>
+                <span className="font-medium">{totalHours.toFixed(1)}h {t("staffStats.totalHours")}</span>
                 {verifiedCount > 0 && (
                   <Badge variant="outline" className="gap-1 text-xs">
                     <CheckCircle className="h-3 w-3 text-green-600" />
-                    {verifiedCount} verified
+                    {verifiedCount} {t("staffStats.verified")}
                   </Badge>
                 )}
                 {pastUnverified.length > 0 && (
                   <Badge variant="outline" className="gap-1 text-xs text-amber-600 border-amber-200">
                     <AlertTriangle className="h-3 w-3" />
-                    {pastUnverified.length} unverified
+                    {pastUnverified.length} {t("staffStats.unverified")}
                   </Badge>
                 )}
               </div>
@@ -396,7 +396,7 @@ export default function StaffStats() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{morningCount}</p>
-                  <p className="text-xs text-muted-foreground">Morning</p>
+                  <p className="text-xs text-muted-foreground">{t("shift.morning")}</p>
                 </div>
               </CardContent>
             </Card>
@@ -407,7 +407,7 @@ export default function StaffStats() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{eveningCount}</p>
-                  <p className="text-xs text-muted-foreground">Evening</p>
+                  <p className="text-xs text-muted-foreground">{t("shift.evening")}</p>
                 </div>
               </CardContent>
             </Card>
@@ -418,7 +418,7 @@ export default function StaffStats() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{nightCount}</p>
-                  <p className="text-xs text-muted-foreground">Night</p>
+                  <p className="text-xs text-muted-foreground">{t("shift.night")}</p>
                 </div>
               </CardContent>
             </Card>
@@ -428,18 +428,18 @@ export default function StaffStats() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
-                <ClipboardCheck className="h-4 w-4" /> Day-by-Day Shifts
+                <ClipboardCheck className="h-4 w-4" /> {t("staffStats.dayByDay")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {Object.keys(shiftsByDate).length === 0 ? (
-                <p className="text-sm text-muted-foreground">No shifts in this period.</p>
+                <p className="text-sm text-muted-foreground">{t("staffStats.noShiftsPeriod")}</p>
               ) : (
                 <div className="space-y-3">
                   {Object.entries(shiftsByDate).sort(([a], [b]) => a.localeCompare(b)).map(([date, shifts]) => (
                     <div key={date}>
                       <p className="text-xs font-medium text-muted-foreground mb-1">
-                        {format(new Date(date), "EEE, MMM d")}
+                        {formatLocale(new Date(date), "EEE, MMM d", locale)}
                       </p>
                       <div className="space-y-1">
                         {shifts.map((s: any) => {
@@ -469,8 +469,9 @@ export default function StaffStats() {
                               </div>
                               <div className="flex items-center gap-1">
                                 {isVerified && (
-                                  <Badge variant="outline" className="gap-1 text-xs text-green-700 border-green-200">
-                                    <Lock className="h-3 w-3" /> Verified
+                                   <Badge variant="outline" className="gap-1 text-xs text-green-700 border-green-200">
+                                    <Lock className="h-3 w-3" /> {t("roster.verified")}
+                                  </Badge>
                                   </Badge>
                                 )}
                                 {isPast ? (
@@ -486,10 +487,10 @@ export default function StaffStats() {
                                       }
                                     }}
                                   >
-                                    <ClipboardCheck className="h-3 w-3" /> {isVerified ? "Re-Audit" : "Audit"}
+                                    <ClipboardCheck className="h-3 w-3" /> {isVerified ? t("roster.reaudit") : t("roster.audit")}
                                   </Button>
                                 ) : (
-                                  <span className="text-xs text-muted-foreground">Upcoming</span>
+                                  <span className="text-xs text-muted-foreground">{t("common.upcoming")}</span>
                                 )}
                               </div>
                             </div>
@@ -508,7 +509,7 @@ export default function StaffStats() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <CalendarOff className="h-4 w-4" /> Pending Availability Requests
+                  <CalendarOff className="h-4 w-4" /> {t("staffStats.pendingAvail")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -518,13 +519,13 @@ export default function StaffStats() {
                     return (
                       <div key={ar.id} className="flex items-center justify-between rounded-sm border p-3">
                         <div className="text-sm">
-                          <span className="font-medium">{format(new Date(ar.date), "MMM d")}</span>
+                           <span className="font-medium">{formatLocale(new Date(ar.date), "MMM d", locale)}</span>
                           {ar.end_date && ar.end_date !== ar.date && (
-                            <span className="text-muted-foreground"> — {format(new Date(ar.end_date), "MMM d")}</span>
+                             <span className="text-muted-foreground"> — {formatLocale(new Date(ar.end_date), "MMM d", locale)}</span>
                           )}
                           <Badge variant="outline" className="ms-2 capitalize text-xs">{ar.request_type}</Badge>
                           {blockedLabel && (
-                            <span className="ms-2 text-xs text-muted-foreground">({blockedLabel} only)</span>
+                             <span className="ms-2 text-xs text-muted-foreground">({blockedLabel} {t("common.only")})</span>
                           )}
                           {ar.reason && <span className="ms-2 text-xs text-muted-foreground italic">{ar.reason}</span>}
                         </div>
@@ -560,12 +561,12 @@ export default function StaffStats() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
-                <ArrowLeftRight className="h-4 w-4" /> Swap Requests
+                <ArrowLeftRight className="h-4 w-4" /> {t("staffStats.swapRequests")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {swapRequests.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No swap requests.</p>
+                <p className="text-sm text-muted-foreground">{t("staffStats.noSwapRequests")}</p>
               ) : (
                 <div className="space-y-2">
                   {swapRequests.map((sr) => {
@@ -575,7 +576,7 @@ export default function StaffStats() {
                       <div key={sr.id} className="flex items-center justify-between rounded-sm border p-3">
                         <div className="text-sm">
                           <span className="font-medium">
-                            {shift?.date ? format(new Date(shift.date), "MMM d") : "—"}
+                            {shift?.date ? formatLocale(new Date(shift.date), "MMM d", locale) : "—"}
                           </span>
                           {shift && (
                             <span className="ms-2 text-muted-foreground capitalize">
@@ -583,14 +584,14 @@ export default function StaffStats() {
                             </span>
                           )}
                           {!sr.is_pool_request && coveringProfile?.full_name && (
-                            <span className="ms-2 text-muted-foreground">with {coveringProfile.full_name}</span>
+                            <span className="ms-2 text-muted-foreground">{t("common.with")} {coveringProfile.full_name}</span>
                           )}
                           {sr.is_pool_request && (
-                            <span className="ms-2 text-muted-foreground italic">Pool</span>
+                            <span className="ms-2 text-muted-foreground italic">{t("common.pool")}</span>
                           )}
                         </div>
-                        <Badge variant="outline" className={statusColor[sr.status] || ""}>
-                          {sr.status.replace("_", " ")}
+                         <Badge variant="outline" className={statusColor[sr.status] || ""}>
+                          {t(`status.${sr.status}`)}
                         </Badge>
                       </div>
                     );
@@ -605,17 +606,19 @@ export default function StaffStats() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <CalendarOff className="h-4 w-4" /> Availability Requests
+                  <CalendarOff className="h-4 w-4" /> {t("staffStats.availRequests")}
                 </CardTitle>
-                <Button size="sm" variant="outline" onClick={() => setProxyOpen(true)}>
+                 <Button size="sm" variant="outline" onClick={() => setProxyOpen(true)}>
                   <UserPlus className="me-1 h-4 w-4" />
+                  {t("staffStats.requestOnBehalf")}
+                </Button>
                   Request on Behalf
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              {availRequests.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No availability requests.</p>
+               {availRequests.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("staffStats.noAvailRequests")}</p>
               ) : (
                 <div className="space-y-2">
                   {availRequests.map((ar) => {
@@ -623,20 +626,20 @@ export default function StaffStats() {
                     return (
                       <div key={ar.id} className="flex items-center justify-between rounded-sm border p-3">
                         <div className="text-sm">
-                          <span className="font-medium">{format(new Date(ar.date), "MMM d")}</span>
+                          <span className="font-medium">{formatLocale(new Date(ar.date), "MMM d", locale)}</span>
                           {ar.end_date && ar.end_date !== ar.date && (
                             <span className="text-muted-foreground"> — {format(new Date(ar.end_date), "MMM d")}</span>
                           )}
-                          <Badge variant="outline" className="ms-2 capitalize text-xs">{ar.request_type}</Badge>
+                           <Badge variant="outline" className="ms-2 capitalize text-xs">{ar.request_type === "vacation" ? t("common.vacation") : t("common.block")}</Badge>
                           {blockedLabel && (
-                            <span className="ms-2 text-xs text-muted-foreground">({blockedLabel} only)</span>
+                            <span className="ms-2 text-xs text-muted-foreground">({blockedLabel} {t("common.only")})</span>
                           )}
                           {(ar as any).created_by_manager_id && (
                             <Badge variant="outline" className="ms-2 text-[10px]">Manager</Badge>
                           )}
                         </div>
-                        <Badge variant="outline" className={statusColor[ar.status] || ""}>
-                          {ar.status}
+                         <Badge variant="outline" className={statusColor[ar.status] || ""}>
+                          {t(`status.${ar.status}`)}
                         </Badge>
                       </div>
                     );
@@ -652,19 +655,19 @@ export default function StaffStats() {
       <Dialog open={proxyOpen} onOpenChange={(open) => { if (!open) closeProxyDialog(); else setProxyOpen(true); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Request on Behalf of {selectedProfile?.full_name}</DialogTitle>
+            <DialogTitle>{t("staffStats.requestOnBehalfOf")} {selectedProfile?.full_name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Type</Label>
+              <Label>{t("common.type")}</Label>
               <Select value={proxyType} onValueChange={(v: any) => { setProxyType(v); setProxyBlockedShifts([]); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="block">
-                    <span className="flex items-center gap-2"><CalendarOff className="h-3 w-3" /> Block Dates</span>
+                   <SelectItem value="block">
+                    <span className="flex items-center gap-2"><CalendarOff className="h-3 w-3" /> {t("avail.blockDates")}</span>
                   </SelectItem>
                   <SelectItem value="vacation">
-                    <span className="flex items-center gap-2">🌴 Vacation</span>
+                    <span className="flex items-center gap-2">🌴 {t("avail.vacationLabel")}</span>
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -672,17 +675,17 @@ export default function StaffStats() {
             {proxyType === "block" ? (
               <>
                 <div className="space-y-2">
-                  <Label>Date</Label>
+                  <Label>{t("common.date")}</Label>
                   <Input type="date" value={proxyDate} onChange={(e) => setProxyDate(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Block specific shifts (optional)</Label>
-                  <p className="text-xs text-muted-foreground">Leave unchecked to block the entire day</p>
+                   <Label>{t("avail.blockShifts")}</Label>
+                  <p className="text-xs text-muted-foreground">{t("avail.blockShiftsHint")}</p>
                   <div className="flex gap-3">
                     {SHIFT_TYPES.map((type) => (
                       <label key={type} className="flex items-center gap-2 text-sm cursor-pointer">
                         <Checkbox checked={proxyBlockedShifts.includes(type)} onCheckedChange={() => toggleProxyShift(type)} />
-                        <span className="capitalize">{type}</span>
+                        <span className="capitalize">{t(`shift.${type}`)}</span>
                       </label>
                     ))}
                   </div>
@@ -691,23 +694,23 @@ export default function StaffStats() {
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>Start Date</Label>
+                  <Label>{t("avail.startDate")}</Label>
                   <Input type="date" value={proxyDate} onChange={(e) => setProxyDate(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label>End Date</Label>
+                  <Label>{t("avail.endDate")}</Label>
                   <Input type="date" value={proxyEndDate || proxyDate} min={proxyDate} onChange={(e) => setProxyEndDate(e.target.value)} />
                 </div>
               </div>
             )}
             <div className="space-y-2">
-              <Label>Reason (optional)</Label>
-              <Input placeholder="Reason for request" value={proxyReason} onChange={(e) => setProxyReason(e.target.value)} />
+               <Label>{t("avail.reasonOptional")}</Label>
+              <Input placeholder={t("avail.reasonPlaceholder")} value={proxyReason} onChange={(e) => setProxyReason(e.target.value)} />
             </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={closeProxyDialog}>Cancel</Button>
+               <Button variant="outline" onClick={closeProxyDialog}>{t("common.cancel")}</Button>
               <Button onClick={() => createProxyRequest.mutate()} disabled={!proxyDate || createProxyRequest.isPending}>
-                Submit Request
+                {t("common.submit")}
               </Button>
             </div>
           </div>
@@ -725,18 +728,19 @@ export default function StaffStats() {
       <AlertDialog open={!!reauditConfirm} onOpenChange={(open) => { if (!open) setReauditConfirm(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
+               <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Shift Already Finalized
+              {t("staffStats.shiftAlreadyFinalized")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This shift has already been verified and locked. Do you want to audit it again? Any previous actual hours will be overwritten.
+              {t("staffStats.shiftAlreadyFinalizedDesc")}
+            </AlertDialogDescription>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={() => { setVerifyShift(reauditConfirm); setReauditConfirm(null); }}>
-              Continue
+              {t("common.continue")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
