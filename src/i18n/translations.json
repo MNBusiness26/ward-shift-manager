@@ -577,6 +577,8 @@
     "roster.load": "טען",
     "roster.none": "ללא",
     "roster.blocked": "חסום",
+    "roster.blockedDate": "תאריך חסום",
+    "roster.assigned": "משובץ",
     "roster.missingRN": "משמרות מפורסמות ללא אח/ות אחראי/ת",
     "roster.clearDrafts": "לנקות טיוטות?",
     "roster.onCallHint": "רק מנהלים ואחיות אחראיות מוצגים למשמרות כוננות.",
