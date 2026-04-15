@@ -14,10 +14,22 @@ const shiftIcons: Record<string, React.ElementType> = {
   night: Moon,
 };
 
-const shiftBadgeColors: Record<string, string> = {
-  morning: "bg-shift-morning/15 text-shift-morning border-shift-morning/30",
-  evening: "bg-shift-evening/15 text-shift-evening border-shift-evening/30",
-  night: "bg-shift-night/15 text-shift-night border-shift-night/30",
+const shiftColorClass: Record<string, { bg: string; border: string; icon: string }> = {
+  morning: {
+    bg: "bg-shift-morning/10",
+    border: "border-s-2 border-s-shift-morning",
+    icon: "text-shift-morning",
+  },
+  evening: {
+    bg: "bg-shift-evening/10",
+    border: "border-s-2 border-s-shift-evening",
+    icon: "text-shift-evening",
+  },
+  night: {
+    bg: "bg-shift-night/10",
+    border: "border-s-2 border-s-shift-night",
+    icon: "text-shift-night",
+  },
 };
 
 export default function Index() {
@@ -29,7 +41,6 @@ export default function Index() {
   const todayStr = format(today, "yyyy-MM-dd");
   const endStr = format(weekEnd, "yyyy-MM-dd");
 
-  // Greeting template from admin setting
   const greetingTemplate = settings.find((s: any) => s.key === "greeting_template")?.value as string | undefined;
   const greetingFormat = settings.find((s: any) => s.key === "greeting_format")?.value ?? "formal";
 
@@ -50,23 +61,18 @@ export default function Index() {
     const name = profile?.full_name || "there";
     const firstName = name.split(" ")[0];
     const lastName = name.split(" ").slice(1).join(" ") || firstName;
-
-    // If a custom template exists, parse it
     if (greetingTemplate && typeof greetingTemplate === "string" && greetingTemplate.trim()) {
       return greetingTemplate
         .replace(/\{\{title\}\}/g, roleLabel)
         .replace(/\{\{first_name\}\}/g, firstName)
         .replace(/\{\{last_name\}\}/g, lastName);
     }
-
-    // Fallback to toggle-based
     if (greetingFormat === "first_name") {
       return `${t("dashboard.greeting")}, ${firstName}`;
     }
     return `${t("dashboard.greeting")}, ${roleLabel} ${name}`;
   })();
 
-  // Personal shifts for next 7 days
   const { data: myShifts = [], isLoading } = useQuery({
     queryKey: ["dashboard-my-shifts", user?.id, todayStr],
     queryFn: async () => {
@@ -85,7 +91,6 @@ export default function Index() {
     enabled: !!user,
   });
 
-  // All shifts in range (for teammates)
   const { data: allShifts = [] } = useQuery({
     queryKey: ["dashboard-all-shifts", todayStr],
     queryFn: async () => {
@@ -101,7 +106,6 @@ export default function Index() {
     enabled: !!user,
   });
 
-  // Pending/approved swaps involving user
   const { data: swaps = [] } = useQuery({
     queryKey: ["dashboard-swaps", user?.id, todayStr],
     queryFn: async () => {
@@ -119,7 +123,6 @@ export default function Index() {
     enabled: !!user,
   });
 
-  // Absences (approved blocks/vacations) for user
   const { data: absences = [] } = useQuery({
     queryKey: ["dashboard-absences", user?.id, todayStr],
     queryFn: async () => {
@@ -152,9 +155,23 @@ export default function Index() {
   const getSwapsForDate = (dateStr: string) =>
     swaps.filter((s: any) => s.shift?.date === dateStr);
 
+  // Ward Pulse logic: compute staffing status for each day
+  const getWardPulse = (dateStr: string, dayShifts: any[], daySwaps: any[]) => {
+    // Green = has shifts and no pending swaps, Red = no shifts for the day, Amber = pending swaps
+    if (daySwaps.length > 0) return "amber";
+    if (dayShifts.length > 0) return "green";
+    return "neutral";
+  };
+
+  const pulseColors: Record<string, string> = {
+    green: "bg-success",
+    amber: "bg-shift-morning",
+    red: "bg-destructive",
+    neutral: "bg-border",
+  };
+
   return (
     <div className="space-y-6">
-      {/* Personalized Greeting */}
       <div>
         <h1 className="text-xl md:text-2xl font-bold">{greeting}</h1>
         <p className="text-sm text-muted-foreground">{t("dashboard.subtitle")}</p>
@@ -177,6 +194,7 @@ export default function Index() {
             const absence = getAbsenceForDate(dateStr);
             const daySwaps = getSwapsForDate(dateStr);
             const hasContent = dayShifts.length > 0 || absence || daySwaps.length > 0;
+            const pulse = getWardPulse(dateStr, dayShifts, daySwaps);
 
             return (
               <div key={dateStr} className="space-y-2">
@@ -225,49 +243,42 @@ export default function Index() {
 
                     {dayShifts.map((shift) => {
                       const Icon = shiftIcons[shift.type] || Sun;
+                      const colors = shiftColorClass[shift.type] || shiftColorClass.morning;
                       const teammates = getTeammates(dateStr, shift.type);
                       const hasSwap = daySwaps.some((sw: any) => sw.shift_id === shift.id);
 
                       return (
                         <Card
                           key={shift.id}
-                          className={`overflow-hidden shadow-md ${isToday ? "border-primary/30" : ""}`}
+                          className={`overflow-hidden shadow-md border-0 ${isToday ? "ring-1 ring-primary/20" : ""}`}
                         >
+                          {/* Ward Pulse strip */}
+                          <div className={`h-1 ${pulseColors[hasSwap ? "amber" : "green"]}`} />
                           <CardContent className="p-0">
-                            <div className="flex">
-                              <div className={`w-1.5 flex-shrink-0 ${
-                                shift.type === "morning" ? "bg-shift-morning" :
-                                shift.type === "evening" ? "bg-shift-evening" : "bg-shift-night"
-                              }`} />
+                            <div className={`${colors.bg} ${colors.border} ${shift.is_draft ? "border-dashed" : ""}`}>
+                              <div className="relative flex-1 p-3 md:p-4 space-y-2">
+                                {/* Responsible star top-right */}
+                                {shift.is_responsible_on_shift && (
+                                  <Star className="absolute top-3 end-3 h-4 w-4 fill-primary text-primary" />
+                                )}
 
-                              <div className="flex-1 p-3 md:p-4 space-y-2">
-                                <div className="flex items-center justify-between flex-wrap gap-2">
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className={`gap-1 ${shiftBadgeColors[shift.type]}`}>
-                                      <Icon className="h-3 w-3" />
-                                      {shiftLabels[shift.type]}
+                                <div className="flex items-center gap-2 flex-wrap pe-6">
+                                  <Icon className={`h-4 w-4 ${colors.icon}`} />
+                                  <span className={`text-sm font-semibold ${colors.icon}`}>
+                                    {shiftLabels[shift.type]}
+                                  </span>
+                                  <span className="text-sm text-muted-foreground">
+                                    {shift.start_time.slice(0, 5)} — {shift.end_time.slice(0, 5)}
+                                  </span>
+                                  {shift.is_draft && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 opacity-60">Draft</Badge>
+                                  )}
+                                  {hasSwap && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-shift-morning/30 text-shift-morning">
+                                      <ArrowLeftRight className="h-2.5 w-2.5 me-0.5" />
+                                      {t("dashboard.pendingSwap")}
                                     </Badge>
-                                    <span className="text-sm text-muted-foreground">
-                                      {shift.start_time.slice(0, 5)} — {shift.end_time.slice(0, 5)}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    {shift.is_responsible_on_shift && (
-                                      <Badge className="gap-1 text-xs">
-                                        <Star className="h-3 w-3 fill-current" />
-                                        {t("dashboard.responsible")}
-                                      </Badge>
-                                    )}
-                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                      {t("dashboard.published")}
-                                    </Badge>
-                                    {hasSwap && (
-                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-400/30 text-amber-600 dark:text-amber-400">
-                                        <ArrowLeftRight className="h-2.5 w-2.5 me-0.5" />
-                                        {t("dashboard.pendingSwap")}
-                                      </Badge>
-                                    )}
-                                  </div>
+                                  )}
                                 </div>
 
                                 <div className="text-xs text-muted-foreground">
@@ -310,7 +321,7 @@ export default function Index() {
                     {dayShifts.length === 0 && daySwaps.length > 0 && !absence && (
                       <Card className="border-dashed shadow-md">
                         <CardContent className="flex items-center gap-3 py-4 px-4">
-                          <ArrowLeftRight className="h-4 w-4 text-amber-500" />
+                          <ArrowLeftRight className="h-4 w-4 text-shift-morning" />
                           <span className="text-sm text-muted-foreground">
                             {daySwaps.length} pending swap{daySwaps.length > 1 ? "s" : ""} involving you
                           </span>
