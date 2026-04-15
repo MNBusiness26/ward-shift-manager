@@ -44,10 +44,9 @@ export function AppSidebar() {
   const nurseItems = [
     { title: t("nav.dashboard"), url: "/", icon: LayoutDashboard },
     { title: t("nav.myCalendar"), url: "/calendar", icon: Calendar },
+    { title: t("nav.teamCalendar"), url: "/team-calendar", icon: Users },
     { title: t("nav.availability"), url: "/availability", icon: CalendarOff },
     { title: t("nav.swapRequests"), url: "/swaps", icon: ArrowLeftRight },
-    { title: t("nav.teamCalendar"), url: "/team-calendar", icon: Users },
-    { title: t("nav.teamCalendar"), url: "/team-calendar", icon: Users },
     { title: t("nav.myStats"), url: "/stats", icon: BarChart3 },
   ];
 
