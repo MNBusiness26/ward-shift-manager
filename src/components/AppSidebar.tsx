@@ -88,7 +88,7 @@ export function AppSidebar() {
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider">{t("nav.menu")}</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/50 text-[10px] uppercase tracking-wider">{t("nav.menu")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {nurseItems.map((item) => {
@@ -122,7 +122,7 @@ export function AppSidebar() {
 
         {showManagement && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider">{t("nav.management")}</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sidebar-foreground/50 text-[10px] uppercase tracking-wider">{t("nav.management")}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {managerItems.map((item) => {
