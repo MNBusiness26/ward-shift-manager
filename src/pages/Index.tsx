@@ -36,7 +36,7 @@ const shiftColorClass: Record<string, { bg: string; border: string; icon: string
 export default function Index() {
   const { user, profile, roles } = useAuth();
   const { settings } = useAppSettings();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const today = startOfToday();
   const weekEnd = addDays(today, 6);
   const todayStr = format(today, "yyyy-MM-dd");
