@@ -228,7 +228,7 @@ export default function Index() {
                           )}
                           <div>
                             <span className="text-sm font-medium capitalize">
-                              {absence.request_type === "vacation" ? "Vacation" : "Blocked"}
+                              {absence.request_type === "vacation" ? t("dashboard.vacation") : t("dashboard.blocked")}
                             </span>
                             <span className="text-sm text-muted-foreground ms-1.5">— {t("dashboard.allDay")}</span>
                           </div>
@@ -271,7 +271,7 @@ export default function Index() {
                                     {shift.start_time.slice(0, 5)} — {shift.end_time.slice(0, 5)}
                                   </span>
                                   {shift.is_draft && (
-                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 opacity-60">Draft</Badge>
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 opacity-60">{t("dashboard.draft")}</Badge>
                                   )}
                                   {hasSwap && (
                                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-shift-morning/30 text-shift-morning">
@@ -282,7 +282,7 @@ export default function Index() {
                                 </div>
 
                                 <div className="text-xs text-muted-foreground">
-                                  Role: <span className="font-medium text-foreground capitalize">{roleLabel}</span>
+                                  {t("dashboard.role")}: <span className="font-medium text-foreground capitalize">{roleLabel}</span>
                                 </div>
 
                                 <div className="flex items-start gap-1.5 text-xs">
@@ -323,7 +323,7 @@ export default function Index() {
                         <CardContent className="flex items-center gap-3 py-4 px-4">
                           <ArrowLeftRight className="h-4 w-4 text-shift-morning" />
                           <span className="text-sm text-muted-foreground">
-                            {daySwaps.length} pending swap{daySwaps.length > 1 ? "s" : ""} involving you
+                            {daySwaps.length} {t("dashboard.pendingSwaps")}
                           </span>
                         </CardContent>
                       </Card>
