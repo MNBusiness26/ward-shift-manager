@@ -47,12 +47,13 @@ export function AppSidebar() {
     { title: t("nav.availability"), url: "/availability", icon: CalendarOff },
     { title: t("nav.swapRequests"), url: "/swaps", icon: ArrowLeftRight },
     { title: t("nav.teamCalendar"), url: "/team-calendar", icon: Users },
+    { title: t("nav.teamCalendar"), url: "/team-calendar", icon: Users },
     { title: t("nav.myStats"), url: "/stats", icon: BarChart3 },
   ];
 
   const managerItems = [
-    { title: t("nav.masterRoster"), url: "/roster", icon: ClipboardList },
-    { title: t("nav.mgmtCalendar"), url: "/management-calendar", icon: CalendarDays },
+    { title: t("nav.shiftManager"), url: "/roster", icon: ClipboardList },
+    { title: t("nav.weeklyOverview"), url: "/management-calendar", icon: CalendarDays },
     { title: t("nav.requests"), url: "/requests", icon: Settings },
     { title: t("nav.staff"), url: "/staff", icon: Users },
     { title: t("nav.analytics"), url: "/analytics", icon: BarChart3 },
