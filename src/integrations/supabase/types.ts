@@ -186,6 +186,8 @@ export type Database = {
       }
       shifts: {
         Row: {
+          actual_end_time: string | null
+          actual_start_time: string | null
           assigned_user_id: string | null
           color_code: string | null
           comments: string | null
@@ -196,12 +198,15 @@ export type Database = {
           is_draft: boolean
           is_responsible_on_shift: boolean
           is_standby: boolean
+          is_verified: boolean
           manager_on_duty_id: string | null
           start_time: string
           type: Database["public"]["Enums"]["shift_type"]
           updated_at: string
         }
         Insert: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
           assigned_user_id?: string | null
           color_code?: string | null
           comments?: string | null
@@ -212,12 +217,15 @@ export type Database = {
           is_draft?: boolean
           is_responsible_on_shift?: boolean
           is_standby?: boolean
+          is_verified?: boolean
           manager_on_duty_id?: string | null
           start_time: string
           type: Database["public"]["Enums"]["shift_type"]
           updated_at?: string
         }
         Update: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
           assigned_user_id?: string | null
           color_code?: string | null
           comments?: string | null
@@ -228,6 +236,7 @@ export type Database = {
           is_draft?: boolean
           is_responsible_on_shift?: boolean
           is_standby?: boolean
+          is_verified?: boolean
           manager_on_duty_id?: string | null
           start_time?: string
           type?: Database["public"]["Enums"]["shift_type"]
