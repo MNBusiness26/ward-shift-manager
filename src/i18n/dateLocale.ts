@@ -1,6 +1,8 @@
 import { format as dateFnsFormat } from "date-fns";
 import { he } from "date-fns/locale/he";
 
+import type { Locale } from "date-fns";
+
 const localeMap: Record<string, Locale> = { he };
 
 /**
