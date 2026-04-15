@@ -451,7 +451,7 @@ export default function ManagementCalendar() {
         </div>
         <div className="flex items-center gap-1">
           <Badge variant="secondary" className="text-[10px]">
-            Name <span className="bg-amber-500/20 text-amber-700 rounded px-0.5">S</span>
+            Name <span className="bg-amber-500/20 text-amber-700 rounded-sm px-0.5">S</span>
           </Badge>
           <span>On Call</span>
         </div>
