@@ -25,11 +25,7 @@ type ShiftType = Database["public"]["Enums"]["shift_type"];
 
 const shiftTypes = ["morning", "evening", "night"] as const;
 
-const shiftLabels: Record<string, string> = {
-  morning: "Morning",
-  evening: "Evening",
-  night: "Night",
-};
+// shiftLabels moved inside component to use t()
 
 const shiftColors: Record<string, string> = {
   morning: "bg-shift-morning/10 border-shift-morning/30",
