@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 14%;
 
-    --primary: 226 72% 49%;
+    --primary: 199 89% 48%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 0 0% 91%;
@@ -27,26 +27,29 @@
     --accent: 0 0% 95%;
     --accent-foreground: 0 0% 14%;
 
-    --destructive: 358 87% 52%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
 
     --border: 0 0% 91%;
     --input: 0 0% 91%;
-    --ring: 226 72% 49%;
+    --ring: 199 89% 48%;
 
     --radius: 0.5rem;
 
-    --shift-morning: 36 100% 50%;
-    --shift-evening: 262 52% 47%;
-    --shift-night: 220 70% 25%;
+    --shift-morning: 45 93% 47%;
+    --shift-evening: 262 83% 58%;
+    --shift-night: 221 83% 33%;
 
-    --sidebar-background: 226 72% 49%;
+    --sidebar-background: 199 89% 48%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 226 72% 49%;
-    --sidebar-accent: 226 72% 55%;
+    --sidebar-primary-foreground: 199 89% 48%;
+    --sidebar-accent: 199 89% 55%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 226 72% 42%;
+    --sidebar-border: 199 89% 42%;
     --sidebar-ring: 0 0% 100%;
   }
 
@@ -57,7 +60,7 @@
     --card-foreground: 0 0% 91%;
     --popover: 0 0% 10%;
     --popover-foreground: 0 0% 91%;
-    --primary: 226 72% 55%;
+    --primary: 199 89% 55%;
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 18%;
     --secondary-foreground: 0 0% 91%;
@@ -65,19 +68,21 @@
     --muted-foreground: 0 0% 55%;
     --accent: 0 0% 18%;
     --accent-foreground: 0 0% 91%;
-    --destructive: 358 87% 45%;
+    --destructive: 0 84% 50%;
     --destructive-foreground: 0 0% 100%;
+    --success: 142 76% 42%;
+    --success-foreground: 0 0% 100%;
     --border: 0 0% 18%;
     --input: 0 0% 18%;
-    --ring: 226 72% 55%;
-    --sidebar-background: 226 72% 15%;
+    --ring: 199 89% 55%;
+    --sidebar-background: 199 89% 15%;
     --sidebar-foreground: 0 0% 91%;
-    --sidebar-primary: 226 72% 55%;
+    --sidebar-primary: 199 89% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 226 72% 22%;
+    --sidebar-accent: 199 89% 22%;
     --sidebar-accent-foreground: 0 0% 91%;
-    --sidebar-border: 226 72% 22%;
-    --sidebar-ring: 226 72% 55%;
+    --sidebar-border: 199 89% 22%;
+    --sidebar-ring: 199 89% 55%;
   }
 }
 

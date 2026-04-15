@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { I18nProvider } from "@/i18n/I18nProvider";
 import { AppLayout } from "@/components/AppLayout";
 import { WelcomeOverlay } from "@/components/WelcomeOverlay";
 
@@ -40,7 +41,6 @@ function ProtectedRoute({ children, requireManager }: { children: React.ReactNod
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  // Wait for profile fetch to complete
   if (!profileLoaded) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -49,11 +49,8 @@ function ProtectedRoute({ children, requireManager }: { children: React.ReactNod
     );
   }
 
-  // No profile = email not in staff directory
   if (!hasProfile) return <RestrictedAccess />;
-  // Profile exists but not activated
   if (!isActive) return <PendingActivation />;
-  // Management routes: allow manager OR assistant_manager
   if (requireManager && !isManager && !isAssistantManager) return <Navigate to="/" replace />;
 
   return (
@@ -99,13 +96,15 @@ function AppRoutes() {
 const App: React.FC = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
+      <I18nProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </BrowserRouter>
+      </I18nProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -21,6 +21,7 @@ export default function Admin() {
 
   const [enforceFullWeek, setEnforceFullWeek] = useState(true);
   const [greetingFormat, setGreetingFormat] = useState<"formal" | "first_name">("formal");
+  const [greetingTemplate, setGreetingTemplate] = useState("");
   const [morningLimit, setMorningLimit] = useState(6);
   const [eveningLimit, setEveningLimit] = useState(4);
   const [nightLimit, setNightLimit] = useState(3);
@@ -59,6 +60,9 @@ export default function Admin() {
     const gfSetting = settings.find((s: any) => s.key === "greeting_format");
     if (gfSetting) setGreetingFormat(gfSetting.value === "first_name" ? "first_name" : "formal");
 
+    const gtSetting = settings.find((s: any) => s.key === "greeting_template");
+    if (gtSetting && typeof gtSetting.value === "string") setGreetingTemplate(gtSetting.value);
+
     const hcSetting = settings.find((s: any) => s.key === "headcount_limits");
     if (hcSetting && typeof hcSetting.value === "object") {
       const v = hcSetting.value as any;
@@ -74,11 +78,20 @@ export default function Admin() {
 
   const saveSetting = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
-      const { error } = await supabase
-        .from("app_settings")
-        .update({ value, updated_at: new Date().toISOString(), updated_by: user.id })
-        .eq("key", key);
-      if (error) throw error;
+      // Upsert: try update, if no rows affected, insert
+      const { data: existing } = await supabase.from("app_settings").select("id").eq("key", key).maybeSingle();
+      if (existing) {
+        const { error } = await supabase
+          .from("app_settings")
+          .update({ value, updated_at: new Date().toISOString(), updated_by: user.id })
+          .eq("key", key);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("app_settings")
+          .insert({ key, value, updated_by: user.id });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["app-settings"] });
@@ -148,6 +161,10 @@ export default function Admin() {
     saveSetting.mutate({ key: "greeting_format", value: val });
   };
 
+  const handleSaveGreetingTemplate = () => {
+    saveSetting.mutate({ key: "greeting_template", value: greetingTemplate });
+  };
+
   const handleSaveHeadcounts = () => {
     saveSetting.mutate({
       key: "headcount_limits",
@@ -165,6 +182,8 @@ export default function Admin() {
 
   const roleLabel = (r: string) => r.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
+  const templateVars = ["{{title}}", "{{first_name}}", "{{last_name}}"];
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -173,7 +192,7 @@ export default function Admin() {
       </h1>
 
       {/* Staff Directory */}
-      <Card>
+      <Card className="shadow-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
@@ -250,7 +269,7 @@ export default function Admin() {
                   <span className="text-xs text-muted-foreground">{Math.round(entry.target_fte_percent * 100)}%</span>
                   <div className="flex items-center gap-1">
                     {entry.is_claimed ? (
-                      <Check className="h-4 w-4 text-green-500" />
+                      <Check className="h-4 w-4 text-success" />
                     ) : (
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeEntry.mutate(entry.id)}>
                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
@@ -265,7 +284,7 @@ export default function Admin() {
       </Card>
 
       {/* Operational Toggles */}
-      <Card>
+      <Card className="shadow-md">
         <CardHeader>
           <CardTitle>Operational Toggles</CardTitle>
           <CardDescription>Global settings that affect roster operations.</CardDescription>
@@ -284,7 +303,7 @@ export default function Admin() {
             <div>
               <Label className="text-sm font-medium">Dashboard Greeting: First Name Only</Label>
               <p className="text-xs text-muted-foreground mt-0.5">
-                When active, the dashboard shows "Hello, Jane" instead of "Hello, Nurse Jane Doe".
+                When active, the dashboard shows "Hello, Jane" instead of "Hello, Nurse Jane Doe". Overridden by custom template below.
               </p>
             </div>
             <Switch checked={greetingFormat === "first_name"} onCheckedChange={handleToggleGreetingFormat} />
@@ -292,8 +311,45 @@ export default function Admin() {
         </CardContent>
       </Card>
 
+      {/* Greeting Template */}
+      <Card className="shadow-md">
+        <CardHeader>
+          <CardTitle>Dashboard Greeting Template</CardTitle>
+          <CardDescription>
+            Customize the dashboard greeting using template variables. Leave empty to use the default toggle above.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-sm">Greeting Template</Label>
+            <Input
+              value={greetingTemplate}
+              onChange={(e) => setGreetingTemplate(e.target.value)}
+              placeholder="e.g. Shalom, {{title}} {{last_name}}"
+            />
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="text-xs text-muted-foreground">Available variables:</span>
+            {templateVars.map((v) => (
+              <Badge
+                key={v}
+                variant="secondary"
+                className="text-xs cursor-pointer hover:bg-primary/10"
+                onClick={() => setGreetingTemplate((prev) => prev + " " + v)}
+              >
+                {v}
+              </Badge>
+            ))}
+          </div>
+          <Button onClick={handleSaveGreetingTemplate} className="gap-2">
+            <Save className="h-4 w-4" />
+            Save Template
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Headcount Limits */}
-      <Card>
+      <Card className="shadow-md">
         <CardHeader>
           <CardTitle>Target Headcount Limits</CardTitle>
           <CardDescription>
