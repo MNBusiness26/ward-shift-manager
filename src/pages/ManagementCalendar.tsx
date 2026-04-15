@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval } from "date-fns";
+import { formatLocale } from "@/i18n/dateLocale";
+import { useTranslation } from "@/i18n/useTranslation";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle, Sun, Sunset, Moon } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
