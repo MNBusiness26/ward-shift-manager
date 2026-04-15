@@ -787,7 +787,7 @@ export default function Roster() {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
                   return (
-                    <th key={d.toISOString()} className={`relative z-10 min-w-[70px] md:min-w-[120px] p-1 md:p-2 text-center font-medium text-muted-foreground ${dateBlocked ? "bg-muted/50" : ""}`}>
+                    <th key={d.toISOString()} className={`relative z-10 min-w-[70px] md:min-w-[120px] p-1 md:p-2 text-center font-medium text-muted-foreground border-b border-r border-border/30 ${dateBlocked ? "bg-muted/50" : ""}`}>
                       <div className="flex items-center justify-center gap-1">
                         {format(d, "EEE")}
                         {dateBlocked && <Lock className="h-3 w-3" />}
@@ -846,7 +846,7 @@ export default function Roster() {
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`relative z-0 p-1 text-center transition-colors ${dateBlocked || blocked ? "bg-destructive/5 cursor-not-allowed" : "cursor-pointer hover:bg-accent/30"}`}
+                        className={`relative z-0 p-1 text-center transition-colors border-b border-r border-border/20 ${dateBlocked || blocked ? "bg-destructive/5 cursor-not-allowed" : "cursor-pointer hover:bg-accent/30"}`}
                         onClick={() => {
                           if (dateBlocked || blocked) return;
                           if (dayShifts.length === 0) {
