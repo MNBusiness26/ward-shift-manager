@@ -62,6 +62,12 @@ function ProtectedRoute({ children, requireManager }: { children: React.ReactNod
   );
 }
 
+function ManagerHomeRedirect() {
+  const { isManager, isAssistantManager } = useAuth();
+  if (isManager || isAssistantManager) return <Navigate to="/management-calendar" replace />;
+  return <Index />;
+}
+
 function AppRoutes() {
   const { user, isLoading } = useAuth();
 
@@ -76,7 +82,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
-      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute><ManagerHomeRedirect /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><MyCalendar /></ProtectedRoute>} />
       <Route path="/availability" element={<ProtectedRoute><Availability /></ProtectedRoute>} />
       <Route path="/swaps" element={<ProtectedRoute><SwapRequests /></ProtectedRoute>} />

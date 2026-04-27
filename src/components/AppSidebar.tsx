@@ -51,8 +51,8 @@ export function AppSidebar() {
   ];
 
   const managerItems = [
-    { title: t("nav.shiftManager"), url: "/roster", icon: ClipboardList },
     { title: t("nav.weeklyOverview"), url: "/management-calendar", icon: CalendarDays },
+    { title: t("nav.shiftManager"), url: "/roster", icon: ClipboardList },
     { title: t("nav.requests"), url: "/requests", icon: Settings },
     { title: t("nav.staff"), url: "/staff", icon: Users },
     { title: t("nav.analytics"), url: "/analytics", icon: BarChart3 },
