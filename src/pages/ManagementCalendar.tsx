@@ -13,10 +13,12 @@ import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval }
 import { formatLocale } from "@/i18n/dateLocale";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle, Sun, Sunset, Moon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle, Sun, Sunset, Moon, Phone, Ban } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
 import { validateShiftFriction, isOverHeadcount, getHeadcountTarget } from "@/components/roster/frictionValidation";
+import { compareStaff, isAssistant } from "@/components/roster/staffSort";
+import { useStaffPool } from "@/hooks/useStaffPool";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
