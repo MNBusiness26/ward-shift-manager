@@ -147,21 +147,38 @@ export function validateShiftFriction({
   return warnings;
 }
 
+/** Roles that count toward shift headcount capacity (assistants are excluded). */
+export const HEADCOUNT_ROLES = new Set(["nurse", "manager", "assistant_manager"]);
+
+/** Returns true if a staff role counts toward headcount capacity. */
+export function countsTowardHeadcount(role?: string | null): boolean {
+  if (!role) return true; // unknown roles default to counted (safe)
+  return HEADCOUNT_ROLES.has(role);
+}
+
 /**
  * Check headcount for a given date/type.
  * Returns true if headcount exceeds the day-aware target.
  * On Call shifts do NOT count.
+ * Assistants do NOT count toward headcount capacity.
  */
 export function isOverHeadcount(
   shifts: Array<{ date: string; type: string; assigned_user_id: string | null; is_standby?: boolean }>,
   date: string,
   type: string,
   customLimits?: Record<string, number>,
+  staffRoles?: Map<string, string>,
 ): boolean {
   const limit = getHeadcountTarget(type, date, customLimits);
   if (!limit) return false;
-  const count = shifts.filter(
-    (s) => s.date === date && s.type === type && s.assigned_user_id && !(s as any).is_standby
-  ).length;
+  const count = shifts.filter((s) => {
+    if (s.date !== date || s.type !== type || !s.assigned_user_id) return false;
+    if ((s as any).is_standby) return false;
+    if (staffRoles) {
+      const role = staffRoles.get(s.assigned_user_id);
+      if (!countsTowardHeadcount(role)) return false;
+    }
+    return true;
+  }).length;
   return count > limit;
 }

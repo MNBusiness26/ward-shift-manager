@@ -13,10 +13,12 @@ import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval }
 import { formatLocale } from "@/i18n/dateLocale";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle, Sun, Sunset, Moon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle, Sun, Sunset, Moon, Phone, Ban } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
 import { validateShiftFriction, isOverHeadcount, getHeadcountTarget } from "@/components/roster/frictionValidation";
+import { compareStaff, isAssistant } from "@/components/roster/staffSort";
+import { useStaffPool } from "@/hooks/useStaffPool";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
@@ -111,18 +113,15 @@ export default function ManagementCalendar() {
     },
   });
 
-  const { data: staff = [] } = useQuery({
-    queryKey: ["all-staff"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, is_active, is_responsible, target_fte_percent, constraints")
-        .eq("is_active", true)
-        .order("full_name");
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { data: staffPool = [] } = useStaffPool();
+  const staff = staffPool
+    .filter((s) => s.is_active || s.kind === "pending")
+    .slice()
+    .sort(compareStaff);
+  // role map: assigned_user_id → role (used to exclude assistants from headcount)
+  const staffRoleMap = new Map<string, string>(
+    staffPool.map((s) => [s.id, (s.role || s.app_role || "nurse") as string]),
+  );
 
   const { data: managers = [] } = useQuery({
     queryKey: ["all-managers"],
@@ -283,7 +282,17 @@ export default function ManagementCalendar() {
     }
   };
 
-  const detailShifts = shifts.filter((s) => s.date === detailDate && s.type === detailType && s.assigned_user_id);
+  const detailShifts = shifts
+    .filter((s) => s.date === detailDate && s.type === detailType && s.assigned_user_id)
+    .slice()
+    .sort((a, b) => {
+      const pa = staff.find((p) => p.id === a.assigned_user_id);
+      const pb = staff.find((p) => p.id === b.assigned_user_id);
+      return compareStaff(
+        { full_name: (a as any).profiles?.full_name || pa?.full_name || "", is_responsible_on_shift: a.is_responsible_on_shift, is_responsible: pa?.is_responsible, role: pa?.role ?? pa?.app_role },
+        { full_name: (b as any).profiles?.full_name || pb?.full_name || "", is_responsible_on_shift: b.is_responsible_on_shift, is_responsible: pb?.is_responsible, role: pb?.role ?? pb?.app_role },
+      );
+    });
   const managerStaff = staff.filter((s) => managers.includes(s.id));
 
   // Standby-eligible staff: managers, assistant_managers, or is_responsible
@@ -394,8 +403,28 @@ export default function ManagementCalendar() {
                   {days.map((d) => {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const blocked = isDateBlocked(dateStr);
-                    const dayShifts = shifts.filter((s) => s.date === dateStr && s.type === type && s.assigned_user_id);
-                    const overHeadcount = isOverHeadcount(shifts as any[], dateStr, type, headcountLimits);
+                    const dayShifts = shifts
+                      .filter((s) => s.date === dateStr && s.type === type && s.assigned_user_id)
+                      .slice()
+                      .sort((a, b) => {
+                        const pa = staff.find((p) => p.id === a.assigned_user_id);
+                        const pb = staff.find((p) => p.id === b.assigned_user_id);
+                        return compareStaff(
+                          {
+                            full_name: (a as any).profiles?.full_name || pa?.full_name || "",
+                            is_responsible_on_shift: a.is_responsible_on_shift,
+                            is_responsible: pa?.is_responsible,
+                            role: pa?.role ?? pa?.app_role,
+                          },
+                          {
+                            full_name: (b as any).profiles?.full_name || pb?.full_name || "",
+                            is_responsible_on_shift: b.is_responsible_on_shift,
+                            is_responsible: pb?.is_responsible,
+                            role: pb?.role ?? pb?.app_role,
+                          },
+                        );
+                      });
+                    const overHeadcount = isOverHeadcount(shifts as any[], dateStr, type, headcountLimits, staffRoleMap);
                     return (
                       <td
                         key={d.toISOString()}
@@ -405,14 +434,17 @@ export default function ManagementCalendar() {
                         {overHeadcount && (
                           <div className="flex items-center gap-0.5 mb-1">
                             <AlertTriangle className="h-3 w-3 text-amber-500" />
-                            <span className="text-[9px] text-amber-600 font-medium">{dayShifts.filter(s => !(s as any).is_standby).length}/{getHeadcountTarget(type, dateStr, headcountLimits)}</span>
+                            <span className="text-[9px] text-amber-600 font-medium">{dayShifts.filter(s => !(s as any).is_standby && (() => { const r = staffRoleMap.get(s.assigned_user_id || ""); return r !== "assistant"; })()).length}/{getHeadcountTarget(type, dateStr, headcountLimits)}</span>
                           </div>
                         )}
                         {dayShifts.length === 0 ? (
                           <span className="text-xs text-muted-foreground italic">{blocked ? "🔒" : "—"}</span>
                         ) : (
                           <div className="flex flex-wrap gap-1">
-                            {dayShifts.map((s) => (
+                            {dayShifts.map((s) => {
+                              const profile = staff.find((p) => p.id === s.assigned_user_id);
+                              const assistantRole = isAssistant(profile?.role ?? profile?.app_role);
+                              return (
                               <Badge
                                 key={s.id}
                                 variant={s.is_responsible_on_shift ? "default" : "secondary"}
@@ -420,14 +452,14 @@ export default function ManagementCalendar() {
                                   (s as any).is_standby
                                     ? "bg-transparent border-2 border-dashed border-current"
                                     : s.is_draft ? "opacity-60 border-dashed" : "ring-1 ring-current/20"
-                                }`}
+                                } ${assistantRole && !s.is_responsible_on_shift ? "bg-muted text-muted-foreground border-muted-foreground/20" : ""}`}
                               >
                                 {getFirstName(s)}
-                                {s.is_responsible_on_shift && <span className="ml-0.5 text-[9px]">★</span>}
-                                {(s as any).is_standby && <span className="ml-0.5 text-[9px] font-bold">OC</span>}
-                                {s.is_draft ? <span className="ml-0.5 text-[9px]">D</span> : <Lock className="ml-0.5 h-2.5 w-2.5 opacity-40" />}
+                                {s.is_responsible_on_shift && <Star className="ml-0.5 h-2.5 w-2.5 inline fill-current" />}
+                                {(s as any).is_standby && <Phone className="ml-0.5 h-2.5 w-2.5 inline" />}
                               </Badge>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </td>
@@ -482,12 +514,16 @@ export default function ManagementCalendar() {
             {detailShifts.length === 0 ? (
               <p className="text-sm text-muted-foreground">No staff assigned.</p>
             ) : (
-              detailShifts.map((s) => (
-                <div key={s.id} className="flex items-center justify-between rounded-md border px-3 py-2">
+              detailShifts.map((s) => {
+                const profile = staff.find((p) => p.id === s.assigned_user_id);
+                const assistantRole = isAssistant(profile?.role ?? profile?.app_role);
+                return (
+                <div key={s.id} className={`flex items-center justify-between rounded-md border px-3 py-2 ${assistantRole ? "bg-muted/50" : ""}`}>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{(s as any).profiles?.full_name || "Unknown"}</span>
-                    {s.is_responsible_on_shift && <Badge variant="default" className="text-[10px] px-1 py-0">★ Responsible</Badge>}
-                    {(s as any).is_standby && <Badge variant="outline" className="text-[10px] px-1 py-0 bg-amber-500/10 text-amber-700">OC On Call</Badge>}
+                    <span className={`text-sm font-medium ${assistantRole ? "text-muted-foreground" : ""}`}>{(s as any).profiles?.full_name || profile?.full_name || "Unknown"}</span>
+                    {s.is_responsible_on_shift && <Badge variant="default" className="text-[10px] px-1 py-0 gap-0.5"><Star className="h-2.5 w-2.5 fill-current" /> Responsible</Badge>}
+                    {(s as any).is_standby && <Badge variant="outline" className="text-[10px] px-1 py-0 bg-amber-500/10 text-amber-700 gap-0.5"><Phone className="h-2.5 w-2.5" /> On Call</Badge>}
+                    {assistantRole && <Badge variant="outline" className="text-[10px] px-1 py-0 bg-muted text-muted-foreground border-muted-foreground/20">Assistant</Badge>}
                     {s.is_draft && <Badge variant="outline" className="text-[10px] px-1 py-0 opacity-60">Draft</Badge>}
                   </div>
                   <div className="flex items-center gap-1">
@@ -515,7 +551,8 @@ export default function ManagementCalendar() {
                     </Button>
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
           </div>
           {!isDateBlocked(detailDate) && (
@@ -582,7 +619,11 @@ export default function ManagementCalendar() {
                     });
                     return (
                       <SelectItem key={s.id} value={s.id} disabled={userBlocked}>
-                        {s.full_name} {userBlocked ? `🚫 ${t("roster.blocked")}` : ""}
+                        <span className="flex items-center gap-1">
+                          {userBlocked && <Ban className="h-3 w-3 text-destructive" />}
+                          {s.full_name}{(s as any).kind === "pending" ? " (Pending)" : ""}
+                          {userBlocked ? ` — ${t("roster.blocked")}` : ""}
+                        </span>
                       </SelectItem>
                     );
                   })}

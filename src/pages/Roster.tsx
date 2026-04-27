@@ -14,7 +14,8 @@ import { format, startOfWeek, addWeeks, subWeeks, addDays, subDays, eachDayOfInt
 import { formatLocale } from "@/i18n/dateLocale";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Trash2, Copy, ClipboardPaste, Users, Star, Save, FolderOpen, Lock, Settings, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Trash2, Copy, ClipboardPaste, Users, Star, Save, FolderOpen, Lock, Settings, X, Phone } from "lucide-react";
+import { compareStaff, isAssistant, ASSISTANT_BG_CLASS } from "@/components/roster/staffSort";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { PublishConfirmDialog } from "@/components/roster/PublishConfirmDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
@@ -156,7 +157,10 @@ export default function Roster() {
 
   // Unified pool: active profiles + unclaimed staff_directory ("pending") entries.
   const { data: staffPool = [] } = useStaffPool();
-  const staff = staffPool.filter((s) => s.is_active || s.kind === "pending");
+  const staff = staffPool
+    .filter((s) => s.is_active || s.kind === "pending")
+    .slice()
+    .sort(compareStaff);
 
   const { data: managers = [] } = useQuery({
     queryKey: ["all-managers"],
@@ -822,12 +826,15 @@ export default function Roster() {
             <tbody>
               {staff.map((member) => (
                 <tr key={member.id} className="border-t">
-                  <td className="sticky left-0 z-20 w-[100px] min-w-[100px] overflow-hidden border-r bg-card py-3 px-1.5 font-medium shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:py-4 md:px-2">
+                  <td className={`sticky left-0 z-20 w-[100px] min-w-[100px] overflow-hidden border-r py-3 px-1.5 font-medium shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:py-4 md:px-2 ${isAssistant(member.role ?? member.app_role) ? "bg-muted/60" : "bg-card"}`}>
                     <div className="max-w-[100px] md:max-w-[160px]">
-                      <span className="truncate block text-xs md:text-sm">{member.full_name}</span>
+                      <span className={`truncate block text-xs md:text-sm ${isAssistant(member.role ?? member.app_role) ? "text-muted-foreground" : ""}`}>{member.full_name}</span>
                       <div className="flex items-center gap-1 mt-0.5 flex-wrap">
                         <span className="text-[10px] md:text-xs text-muted-foreground">{Math.round(Number(member.target_fte_percent) * 100)}%</span>
                         {member.is_responsible && <Star className="h-3 w-3 fill-primary text-primary flex-shrink-0" />}
+                        {isAssistant(member.role ?? member.app_role) && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 bg-muted text-muted-foreground border-muted-foreground/20">Assistant</Badge>
+                        )}
                         {member.kind === "pending" && (
                           <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 bg-amber-50 text-amber-800 border-amber-200">Pending</Badge>
                         )}
@@ -878,9 +885,8 @@ export default function Roster() {
                             <div className="flex items-center justify-center gap-0.5">
                               <span className="capitalize font-medium">{s.type.charAt(0)}</span>
                               {(s as any).is_standby && (
-                                <span className="text-[9px] font-bold bg-shift-morning/20 text-shift-morning rounded-sm px-0.5">OC</span>
+                                <Phone className="h-2.5 w-2.5 text-shift-morning" />
                               )}
-                              {s.is_draft ? <EyeOff className="h-2.5 w-2.5 opacity-60" /> : <Lock className="h-2.5 w-2.5 opacity-40" />}
                             </div>
                           </div>
                         ))}
