@@ -514,12 +514,16 @@ export default function ManagementCalendar() {
             {detailShifts.length === 0 ? (
               <p className="text-sm text-muted-foreground">No staff assigned.</p>
             ) : (
-              detailShifts.map((s) => (
-                <div key={s.id} className="flex items-center justify-between rounded-md border px-3 py-2">
+              detailShifts.map((s) => {
+                const profile = staff.find((p) => p.id === s.assigned_user_id);
+                const assistantRole = isAssistant(profile?.role ?? profile?.app_role);
+                return (
+                <div key={s.id} className={`flex items-center justify-between rounded-md border px-3 py-2 ${assistantRole ? "bg-muted/50" : ""}`}>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{(s as any).profiles?.full_name || "Unknown"}</span>
-                    {s.is_responsible_on_shift && <Badge variant="default" className="text-[10px] px-1 py-0">★ Responsible</Badge>}
-                    {(s as any).is_standby && <Badge variant="outline" className="text-[10px] px-1 py-0 bg-amber-500/10 text-amber-700">OC On Call</Badge>}
+                    <span className={`text-sm font-medium ${assistantRole ? "text-muted-foreground" : ""}`}>{(s as any).profiles?.full_name || profile?.full_name || "Unknown"}</span>
+                    {s.is_responsible_on_shift && <Badge variant="default" className="text-[10px] px-1 py-0 gap-0.5"><Star className="h-2.5 w-2.5 fill-current" /> Responsible</Badge>}
+                    {(s as any).is_standby && <Badge variant="outline" className="text-[10px] px-1 py-0 bg-amber-500/10 text-amber-700 gap-0.5"><Phone className="h-2.5 w-2.5" /> On Call</Badge>}
+                    {assistantRole && <Badge variant="outline" className="text-[10px] px-1 py-0 bg-muted text-muted-foreground border-muted-foreground/20">Assistant</Badge>}
                     {s.is_draft && <Badge variant="outline" className="text-[10px] px-1 py-0 opacity-60">Draft</Badge>}
                   </div>
                   <div className="flex items-center gap-1">
