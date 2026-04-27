@@ -98,36 +98,63 @@ export default function Staff() {
         excluded_shifts: editForm.excluded_shifts,
         excluded_days: editForm.excluded_days,
       };
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          full_name: editForm.full_name,
-          target_fte_percent: editForm.target_fte_percent,
-          is_responsible: editForm.is_responsible,
-          constraints,
-        })
-        .eq("id", editMember.id);
-      if (error) throw error;
 
-      // Handle primary role
-      const currentRole = editMember.roles?.[0];
-      if (currentRole !== editForm.role) {
-        if (currentRole) {
-          await supabase.from("user_roles").delete().eq("user_id", editMember.id).eq("role", currentRole);
-        }
-        await supabase.from("user_roles").insert({ user_id: editMember.id, role: editForm.role });
+      // Update profiles row if it exists (real signup OR placeholder profile)
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", editMember.id)
+        .maybeSingle();
+
+      if (existingProfile) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            full_name: editForm.full_name,
+            target_fte_percent: editForm.target_fte_percent,
+            is_responsible: editForm.is_responsible,
+            constraints,
+            role: editForm.role,
+          })
+          .eq("id", editMember.id);
+        if (error) throw error;
       }
 
-      // Handle assistant_manager toggle
-      const hadAM = (editMember.roles ?? []).includes("assistant_manager");
-      if (editForm.is_assistant_manager && !hadAM) {
-        await supabase.from("user_roles").insert({ user_id: editMember.id, role: "assistant_manager" as AppRole });
-      } else if (!editForm.is_assistant_manager && hadAM) {
-        await supabase.from("user_roles").delete().eq("user_id", editMember.id).eq("role", "assistant_manager");
+      // Mirror onto staff_directory if this is a pending entry (or directory record exists)
+      if (editMember.kind === "pending") {
+        const { error: dirErr } = await supabase
+          .from("staff_directory")
+          .update({
+            full_name: editForm.full_name,
+            target_fte_percent: editForm.target_fte_percent,
+            app_role: editForm.role,
+          })
+          .eq("id", editMember.id);
+        if (dirErr) throw dirErr;
+      }
+
+      // Role tables only apply to claimed users
+      if (editMember.kind !== "pending") {
+        const currentRole = editMember.roles?.[0];
+        if (currentRole !== editForm.role) {
+          if (currentRole) {
+            await supabase.from("user_roles").delete().eq("user_id", editMember.id).eq("role", currentRole);
+          }
+          await supabase.from("user_roles").insert({ user_id: editMember.id, role: editForm.role });
+        }
+
+        const hadAM = (editMember.roles ?? []).includes("assistant_manager");
+        if (editForm.is_assistant_manager && !hadAM) {
+          await supabase.from("user_roles").insert({ user_id: editMember.id, role: "assistant_manager" as AppRole });
+        } else if (!editForm.is_assistant_manager && hadAM) {
+          await supabase.from("user_roles").delete().eq("user_id", editMember.id).eq("role", "assistant_manager");
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff-management"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-directory"] });
+      queryClient.invalidateQueries({ queryKey: ["staff-pool"] });
       setEditDialog(false);
       toast.success("Profile updated");
     },
