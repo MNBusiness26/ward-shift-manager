@@ -551,7 +551,8 @@ export default function ManagementCalendar() {
                     </Button>
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
           </div>
           {!isDateBlocked(detailDate) && (
