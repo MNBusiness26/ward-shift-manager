@@ -68,10 +68,11 @@ export default function Staff() {
       const { data, error } = await supabase
         .from("staff_directory")
         .select("*")
-        .eq("is_claimed", false)
-        .order("full_name");
+        .eq("is_claimed", false);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []).sort((a: any, b: any) =>
+        (a.full_name || "").localeCompare(b.full_name || "", "he", { sensitivity: "base" })
+      );
     },
   });
 
@@ -97,36 +98,63 @@ export default function Staff() {
         excluded_shifts: editForm.excluded_shifts,
         excluded_days: editForm.excluded_days,
       };
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          full_name: editForm.full_name,
-          target_fte_percent: editForm.target_fte_percent,
-          is_responsible: editForm.is_responsible,
-          constraints,
-        })
-        .eq("id", editMember.id);
-      if (error) throw error;
 
-      // Handle primary role
-      const currentRole = editMember.roles?.[0];
-      if (currentRole !== editForm.role) {
-        if (currentRole) {
-          await supabase.from("user_roles").delete().eq("user_id", editMember.id).eq("role", currentRole);
-        }
-        await supabase.from("user_roles").insert({ user_id: editMember.id, role: editForm.role });
+      // Update profiles row if it exists (real signup OR placeholder profile)
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", editMember.id)
+        .maybeSingle();
+
+      if (existingProfile) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            full_name: editForm.full_name,
+            target_fte_percent: editForm.target_fte_percent,
+            is_responsible: editForm.is_responsible,
+            constraints,
+            role: editForm.role,
+          })
+          .eq("id", editMember.id);
+        if (error) throw error;
       }
 
-      // Handle assistant_manager toggle
-      const hadAM = (editMember.roles ?? []).includes("assistant_manager");
-      if (editForm.is_assistant_manager && !hadAM) {
-        await supabase.from("user_roles").insert({ user_id: editMember.id, role: "assistant_manager" as AppRole });
-      } else if (!editForm.is_assistant_manager && hadAM) {
-        await supabase.from("user_roles").delete().eq("user_id", editMember.id).eq("role", "assistant_manager");
+      // Mirror onto staff_directory if this is a pending entry (or directory record exists)
+      if (editMember.kind === "pending") {
+        const { error: dirErr } = await supabase
+          .from("staff_directory")
+          .update({
+            full_name: editForm.full_name,
+            target_fte_percent: editForm.target_fte_percent,
+            app_role: editForm.role,
+          })
+          .eq("id", editMember.id);
+        if (dirErr) throw dirErr;
+      }
+
+      // Role tables only apply to claimed users
+      if (editMember.kind !== "pending") {
+        const currentRole = editMember.roles?.[0];
+        if (currentRole !== editForm.role) {
+          if (currentRole) {
+            await supabase.from("user_roles").delete().eq("user_id", editMember.id).eq("role", currentRole);
+          }
+          await supabase.from("user_roles").insert({ user_id: editMember.id, role: editForm.role });
+        }
+
+        const hadAM = (editMember.roles ?? []).includes("assistant_manager");
+        if (editForm.is_assistant_manager && !hadAM) {
+          await supabase.from("user_roles").insert({ user_id: editMember.id, role: "assistant_manager" as AppRole });
+        } else if (!editForm.is_assistant_manager && hadAM) {
+          await supabase.from("user_roles").delete().eq("user_id", editMember.id).eq("role", "assistant_manager");
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff-management"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-directory"] });
+      queryClient.invalidateQueries({ queryKey: ["staff-pool"] });
       setEditDialog(false);
       toast.success("Profile updated");
     },
@@ -134,12 +162,13 @@ export default function Staff() {
   });
 
   const openEdit = (member: any) => {
-    setEditMember(member);
+    const isPending = member.kind === "pending" || member.is_claimed === false;
+    setEditMember({ ...member, kind: isPending ? "pending" : "profile" });
     const constraints = typeof member.constraints === "object" && member.constraints !== null ? member.constraints : {};
     setEditForm({
       full_name: member.full_name || "",
       target_fte_percent: member.target_fte_percent ?? 1,
-      role: member.roles?.[0] || "nurse",
+      role: (isPending ? member.app_role : member.roles?.[0]) || "nurse",
       is_responsible: !!member.is_responsible,
       is_assistant_manager: (member.roles ?? []).includes("assistant_manager"),
       no_nights: !!(constraints as any).no_nights,
@@ -168,8 +197,12 @@ export default function Staff() {
     }));
   };
 
-  const inactiveProfiles = staff.filter((s) => !s.is_active);
-  const activeStaff = staff.filter((s) => s.is_active);
+  const hebrewSort = <T extends { full_name?: string | null }>(arr: T[]) =>
+    [...arr].sort((a, b) =>
+      (a.full_name || "").localeCompare(b.full_name || "", "he", { sensitivity: "base" })
+    );
+  const inactiveProfiles = hebrewSort(staff.filter((s) => !s.is_active));
+  const activeStaff = hebrewSort(staff.filter((s) => s.is_active));
   // "Pending" for the demo = unclaimed staff_directory entries (no profile yet)
   const pendingStaff = pendingDirectory;
   const totalRoster = activeStaff.length + pendingStaff.length;
@@ -253,7 +286,12 @@ export default function Staff() {
           <span>{Math.round(Number(entry.target_fte_percent) * 100)}% FTE</span>
         </div>
       </div>
-      <Badge variant="outline" className="text-[10px]">Schedulable</Badge>
+      <div className="flex items-center gap-1">
+        <Badge variant="outline" className="text-[10px]">Schedulable</Badge>
+        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit({ ...entry, kind: "pending" })}>
+          <Pencil className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 

@@ -76,15 +76,24 @@ export function useStaffPool() {
         created_at: d.created_at,
       }));
 
-      // De-dup by id just in case.
-      const seen = new Set<string>();
-      return [...profiles, ...pending]
-        .filter((m) => {
-          if (seen.has(m.id)) return false;
-          seen.add(m.id);
-          return true;
-        })
-        .sort((a, b) => a.full_name.localeCompare(b.full_name, undefined, { sensitivity: "base" }));
+      // De-dup by id. When a placeholder profile (inactive) and a pending
+      // directory entry share the same id, prefer the pending entry so the
+      // staff member remains schedulable in the manager UI.
+      const byId = new Map<string, StaffPoolMember>();
+      for (const m of [...profiles, ...pending]) {
+        const existing = byId.get(m.id);
+        if (!existing) {
+          byId.set(m.id, m);
+          continue;
+        }
+        // Prefer pending over an inactive placeholder profile
+        if (existing.kind === "profile" && !existing.is_active && m.kind === "pending") {
+          byId.set(m.id, m);
+        }
+      }
+      return Array.from(byId.values()).sort((a, b) =>
+        a.full_name.localeCompare(b.full_name, "he", { sensitivity: "base" })
+      );
     },
   });
 }
