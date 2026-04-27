@@ -24,6 +24,7 @@ import { useAppSettings } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStaffPool } from "@/hooks/useStaffPool";
 import type { Database } from "@/integrations/supabase/types";
 
 type ShiftType = Database["public"]["Enums"]["shift_type"];
@@ -153,18 +154,9 @@ export default function Roster() {
     },
   });
 
-  const { data: staff = [] } = useQuery({
-    queryKey: ["all-staff"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, is_active, is_responsible, target_fte_percent, constraints")
-        .eq("is_active", true)
-        .order("full_name");
-      if (error) throw error;
-      return data;
-    },
-  });
+  // Unified pool: active profiles + unclaimed staff_directory ("pending") entries.
+  const { data: staffPool = [] } = useStaffPool();
+  const staff = staffPool.filter((s) => s.is_active || s.kind === "pending");
 
   const { data: managers = [] } = useQuery({
     queryKey: ["all-managers"],
