@@ -197,8 +197,12 @@ export default function Staff() {
     }));
   };
 
-  const inactiveProfiles = staff.filter((s) => !s.is_active);
-  const activeStaff = staff.filter((s) => s.is_active);
+  const hebrewSort = <T extends { full_name?: string | null }>(arr: T[]) =>
+    [...arr].sort((a, b) =>
+      (a.full_name || "").localeCompare(b.full_name || "", "he", { sensitivity: "base" })
+    );
+  const inactiveProfiles = hebrewSort(staff.filter((s) => !s.is_active));
+  const activeStaff = hebrewSort(staff.filter((s) => s.is_active));
   // "Pending" for the demo = unclaimed staff_directory entries (no profile yet)
   const pendingStaff = pendingDirectory;
   const totalRoster = activeStaff.length + pendingStaff.length;
