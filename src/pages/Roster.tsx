@@ -157,7 +157,10 @@ export default function Roster() {
 
   // Unified pool: active profiles + unclaimed staff_directory ("pending") entries.
   const { data: staffPool = [] } = useStaffPool();
-  const staff = staffPool.filter((s) => s.is_active || s.kind === "pending");
+  const staff = staffPool
+    .filter((s) => s.is_active || s.kind === "pending")
+    .slice()
+    .sort(compareStaff);
 
   const { data: managers = [] } = useQuery({
     queryKey: ["all-managers"],
