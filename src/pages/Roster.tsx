@@ -825,9 +825,12 @@ export default function Roster() {
                   <td className="sticky left-0 z-20 w-[100px] min-w-[100px] overflow-hidden border-r bg-card py-3 px-1.5 font-medium shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:py-4 md:px-2">
                     <div className="max-w-[100px] md:max-w-[160px]">
                       <span className="truncate block text-xs md:text-sm">{member.full_name}</span>
-                      <div className="flex items-center gap-1 mt-0.5">
+                      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
                         <span className="text-[10px] md:text-xs text-muted-foreground">{Math.round(Number(member.target_fte_percent) * 100)}%</span>
                         {member.is_responsible && <Star className="h-3 w-3 fill-primary text-primary flex-shrink-0" />}
+                        {member.kind === "pending" && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 bg-amber-50 text-amber-800 border-amber-200">Pending</Badge>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -1034,7 +1037,7 @@ export default function Roster() {
                     const blocked = isBlocked(s.id, form.date);
                     return (
                       <SelectItem key={s.id} value={s.id} disabled={blocked}>
-                        {s.full_name} {blocked ? `🚫 ${t("roster.blocked")}` : ""}
+                        {s.full_name}{s.kind === "pending" ? " (Pending)" : ""} {blocked ? `🚫 ${t("roster.blocked")}` : ""}
                       </SelectItem>
                     );
                   })}
