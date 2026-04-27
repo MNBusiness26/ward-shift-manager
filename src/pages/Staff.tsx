@@ -68,10 +68,11 @@ export default function Staff() {
       const { data, error } = await supabase
         .from("staff_directory")
         .select("*")
-        .eq("is_claimed", false)
-        .order("full_name");
+        .eq("is_claimed", false);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []).sort((a: any, b: any) =>
+        (a.full_name || "").localeCompare(b.full_name || "", "he", { sensitivity: "base" })
+      );
     },
   });
 
