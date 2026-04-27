@@ -265,7 +265,10 @@ export default function ManagementCalendar() {
   const getFirstName = (shift: any): string => {
     const fullName = shift.profiles?.full_name;
     if (!fullName) return "?";
-    return fullName.split(" ")[0];
+    // Names are stored as "Lastname Firstname" (Hebrew convention from import).
+    // The first/given name is the LAST whitespace-separated token.
+    const parts = fullName.trim().split(/\s+/);
+    return parts[parts.length - 1];
   };
 
   const handleCellClick = (dateStr: string, type: ShiftType) => {
