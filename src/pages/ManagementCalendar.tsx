@@ -393,8 +393,28 @@ export default function ManagementCalendar() {
                   {days.map((d) => {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const blocked = isDateBlocked(dateStr);
-                    const dayShifts = shifts.filter((s) => s.date === dateStr && s.type === type && s.assigned_user_id);
-                    const overHeadcount = isOverHeadcount(shifts as any[], dateStr, type, headcountLimits);
+                    const dayShifts = shifts
+                      .filter((s) => s.date === dateStr && s.type === type && s.assigned_user_id)
+                      .slice()
+                      .sort((a, b) => {
+                        const pa = staff.find((p) => p.id === a.assigned_user_id);
+                        const pb = staff.find((p) => p.id === b.assigned_user_id);
+                        return compareStaff(
+                          {
+                            full_name: (a as any).profiles?.full_name || pa?.full_name || "",
+                            is_responsible_on_shift: a.is_responsible_on_shift,
+                            is_responsible: pa?.is_responsible,
+                            role: pa?.role ?? pa?.app_role,
+                          },
+                          {
+                            full_name: (b as any).profiles?.full_name || pb?.full_name || "",
+                            is_responsible_on_shift: b.is_responsible_on_shift,
+                            is_responsible: pb?.is_responsible,
+                            role: pb?.role ?? pb?.app_role,
+                          },
+                        );
+                      });
+                    const overHeadcount = isOverHeadcount(shifts as any[], dateStr, type, headcountLimits, staffRoleMap);
                     return (
                       <td
                         key={d.toISOString()}
@@ -404,14 +424,17 @@ export default function ManagementCalendar() {
                         {overHeadcount && (
                           <div className="flex items-center gap-0.5 mb-1">
                             <AlertTriangle className="h-3 w-3 text-amber-500" />
-                            <span className="text-[9px] text-amber-600 font-medium">{dayShifts.filter(s => !(s as any).is_standby).length}/{getHeadcountTarget(type, dateStr, headcountLimits)}</span>
+                            <span className="text-[9px] text-amber-600 font-medium">{dayShifts.filter(s => !(s as any).is_standby && (() => { const r = staffRoleMap.get(s.assigned_user_id || ""); return r !== "assistant"; })()).length}/{getHeadcountTarget(type, dateStr, headcountLimits)}</span>
                           </div>
                         )}
                         {dayShifts.length === 0 ? (
                           <span className="text-xs text-muted-foreground italic">{blocked ? "🔒" : "—"}</span>
                         ) : (
                           <div className="flex flex-wrap gap-1">
-                            {dayShifts.map((s) => (
+                            {dayShifts.map((s) => {
+                              const profile = staff.find((p) => p.id === s.assigned_user_id);
+                              const assistantRole = isAssistant(profile?.role ?? profile?.app_role);
+                              return (
                               <Badge
                                 key={s.id}
                                 variant={s.is_responsible_on_shift ? "default" : "secondary"}
@@ -419,14 +442,14 @@ export default function ManagementCalendar() {
                                   (s as any).is_standby
                                     ? "bg-transparent border-2 border-dashed border-current"
                                     : s.is_draft ? "opacity-60 border-dashed" : "ring-1 ring-current/20"
-                                }`}
+                                } ${assistantRole && !s.is_responsible_on_shift ? "bg-muted text-muted-foreground border-muted-foreground/20" : ""}`}
                               >
                                 {getFirstName(s)}
-                                {s.is_responsible_on_shift && <span className="ml-0.5 text-[9px]">★</span>}
-                                {(s as any).is_standby && <span className="ml-0.5 text-[9px] font-bold">OC</span>}
-                                {s.is_draft ? <span className="ml-0.5 text-[9px]">D</span> : <Lock className="ml-0.5 h-2.5 w-2.5 opacity-40" />}
+                                {s.is_responsible_on_shift && <Star className="ml-0.5 h-2.5 w-2.5 inline fill-current" />}
+                                {(s as any).is_standby && <Phone className="ml-0.5 h-2.5 w-2.5 inline" />}
                               </Badge>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </td>
