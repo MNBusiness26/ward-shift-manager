@@ -282,7 +282,12 @@ export default function Staff() {
           <span>{Math.round(Number(entry.target_fte_percent) * 100)}% FTE</span>
         </div>
       </div>
-      <Badge variant="outline" className="text-[10px]">Schedulable</Badge>
+      <div className="flex items-center gap-1">
+        <Badge variant="outline" className="text-[10px]">Schedulable</Badge>
+        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit({ ...entry, kind: "pending" })}>
+          <Pencil className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 
