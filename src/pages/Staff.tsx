@@ -288,6 +288,9 @@ export default function Staff() {
       </div>
       <div className="flex items-center gap-1">
         <Badge variant="outline" className="text-[10px]">Schedulable</Badge>
+        <Button size="icon" variant="ghost" className="h-8 w-8" title="View Stats" onClick={() => navigate(`/staff-stats?id=${entry.id}`)}>
+          <ChartLine className="h-4 w-4" />
+        </Button>
         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit({ ...entry, kind: "pending" })}>
           <Pencil className="h-4 w-4" />
         </Button>
