@@ -76,7 +76,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
-      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute><ManagerHomeRedirect /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><MyCalendar /></ProtectedRoute>} />
       <Route path="/availability" element={<ProtectedRoute><Availability /></ProtectedRoute>} />
       <Route path="/swaps" element={<ProtectedRoute><SwapRequests /></ProtectedRoute>} />
