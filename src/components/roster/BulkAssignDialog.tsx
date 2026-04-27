@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Users, AlertTriangle, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useStaffPool } from "@/hooks/useStaffPool";
 import { toast } from "sonner";
 import { startOfMonth, endOfMonth, format, parseISO, getDay } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
@@ -69,19 +70,9 @@ export function BulkAssignDialog({ open, onOpenChange, staff, blockedDates, init
     }
   }, [open, initialDate, initialType]);
 
-  // Fetch full staff profiles with constraints
-  const { data: staffProfiles = [] } = useQuery({
-    queryKey: ["staff-profiles-constraints"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, is_active, target_fte_percent, constraints")
-        .eq("is_active", true)
-        .order("full_name");
-      if (error) throw error;
-      return data;
-    },
-  });
+  // Unified staff pool: profiles + unclaimed staff_directory ("pending") entries.
+  const { data: staffPool = [] } = useStaffPool();
+  const staffProfiles = staffPool.filter((p) => p.is_active || p.kind === "pending");
 
   // Fetch existing shifts for the month to calculate hours
   const monthKey = date ? format(startOfMonth(parseISO(date)), "yyyy-MM") : "";
@@ -304,6 +295,9 @@ export function BulkAssignDialog({ open, onOpenChange, staff, blockedDates, init
                         disabled={disabled}
                       />
                       <span className="text-sm flex-1">{s.full_name}</span>
+                      {(s as any).kind === "pending" && (
+                        <Badge variant="outline" className="text-[10px] px-1 py-0 bg-amber-50 text-amber-800 border-amber-200">Pending</Badge>
+                      )}
                       {constraintReason && (
                         <Badge variant="outline" className="text-[10px] px-1 py-0 text-destructive border-destructive/30">
                           <Ban className="h-2.5 w-2.5 mr-0.5" />

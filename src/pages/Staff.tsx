@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { UserCheck, UserX, Pencil, Users, Clock, Shield, Star, X, ChartLine } from "lucide-react";
+import { UserCheck, UserX, Pencil, Users, Clock, Shield, Star, X, ChartLine, Mail } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -57,6 +58,20 @@ export default function Staff() {
         ...p,
         roles: (roles ?? []).filter((r) => r.user_id === p.id).map((r) => r.role),
       }));
+    },
+  });
+
+  // Unclaimed staff_directory entries — i.e. imported staff who haven't signed up yet.
+  const { data: pendingDirectory = [] } = useQuery({
+    queryKey: ["pending-directory"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("staff_directory")
+        .select("*")
+        .eq("is_claimed", false)
+        .order("full_name");
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
@@ -153,8 +168,11 @@ export default function Staff() {
     }));
   };
 
-  const pendingStaff = staff.filter((s) => !s.is_active);
+  const inactiveProfiles = staff.filter((s) => !s.is_active);
   const activeStaff = staff.filter((s) => s.is_active);
+  // "Pending" for the demo = unclaimed staff_directory entries (no profile yet)
+  const pendingStaff = pendingDirectory;
+  const totalRoster = activeStaff.length + pendingStaff.length;
 
   const getExclusionBadges = (member: any) => {
     const c = typeof member.constraints === "object" && member.constraints !== null ? member.constraints : {};
@@ -169,120 +187,189 @@ export default function Staff() {
     return badges;
   };
 
+  // --- Renderers (used inside multiple tabs) ---
+  const renderActiveRow = (member: any) => {
+    const exclusionBadges = getExclusionBadges(member);
+    return (
+      <div key={member.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/30 transition-colors">
+        <div>
+          <p className="text-sm font-medium">{member.full_name}</p>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            {member.roles?.map((role: string) => (
+              <Badge key={role} variant="outline" className={`text-xs capitalize ${role === "manager" ? "bg-primary/10 text-primary border-primary/20" : ""}`}>
+                {role === "manager" && <Shield className="mr-0.5 h-2.5 w-2.5" />}
+                {role}
+              </Badge>
+            ))}
+            <span className="text-xs text-muted-foreground">
+              {(member.target_fte_percent * 100).toFixed(0)}% FTE
+            </span>
+            {member.is_responsible && (
+              <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                <Star className="mr-0.5 h-2.5 w-2.5" /> Resp. Nurse
+              </Badge>
+            )}
+            {exclusionBadges.map((label) => (
+              <Badge key={label} variant="outline" className="text-[10px] bg-destructive/10 text-destructive border-destructive/20">
+                <X className="mr-0.5 h-2.5 w-2.5" /> {label}
+              </Badge>
+            ))}
+          </div>
+        </div>
+        <div className="flex gap-1">
+          <Button size="icon" variant="ghost" className="h-8 w-8" title="View Stats" onClick={() => navigate(`/staff-stats?id=${member.id}`)}>
+            <ChartLine className="h-4 w-4" />
+          </Button>
+          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(member)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+            onClick={() => toggleActive.mutate({ id: member.id, isActive: false })}
+          >
+            <UserX className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderPendingRow = (entry: any) => (
+    <div key={entry.id} className="flex items-center justify-between rounded-sm border border-amber-200 bg-amber-50 p-3">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-sm font-medium truncate">{entry.full_name}</p>
+          <Badge variant="outline" className="text-[10px] bg-amber-100 text-amber-800 border-amber-300">
+            <Clock className="me-0.5 h-2.5 w-2.5" /> Pending
+          </Badge>
+        </div>
+        <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-muted-foreground">
+          <span className="capitalize">{entry.app_role}</span>
+          <span className="flex items-center gap-1">
+            <Mail className="h-3 w-3" /> {entry.email}
+          </span>
+          <span>{Math.round(Number(entry.target_fte_percent) * 100)}% FTE</span>
+        </div>
+      </div>
+      <Badge variant="outline" className="text-[10px]">Schedulable</Badge>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">{t("staff.title")}</h1>
         <div className="flex gap-2">
           <Badge variant="outline">
             <Users className="me-1 h-3 w-3" />
-            {activeStaff.length} {t("staff.active")}
+            {totalRoster} Total
+          </Badge>
+          <Badge variant="outline">
+            <UserCheck className="me-1 h-3 w-3" />
+            {activeStaff.length} Registered
           </Badge>
           {pendingStaff.length > 0 && (
             <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
               <Clock className="me-1 h-3 w-3" />
-              {pendingStaff.length} {t("staff.pending")}
+              {pendingStaff.length} Pending
             </Badge>
           )}
         </div>
       </div>
 
-      {pendingStaff.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="h-4 w-4 text-amber-600" />
-              {t("staff.pendingActivation")} ({pendingStaff.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {pendingStaff.map((member) => (
-                <div key={member.id} className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-3">
-                  <div>
-                    <p className="text-sm font-medium">{member.full_name || "Unnamed"}</p>
-                    <p className="text-xs text-muted-foreground">{member.roles?.join(", ") || "nurse"}</p>
-                  </div>
-                  <div className="flex gap-1">
-                      <Button size="sm" variant="ghost" onClick={() => openEdit(member)}>
-                        <Pencil className="me-1 h-3 w-3" />
-                        {t("staff.edit")}
-                      </Button>
-                      <Button size="sm" onClick={() => setActivateConfirm(member)}>
-                        <UserCheck className="me-1 h-3 w-3" />
-                        {t("staff.activate")}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList>
+          <TabsTrigger value="all">All Ward Staff ({totalRoster})</TabsTrigger>
+          <TabsTrigger value="registered">Registered ({activeStaff.length})</TabsTrigger>
+          <TabsTrigger value="pending">Pending Invitations ({pendingStaff.length})</TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">{t("staff.activeStaff")} ({activeStaff.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {activeStaff.length === 0 ? (
-            <div className="flex flex-col items-center py-8 text-muted-foreground">
-              <Users className="h-8 w-8 mb-2 opacity-50" />
-              <p className="text-sm">{t("staff.noActiveStaff")}</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {activeStaff.map((member) => {
-                const exclusionBadges = getExclusionBadges(member);
-                return (
-                  <div key={member.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/30 transition-colors">
-                    <div>
-                      <p className="text-sm font-medium">{member.full_name}</p>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        {member.roles?.map((role: string) => (
-                          <Badge key={role} variant="outline" className={`text-xs capitalize ${role === "manager" ? "bg-primary/10 text-primary border-primary/20" : ""}`}>
-                            {role === "manager" && <Shield className="mr-0.5 h-2.5 w-2.5" />}
-                            {role}
-                          </Badge>
-                        ))}
-                        <span className="text-xs text-muted-foreground">
-                          {(member.target_fte_percent * 100).toFixed(0)}% FTE
-                        </span>
-                        {member.is_responsible && (
-                          <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20">
-                            <Star className="mr-0.5 h-2.5 w-2.5" /> Resp. Nurse
-                          </Badge>
-                        )}
-                        {exclusionBadges.map((label) => (
-                          <Badge key={label} variant="outline" className="text-[10px] bg-destructive/10 text-destructive border-destructive/20">
-                            <X className="mr-0.5 h-2.5 w-2.5" /> {label}
-                          </Badge>
-                        ))}
+        <TabsContent value="all" className="mt-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">All Ward Staff</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {totalRoster === 0 ? (
+                <div className="flex flex-col items-center py-8 text-muted-foreground">
+                  <Users className="h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-sm">No staff yet.</p>
+                </div>
+              ) : (
+                <>
+                  {activeStaff.map(renderActiveRow)}
+                  {pendingStaff.map(renderPendingRow)}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="registered" className="mt-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">{t("staff.activeStaff")} ({activeStaff.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {activeStaff.length === 0 ? (
+                <div className="flex flex-col items-center py-8 text-muted-foreground">
+                  <Users className="h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-sm">{t("staff.noActiveStaff")}</p>
+                </div>
+              ) : (
+                <div className="space-y-2">{activeStaff.map(renderActiveRow)}</div>
+              )}
+              {inactiveProfiles.length > 0 && (
+                <div className="mt-6 space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase">Deactivated profiles</p>
+                  {inactiveProfiles.map((m: any) => (
+                    <div key={m.id} className="flex items-center justify-between rounded-lg border border-muted bg-muted/30 p-3">
+                      <div>
+                        <p className="text-sm font-medium">{m.full_name || "Unnamed"}</p>
+                        <p className="text-xs text-muted-foreground">{m.roles?.join(", ") || "nurse"}</p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => openEdit(m)}>
+                          <Pencil className="me-1 h-3 w-3" /> {t("staff.edit")}
+                        </Button>
+                        <Button size="sm" onClick={() => setActivateConfirm(m)}>
+                          <UserCheck className="me-1 h-3 w-3" /> {t("staff.activate")}
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" className="h-8 w-8" title="View Stats" onClick={() => navigate(`/staff-stats?id=${member.id}`)}>
-                        <ChartLine className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(member)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                        onClick={() => toggleActive.mutate({ id: member.id, isActive: false })}
-                      >
-                        <UserX className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="pending" className="mt-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="h-4 w-4 text-amber-600" />
+                Pending Invitations ({pendingStaff.length})
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Imported staff who haven't signed up yet. They are still schedulable from the Master Roster.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {pendingStaff.length === 0 ? (
+                <div className="flex flex-col items-center py-8 text-muted-foreground">
+                  <UserCheck className="h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-sm">All imported staff have signed up.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">{pendingStaff.map(renderPendingRow)}</div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Edit dialog */}
       <Dialog open={editDialog} onOpenChange={setEditDialog}>
