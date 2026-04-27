@@ -619,7 +619,11 @@ export default function ManagementCalendar() {
                     });
                     return (
                       <SelectItem key={s.id} value={s.id} disabled={userBlocked}>
-                        {s.full_name} {userBlocked ? `🚫 ${t("roster.blocked")}` : ""}
+                        <span className="flex items-center gap-1">
+                          {userBlocked && <Ban className="h-3 w-3 text-destructive" />}
+                          {s.full_name}{(s as any).kind === "pending" ? " (Pending)" : ""}
+                          {userBlocked ? ` — ${t("roster.blocked")}` : ""}
+                        </span>
                       </SelectItem>
                     );
                   })}
