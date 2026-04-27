@@ -162,12 +162,13 @@ export default function Staff() {
   });
 
   const openEdit = (member: any) => {
-    setEditMember(member);
+    const isPending = member.kind === "pending" || member.is_claimed === false;
+    setEditMember({ ...member, kind: isPending ? "pending" : "profile" });
     const constraints = typeof member.constraints === "object" && member.constraints !== null ? member.constraints : {};
     setEditForm({
       full_name: member.full_name || "",
       target_fte_percent: member.target_fte_percent ?? 1,
-      role: member.roles?.[0] || "nurse",
+      role: (isPending ? member.app_role : member.roles?.[0]) || "nurse",
       is_responsible: !!member.is_responsible,
       is_assistant_manager: (member.roles ?? []).includes("assistant_manager"),
       no_nights: !!(constraints as any).no_nights,
