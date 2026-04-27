@@ -22,9 +22,6 @@ export default function AdminDictionary() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
-  if (!user) return <Navigate to="/auth" replace />;
-  if (!isManager) return <Navigate to="/" replace />;
-
   const enDict = translations.en as Record<string, string>;
   const targetDict = (translations as Record<string, Record<string, string>>)[editingLocale] ?? {};
 
@@ -37,6 +34,9 @@ export default function AdminDictionary() {
       (k) => k.toLowerCase().includes(q) || (enDict[k] ?? "").toLowerCase().includes(q),
     );
   }, [allKeys, search, enDict]);
+
+  if (!user) return <Navigate to="/auth" replace />;
+  if (!isManager) return <Navigate to="/" replace />;
 
   const currentValue = (key: string): string => {
     if (drafts[key] !== undefined) return drafts[key];

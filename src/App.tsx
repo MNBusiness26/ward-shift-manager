@@ -23,6 +23,7 @@ import Analytics from "./pages/Analytics";
 import StaffStats from "./pages/StaffStats";
 import ManagementCalendar from "./pages/ManagementCalendar";
 import Admin from "./pages/Admin";
+import AdminDictionary from "./pages/AdminDictionary";
 import GlobalTeamCalendar from "./pages/GlobalTeamCalendar";
 import NotFound from "./pages/NotFound";
 
@@ -88,6 +89,7 @@ function AppRoutes() {
       <Route path="/staff-stats" element={<ProtectedRoute requireManager><StaffStats /></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute requireManager><Analytics /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute requireManager><Admin /></ProtectedRoute>} />
+      <Route path="/admin/dictionary" element={<ProtectedRoute requireManager><AdminDictionary /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
