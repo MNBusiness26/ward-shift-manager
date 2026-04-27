@@ -113,18 +113,15 @@ export default function ManagementCalendar() {
     },
   });
 
-  const { data: staff = [] } = useQuery({
-    queryKey: ["all-staff"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, is_active, is_responsible, target_fte_percent, constraints")
-        .eq("is_active", true)
-        .order("full_name");
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { data: staffPool = [] } = useStaffPool();
+  const staff = staffPool
+    .filter((s) => s.is_active || s.kind === "pending")
+    .slice()
+    .sort(compareStaff);
+  // role map: assigned_user_id → role (used to exclude assistants from headcount)
+  const staffRoleMap = new Map<string, string>(
+    staffPool.map((s) => [s.id, (s.role || s.app_role || "nurse") as string]),
+  );
 
   const { data: managers = [] } = useQuery({
     queryKey: ["all-managers"],
