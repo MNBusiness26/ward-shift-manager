@@ -282,7 +282,17 @@ export default function ManagementCalendar() {
     }
   };
 
-  const detailShifts = shifts.filter((s) => s.date === detailDate && s.type === detailType && s.assigned_user_id);
+  const detailShifts = shifts
+    .filter((s) => s.date === detailDate && s.type === detailType && s.assigned_user_id)
+    .slice()
+    .sort((a, b) => {
+      const pa = staff.find((p) => p.id === a.assigned_user_id);
+      const pb = staff.find((p) => p.id === b.assigned_user_id);
+      return compareStaff(
+        { full_name: (a as any).profiles?.full_name || pa?.full_name || "", is_responsible_on_shift: a.is_responsible_on_shift, is_responsible: pa?.is_responsible, role: pa?.role ?? pa?.app_role },
+        { full_name: (b as any).profiles?.full_name || pb?.full_name || "", is_responsible_on_shift: b.is_responsible_on_shift, is_responsible: pb?.is_responsible, role: pb?.role ?? pb?.app_role },
+      );
+    });
   const managerStaff = staff.filter((s) => managers.includes(s.id));
 
   // Standby-eligible staff: managers, assistant_managers, or is_responsible
