@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { UserCheck, UserX, Pencil, Users, Clock, Shield, Star, X, ChartLine } from "lucide-react";
+import { UserCheck, UserX, Pencil, Users, Clock, Shield, Star, X, ChartLine, Mail } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -57,6 +58,20 @@ export default function Staff() {
         ...p,
         roles: (roles ?? []).filter((r) => r.user_id === p.id).map((r) => r.role),
       }));
+    },
+  });
+
+  // Unclaimed staff_directory entries — i.e. imported staff who haven't signed up yet.
+  const { data: pendingDirectory = [] } = useQuery({
+    queryKey: ["pending-directory"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("staff_directory")
+        .select("*")
+        .eq("is_claimed", false)
+        .order("full_name");
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
