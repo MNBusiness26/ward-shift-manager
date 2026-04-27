@@ -885,9 +885,8 @@ export default function Roster() {
                             <div className="flex items-center justify-center gap-0.5">
                               <span className="capitalize font-medium">{s.type.charAt(0)}</span>
                               {(s as any).is_standby && (
-                                <span className="text-[9px] font-bold bg-shift-morning/20 text-shift-morning rounded-sm px-0.5">OC</span>
+                                <Phone className="h-2.5 w-2.5 text-shift-morning" />
                               )}
-                              {s.is_draft ? <EyeOff className="h-2.5 w-2.5 opacity-60" /> : <Lock className="h-2.5 w-2.5 opacity-40" />}
                             </div>
                           </div>
                         ))}
