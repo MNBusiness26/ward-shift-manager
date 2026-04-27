@@ -102,13 +102,50 @@ export default function StaffStats() {
   const { data: staff = [] } = useQuery({
     queryKey: ["staff-stats-list"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, target_fte_percent, is_responsible, constraints, is_active")
-        .eq("is_active", true)
-        .order("full_name");
-      if (error) throw error;
-      return data;
+      const [profilesRes, directoryRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, full_name, target_fte_percent, is_responsible, constraints, is_active"),
+        supabase
+          .from("staff_directory")
+          .select("id, full_name, target_fte_percent, is_claimed")
+          .eq("is_claimed", false),
+      ]);
+      if (profilesRes.error) throw profilesRes.error;
+      if (directoryRes.error) throw directoryRes.error;
+
+      const byId = new Map<string, any>();
+      for (const p of profilesRes.data ?? []) {
+        if (p.is_active) byId.set(p.id, p);
+      }
+      for (const d of directoryRes.data ?? []) {
+        const existing = byId.get(d.id);
+        // Add pending directory entries, or override inactive placeholder profiles
+        if (!existing) {
+          byId.set(d.id, {
+            id: d.id,
+            full_name: d.full_name,
+            target_fte_percent: Number(d.target_fte_percent ?? 1),
+            is_responsible: false,
+            constraints: {},
+            is_active: true,
+          });
+        }
+      }
+      // Also include inactive placeholder profiles whose directory entry is unclaimed
+      for (const p of profilesRes.data ?? []) {
+        if (!p.is_active && !byId.has(p.id)) {
+          // check if there's a matching unclaimed directory row by id
+          const dirMatch = (directoryRes.data ?? []).find((d: any) => d.id === p.id);
+          if (dirMatch) {
+            byId.set(p.id, { ...p, is_active: true, full_name: dirMatch.full_name });
+          }
+        }
+      }
+
+      return Array.from(byId.values()).sort((a, b) =>
+        (a.full_name || "").localeCompare(b.full_name || "", "he", { sensitivity: "base" })
+      );
     },
   });
 
