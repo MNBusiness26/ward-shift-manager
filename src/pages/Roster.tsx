@@ -14,7 +14,8 @@ import { format, startOfWeek, addWeeks, subWeeks, addDays, subDays, eachDayOfInt
 import { formatLocale } from "@/i18n/dateLocale";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Trash2, Copy, ClipboardPaste, Users, Star, Save, FolderOpen, Lock, Settings, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, AlertTriangle, Plus, Trash2, Copy, ClipboardPaste, Users, Star, Save, FolderOpen, Lock, Settings, X, Phone } from "lucide-react";
+import { compareStaff, isAssistant, ASSISTANT_BG_CLASS } from "@/components/roster/staffSort";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { PublishConfirmDialog } from "@/components/roster/PublishConfirmDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
