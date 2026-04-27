@@ -295,6 +295,9 @@ export function BulkAssignDialog({ open, onOpenChange, staff, blockedDates, init
                         disabled={disabled}
                       />
                       <span className="text-sm flex-1">{s.full_name}</span>
+                      {(s as any).kind === "pending" && (
+                        <Badge variant="outline" className="text-[10px] px-1 py-0 bg-amber-50 text-amber-800 border-amber-200">Pending</Badge>
+                      )}
                       {constraintReason && (
                         <Badge variant="outline" className="text-[10px] px-1 py-0 text-destructive border-destructive/30">
                           <Ban className="h-2.5 w-2.5 mr-0.5" />
