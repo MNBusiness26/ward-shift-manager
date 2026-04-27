@@ -117,6 +117,7 @@ export type Database = {
           calendar_token: string | null
           constraints: Json
           created_at: string
+          department: string
           email: string | null
           full_name: string
           id: string
@@ -131,6 +132,7 @@ export type Database = {
           calendar_token?: string | null
           constraints?: Json
           created_at?: string
+          department?: string
           email?: string | null
           full_name?: string
           id: string
@@ -145,6 +147,7 @@ export type Database = {
           calendar_token?: string | null
           constraints?: Json
           created_at?: string
+          department?: string
           email?: string | null
           full_name?: string
           id?: string
@@ -265,6 +268,7 @@ export type Database = {
           claimed_by: string | null
           created_at: string
           created_by: string | null
+          department: string
           email: string
           full_name: string
           id: string
@@ -276,6 +280,7 @@ export type Database = {
           claimed_by?: string | null
           created_at?: string
           created_by?: string | null
+          department?: string
           email: string
           full_name: string
           id?: string
@@ -287,6 +292,7 @@ export type Database = {
           claimed_by?: string | null
           created_at?: string
           created_by?: string | null
+          department?: string
           email?: string
           full_name?: string
           id?: string
