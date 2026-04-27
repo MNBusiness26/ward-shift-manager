@@ -187,8 +187,6 @@ export default function Staff() {
     return badges;
   };
 
-  return (
-    <div className="space-y-6">
   // --- Renderers (used inside multiple tabs) ---
   const renderActiveRow = (member: any) => {
     const exclusionBadges = getExclusionBadges(member);
