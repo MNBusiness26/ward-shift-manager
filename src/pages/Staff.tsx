@@ -168,8 +168,11 @@ export default function Staff() {
     }));
   };
 
-  const pendingStaff = staff.filter((s) => !s.is_active);
+  const inactiveProfiles = staff.filter((s) => !s.is_active);
   const activeStaff = staff.filter((s) => s.is_active);
+  // "Pending" for the demo = unclaimed staff_directory entries (no profile yet)
+  const pendingStaff = pendingDirectory;
+  const totalRoster = activeStaff.length + pendingStaff.length;
 
   const getExclusionBadges = (member: any) => {
     const c = typeof member.constraints === "object" && member.constraints !== null ? member.constraints : {};
