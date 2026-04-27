@@ -201,7 +201,7 @@ export default function Admin() {
           </CardTitle>
           <CardDescription>{t("admin.systemLanguageDesc")}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-wrap items-center gap-3">
           <Select value={locale} onValueChange={(v) => setLocale(v as "en" | "he")}>
             <SelectTrigger className="w-[200px]">
               <SelectValue />
@@ -211,6 +211,9 @@ export default function Admin() {
               <SelectItem value="he">עברית (Hebrew)</SelectItem>
             </SelectContent>
           </Select>
+          <Button asChild variant="outline" className="rounded-sm">
+            <a href="/admin/dictionary">Edit Translation Dictionary →</a>
+          </Button>
         </CardContent>
       </Card>
 
