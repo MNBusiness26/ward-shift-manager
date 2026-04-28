@@ -462,7 +462,7 @@ export default function ManagementCalendar() {
                         {dayShifts.length === 0 ? (
                           <span className="text-xs text-muted-foreground italic">{blocked ? "🔒" : "—"}</span>
                         ) : (
-                          <div className={`flex flex-wrap gap-0.5 ${overHeadcount ? "mt-4" : ""}`}>
+                          <div className={`flex flex-col gap-1 ${overHeadcount ? "mt-4" : ""}`}>
                             {dayShifts.map((s) => {
                               const profile = staff.find((p) => p.id === s.assigned_user_id);
                               const assistantRole = isAssistant(profile?.role ?? profile?.app_role);
