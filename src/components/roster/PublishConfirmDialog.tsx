@@ -37,7 +37,7 @@ interface ShiftInfo {
 }
 
 interface PreFlightWarning {
-  category: "headcount" | "exclusion" | "fte" | "responsible";
+  category: "headcount" | "exclusion" | "fte" | "responsible" | "rest";
   severity: "amber" | "red";
   message: string;
 }
