@@ -416,28 +416,28 @@ export default function Staff() {
       <Dialog open={editDialog} onOpenChange={setEditDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Staff Member</DialogTitle>
+            <DialogTitle>{t("staff.editMember")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Full Name</Label>
+              <Label>{t("staff.fullName")}</Label>
               <Input value={editForm.full_name} onChange={(e) => setEditForm((f) => ({ ...f, full_name: e.target.value }))} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Role</Label>
+                <Label>{t("staff.role")}</Label>
                 <Select value={editForm.role} onValueChange={(v) => setEditForm((f) => ({ ...f, role: v as AppRole }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="nurse">Nurse</SelectItem>
-                    <SelectItem value="assistant">Assistant</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="nurse">{t("staff.nurse")}</SelectItem>
+                    <SelectItem value="assistant">{t("staff.assistant")}</SelectItem>
+                    <SelectItem value="manager">{t("staff.manager")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>FTE %</Label>
+                <Label>{t("staff.ftePercent")}</Label>
                 <Input
                   type="number"
                   min={10}
@@ -450,14 +450,14 @@ export default function Staff() {
             </div>
 
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Qualifications</Label>
+              <Label className="text-sm font-medium">{t("staff.qualifications")}</Label>
               <div className="flex items-center justify-between">
-                <span className="text-sm">Can be Responsible Nurse</span>
+                <span className="text-sm">{t("staff.canBeResponsible")}</span>
                 <Switch checked={editForm.is_responsible} onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_responsible: v }))} />
               </div>
               {isManager && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Assistant Manager</span>
+                  <span className="text-sm">{t("staff.assistantManager")}</span>
                   <Switch checked={editForm.is_assistant_manager} onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_assistant_manager: v }))} />
                 </div>
               )}
@@ -465,11 +465,11 @@ export default function Staff() {
 
             {/* Work Exclusions */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Work Exclusions</Label>
-              <p className="text-xs text-muted-foreground">Tap to exclude shifts or days. Assignments to excluded slots trigger a hard friction warning.</p>
+              <Label className="text-sm font-medium">{t("staff.workExclusions")}</Label>
+              <p className="text-xs text-muted-foreground">{t("staff.exclusionsHint")}</p>
 
               <div className="space-y-2">
-                <span className="text-xs font-medium text-muted-foreground">Shift Types</span>
+                <span className="text-xs font-medium text-muted-foreground">{t("staff.shiftTypes")}</span>
                 <div className="flex gap-2">
                   {SHIFT_TYPES.map((type) => {
                     const excluded = editForm.excluded_shifts.includes(type);
@@ -493,7 +493,7 @@ export default function Staff() {
               </div>
 
               <div className="space-y-2">
-                <span className="text-xs font-medium text-muted-foreground">Weekdays</span>
+                <span className="text-xs font-medium text-muted-foreground">{t("staff.weekdays")}</span>
                 <div className="flex gap-1">
                   {DAY_LABELS.map((label, idx) => {
                     const excluded = editForm.excluded_days.includes(idx);
@@ -518,9 +518,9 @@ export default function Staff() {
             </div>
 
             <div className="flex gap-2 justify-end">
-              <Button variant="ghost" onClick={() => setEditDialog(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setEditDialog(false)}>{t("common.cancel")}</Button>
               <Button onClick={() => updateProfile.mutate()} disabled={updateProfile.isPending}>
-                Save Changes
+                {t("staff.saveChanges")}
               </Button>
             </div>
           </div>
