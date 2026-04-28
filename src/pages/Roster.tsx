@@ -878,7 +878,9 @@ export default function Roster() {
                           <span className="text-[10px] text-muted-foreground">🔒</span>
                         )}
                         {blocked && dayShifts.length === 0 && (
-                          <span className="text-[10px] text-destructive">{t("roster.blocked")}</span>
+                          <span className="text-[10px] text-destructive">
+                            {getBlockType(member.id, dateStr) === "vacation" ? t("common.vacation") : t("roster.blocked")}
+                          </span>
                         )}
                         {dayShifts.map((s) => (
                           <div
