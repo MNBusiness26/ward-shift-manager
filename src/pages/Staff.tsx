@@ -450,14 +450,14 @@ export default function Staff() {
             </div>
 
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Qualifications</Label>
+              <Label className="text-sm font-medium">{t("staff.qualifications")}</Label>
               <div className="flex items-center justify-between">
-                <span className="text-sm">Can be Responsible Nurse</span>
+                <span className="text-sm">{t("staff.canBeResponsible")}</span>
                 <Switch checked={editForm.is_responsible} onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_responsible: v }))} />
               </div>
               {isManager && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Assistant Manager</span>
+                  <span className="text-sm">{t("staff.assistantManager")}</span>
                   <Switch checked={editForm.is_assistant_manager} onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_assistant_manager: v }))} />
                 </div>
               )}
@@ -465,11 +465,11 @@ export default function Staff() {
 
             {/* Work Exclusions */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Work Exclusions</Label>
-              <p className="text-xs text-muted-foreground">Tap to exclude shifts or days. Assignments to excluded slots trigger a hard friction warning.</p>
+              <Label className="text-sm font-medium">{t("staff.workExclusions")}</Label>
+              <p className="text-xs text-muted-foreground">{t("staff.exclusionsHint")}</p>
 
               <div className="space-y-2">
-                <span className="text-xs font-medium text-muted-foreground">Shift Types</span>
+                <span className="text-xs font-medium text-muted-foreground">{t("staff.shiftTypes")}</span>
                 <div className="flex gap-2">
                   {SHIFT_TYPES.map((type) => {
                     const excluded = editForm.excluded_shifts.includes(type);
