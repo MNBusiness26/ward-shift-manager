@@ -347,9 +347,9 @@ export default function ManagementCalendar() {
   };
 
   return (
-    <div className="space-y-4 flex flex-col min-h-[calc(100vh-6rem)]">
+    <div className="space-y-2 flex flex-col min-h-[calc(100vh-5rem)]">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-bold">Management Calendar</h1>
+        <h1 className="text-xl font-bold">Management Calendar</h1>
         <div className="flex gap-1.5 md:gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={() => { setBulkDate(undefined); setBulkType(undefined); setBulkOpen(true); }}>
             <Users className="h-4 w-4 md:mr-2" />
