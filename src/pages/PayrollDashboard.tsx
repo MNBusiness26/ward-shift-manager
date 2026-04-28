@@ -51,14 +51,13 @@ export default function PayrollDashboard() {
   const endStr = format(end, "yyyy-MM-dd");
   const monthLabel = format(month, "MMMM yyyy", { locale: dateLocale });
 
-  // 1. Active staff
+  // 1. All staff (active + pending activation)
   const { data: staff = [] } = useQuery({
     queryKey: ["payroll-staff"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name")
-        .eq("is_active", true)
+        .select("id, full_name, is_active")
         .order("full_name");
       if (error) throw error;
       return data;
@@ -112,12 +111,13 @@ export default function PayrollDashboard() {
       return {
         user_id: s.id,
         full_name: s.full_name,
+        is_active: s.is_active,
         regularHours: totals.regularHours,
         onCallHours: totals.onCallHours,
         responsibleShifts: totals.responsibleShifts,
         shifts: userShifts,
         leave: userLeave,
-      };
+      } as StaffPayrollTotals & { is_active: boolean };
     });
   }, [staff, shifts, leaves]);
 
@@ -164,7 +164,16 @@ export default function PayrollDashboard() {
                 ) : (
                   staffTotals.map((s) => (
                     <TableRow key={s.user_id}>
-                      <TableCell className="font-medium">{s.full_name}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <span>{s.full_name}</span>
+                          {!(s as any).is_active && (
+                            <span className="rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] px-1.5 py-0.5 uppercase tracking-wide">
+                              Pending
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-end tabular-nums">{s.regularHours.toFixed(2)}</TableCell>
                       <TableCell className="text-end tabular-nums">{s.onCallHours.toFixed(2)}</TableCell>
                       <TableCell className="text-end tabular-nums">{s.responsibleShifts}</TableCell>
