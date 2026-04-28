@@ -614,7 +614,16 @@ export default function StaffStats() {
                           {ar.end_date && ar.end_date !== ar.date && (
                              <span className="text-muted-foreground"> — {formatLocale(new Date(ar.end_date), "MMM d", locale)}</span>
                           )}
-                          <Badge variant="outline" className="ms-2 capitalize text-xs">{ar.request_type}</Badge>
+                          <Badge variant="outline" className="ms-2 capitalize text-xs">{(() => {
+                            switch (ar.request_type) {
+                              case "vacation": return t("common.vacation");
+                              case "leave": return t("common.leave");
+                              case "sick_leave": return t("common.sickLeave");
+                              case "maternity_leave": return t("common.maternityLeave");
+                              case "yearly_leave": return t("common.yearlyLeave");
+                              default: return t("common.block");
+                            }
+                          })()}</Badge>
                           {blockedLabel && (
                              <span className="ms-2 text-xs text-muted-foreground">({blockedLabel} {t("common.only")})</span>
                           )}
