@@ -1,0 +1,1 @@
+DELETE FROM public.shifts WHERE date >= '2026-04-26' AND date <= '2026-05-02';
