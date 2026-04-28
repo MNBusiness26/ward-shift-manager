@@ -182,7 +182,7 @@ export default function Requests() {
                               {req.reason && ` — "${req.reason}"`}
                             </p>
                             <Badge variant="outline" className="text-[10px] capitalize">
-                              {(req as any).request_type === "vacation" ? `🌴 ${t("avail.vacationLabel")}` : `🚫 ${t("avail.blockDates")}`}
+                              {(req as any).request_type === "vacation" ? `🌴 ${t("avail.vacationLabel")}` : (req as any).request_type === "leave" ? `✈️ ${t("avail.leaveLabel")}` : `🚫 ${t("avail.blockDates")}`}
                             </Badge>
                             {blockedLabel && (
                               <Badge variant="outline" className="text-[10px]">
