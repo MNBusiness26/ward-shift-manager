@@ -485,7 +485,7 @@ export default function Staff() {
                         }`}
                       >
                         {excluded && <X className="h-3.5 w-3.5" />}
-                        {SHIFT_LABELS[type]} ({type.charAt(0).toUpperCase() + type.slice(1)})
+                        {SHIFT_LABELS[type]} ({t(`shift.${type}`)})
                       </button>
                     );
                   })}
