@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Sun, Sunset, Moon, Users, ArrowLeftRight, Ban, Palmtree, Star } from "lucide-react";
+import { Calendar, Sun, Sunset, Moon, Users, ArrowLeftRight, Ban, Palmtree, Plane, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { format, addDays, startOfToday, isSameDay } from "date-fns";
@@ -224,12 +224,14 @@ export default function Index() {
                         <CardContent className="flex items-center gap-3 py-4 px-4">
                           {absence.request_type === "vacation" ? (
                             <Palmtree className="h-5 w-5 text-muted-foreground" />
+                          ) : absence.request_type === "leave" ? (
+                            <Plane className="h-5 w-5 text-muted-foreground" />
                           ) : (
                             <Ban className="h-5 w-5 text-muted-foreground" />
                           )}
                           <div>
                             <span className="text-sm font-medium capitalize">
-                              {absence.request_type === "vacation" ? t("dashboard.vacation") : t("dashboard.blocked")}
+                              {absence.request_type === "vacation" ? t("dashboard.vacation") : absence.request_type === "leave" ? t("dashboard.leave") : t("dashboard.blocked")}
                             </span>
                             <span className="text-sm text-muted-foreground ms-1.5">— {t("dashboard.allDay")}</span>
                           </div>

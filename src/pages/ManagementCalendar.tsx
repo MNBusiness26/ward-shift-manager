@@ -182,13 +182,13 @@ export default function ManagementCalendar() {
 
   const isDateBlocked = (dateStr: string) => hardBlockedDates.includes(dateStr);
 
-  const getBlockTypeForUser = (userId: string, dateStr: string): "vacation" | "block" | null => {
+  const getBlockTypeForUser = (userId: string, dateStr: string): "vacation" | "block" | "leave" | null => {
     const match = blockedDates.find((b: any) => {
       if (b.user_id !== userId) return false;
       if (b.end_date) return dateStr >= b.date && dateStr <= b.end_date;
       return b.date === dateStr;
     });
-    return ((match as any)?.request_type as "vacation" | "block" | undefined) ?? null;
+    return ((match as any)?.request_type as "vacation" | "block" | "leave" | undefined) ?? null;
   };
 
   const saveShift = useMutation({
@@ -660,7 +660,7 @@ export default function ManagementCalendar() {
                       return b.date === form.date;
                     });
                     const blockType = userBlocked ? getBlockTypeForUser(s.id, form.date) : null;
-                    const blockLabel = blockType === "vacation" ? t("common.vacation") : t("roster.blocked");
+                    const blockLabel = blockType === "vacation" ? t("common.vacation") : blockType === "leave" ? t("common.leave") : t("roster.blocked");
                     return (
                       <SelectItem key={s.id} value={s.id} disabled={userBlocked}>
                         <span className="flex items-center gap-1">

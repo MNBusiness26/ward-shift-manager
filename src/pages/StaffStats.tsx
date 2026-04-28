@@ -20,7 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Sun, Sunset, Moon, TrendingUp, ArrowLeftRight, CalendarOff,
   Calendar, Users, Star, ChevronLeft, ChevronRight, UserPlus,
-  Lock, CheckCircle, AlertTriangle, Check, X, ClipboardCheck,
+  Lock, CheckCircle, AlertTriangle, Check, X, ClipboardCheck, Palmtree, Plane,
 } from "lucide-react";
 import {
   format, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
@@ -76,7 +76,7 @@ export default function StaffStats() {
 
   // Proxy request dialog state
   const [proxyOpen, setProxyOpen] = useState(false);
-  const [proxyType, setProxyType] = useState<"block" | "vacation">("block");
+  const [proxyType, setProxyType] = useState<"block" | "vacation" | "leave">("block");
   const [proxyDate, setProxyDate] = useState("");
   const [proxyEndDate, setProxyEndDate] = useState("");
   const [proxyReason, setProxyReason] = useState("");
@@ -664,7 +664,7 @@ export default function StaffStats() {
                           {ar.end_date && ar.end_date !== ar.date && (
                             <span className="text-muted-foreground"> — {format(new Date(ar.end_date), "MMM d")}</span>
                           )}
-                           <Badge variant="outline" className="ms-2 capitalize text-xs">{ar.request_type === "vacation" ? t("common.vacation") : t("common.block")}</Badge>
+                           <Badge variant="outline" className="ms-2 capitalize text-xs">{ar.request_type === "vacation" ? t("common.vacation") : ar.request_type === "leave" ? t("common.leave") : t("common.block")}</Badge>
                           {blockedLabel && (
                             <span className="ms-2 text-xs text-muted-foreground">({blockedLabel} {t("common.only")})</span>
                           )}
@@ -701,7 +701,10 @@ export default function StaffStats() {
                     <span className="flex items-center gap-2"><CalendarOff className="h-3 w-3" /> {t("avail.blockDates")}</span>
                   </SelectItem>
                   <SelectItem value="vacation">
-                    <span className="flex items-center gap-2">🌴 {t("avail.vacationLabel")}</span>
+                    <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.vacationLabel")}</span>
+                  </SelectItem>
+                  <SelectItem value="leave">
+                    <span className="flex items-center gap-2"><Plane className="h-3 w-3" /> {t("avail.leaveLabel")}</span>
                   </SelectItem>
                 </SelectContent>
               </Select>
