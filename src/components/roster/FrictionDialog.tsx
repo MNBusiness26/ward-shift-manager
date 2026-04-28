@@ -13,8 +13,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertTriangle } from "lucide-react";
 
 export interface FrictionWarning {
-  type: "fte" | "role_rule";
+  type: "fte" | "role_rule" | "rest";
   message: string;
+  severity?: "amber" | "red";
 }
 
 interface FrictionDialogProps {
