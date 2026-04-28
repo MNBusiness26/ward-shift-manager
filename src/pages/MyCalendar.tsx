@@ -66,6 +66,25 @@ export default function MyCalendar() {
   const selectedDateStr = selectedDay ? format(selectedDay, "yyyy-MM-dd") : null;
   const { data: dayAllShifts = [] } = useDayShifts(selectedDateStr);
 
+  // Approved leaves overlapping the visible range — used for PDF export
+  const monthStartStr = format(startOfMonth(currentMonth), "yyyy-MM-dd");
+  const monthEndStr = format(endOfMonth(currentMonth), "yyyy-MM-dd");
+  const { data: myLeaves = [] } = useQuery({
+    queryKey: ["my-leaves", user?.id, monthStartStr, monthEndStr],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("availability_requests")
+        .select("request_type, date, end_date, reason")
+        .eq("user_id", user!.id)
+        .eq("status", "approved")
+        .lte("date", monthEndStr)
+        .or(`end_date.gte.${monthStartStr},and(end_date.is.null,date.gte.${monthStartStr})`);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
   const myRole = myRoles[0] || "nurse";
 
   const shiftLabels: Record<string, string> = { morning: t("shift.morning"), evening: t("shift.evening"), night: t("shift.night") };
