@@ -199,6 +199,7 @@ export type Database = {
           end_time: string
           id: string
           is_draft: boolean
+          is_external: boolean
           is_responsible_on_shift: boolean
           is_standby: boolean
           is_verified: boolean
@@ -218,6 +219,7 @@ export type Database = {
           end_time: string
           id?: string
           is_draft?: boolean
+          is_external?: boolean
           is_responsible_on_shift?: boolean
           is_standby?: boolean
           is_verified?: boolean
@@ -237,6 +239,7 @@ export type Database = {
           end_time?: string
           id?: string
           is_draft?: boolean
+          is_external?: boolean
           is_responsible_on_shift?: boolean
           is_standby?: boolean
           is_verified?: boolean
