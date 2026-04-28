@@ -874,7 +874,9 @@ export default function StaffStats() {
                 <SelectContent>
                   <SelectItem value="block">🚫 {t("avail.blockDates")}</SelectItem>
                   <SelectItem value="vacation">🌴 {t("avail.vacationLabel")}</SelectItem>
-                  <SelectItem value="leave">✈️ {t("avail.leaveLabel")}</SelectItem>
+                  <SelectItem value="sick_leave">🩹 {t("avail.sickLeaveLabel")}</SelectItem>
+                  <SelectItem value="maternity_leave">🍼 {t("avail.maternityLeaveLabel")}</SelectItem>
+                  <SelectItem value="yearly_leave">🌴 {t("avail.yearlyLeaveLabel")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
