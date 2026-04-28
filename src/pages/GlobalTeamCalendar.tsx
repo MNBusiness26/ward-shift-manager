@@ -77,7 +77,7 @@ export default function GlobalTeamCalendar() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 flex flex-col min-h-[calc(100vh-6rem)]">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Users className="h-6 w-6" />
