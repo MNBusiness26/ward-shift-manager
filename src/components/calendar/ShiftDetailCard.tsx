@@ -1,5 +1,11 @@
 import { Badge } from "@/components/ui/badge";
-import { Sun, Sunset, Moon, Star, Users } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Sun, Sunset, Moon, Star, Users, ShieldCheck, CheckCircle2, PhoneCall } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useTranslation } from "@/i18n/useTranslation";
 
 const shiftIcons: Record<string, React.ElementType> = { morning: Sun, evening: Sunset, night: Moon };
 const shiftLabels: Record<string, string> = { morning: "Morning", evening: "Evening", night: "Night" };
@@ -25,6 +31,10 @@ interface ShiftDetailCardProps {
     is_responsible_on_shift: boolean;
     is_draft: boolean;
     comments: string | null;
+    is_verified?: boolean;
+    is_standby?: boolean;
+    actual_start_time?: string | null;
+    actual_end_time?: string | null;
   };
   myRole: string;
   colleagues: Colleague[];
@@ -33,6 +43,27 @@ interface ShiftDetailCardProps {
 export function ShiftDetailCard({ shift, myRole, colleagues }: ShiftDetailCardProps) {
   const Icon = shiftIcons[shift.type] || Sun;
   const colors = shiftColorClass[shift.type] || shiftColorClass.morning;
+  const { isManager } = useAuth();
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+
+  const verifyMutation = useMutation({
+    mutationFn: async (verified: boolean) => {
+      const payload: any = { is_verified: verified };
+      if (verified) {
+        // Save scheduled times as the actuals (manager confirms shift ran as scheduled)
+        payload.actual_start_time = shift.start_time?.slice(0, 5);
+        payload.actual_end_time = shift.end_time?.slice(0, 5);
+      }
+      const { error } = await supabase.from("shifts").update(payload).eq("id", shift.id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, verified) => {
+      queryClient.invalidateQueries();
+      toast.success(verified ? t("payroll.verifiedToast") : t("payroll.unverifiedToast"));
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   return (
     <div className={`relative rounded-lg p-4 space-y-3 ${colors.bg} ${colors.border} ${shift.is_draft ? "border-dashed" : ""}`}>
@@ -54,6 +85,16 @@ export function ShiftDetailCard({ shift, myRole, colleagues }: ShiftDetailCardPr
         <Badge variant="outline" className="capitalize">{myRole}</Badge>
         {shift.is_draft && (
           <Badge variant="outline" className="opacity-60">Draft</Badge>
+        )}
+        {shift.is_standby && (
+          <Badge variant="outline" className="gap-1">
+            <PhoneCall className="h-3 w-3" /> {t("payroll.onCall")}
+          </Badge>
+        )}
+        {shift.is_verified && (
+          <Badge variant="outline" className="gap-1 border-green-600/40 text-green-700 dark:text-green-500">
+            <CheckCircle2 className="h-3 w-3" /> {t("payroll.verified")}
+          </Badge>
         )}
       </div>
 
@@ -80,6 +121,20 @@ export function ShiftDetailCard({ shift, myRole, colleagues }: ShiftDetailCardPr
 
       {shift.comments && (
         <p className="text-xs text-muted-foreground border-t pt-2">{shift.comments}</p>
+      )}
+
+      {isManager && !shift.is_draft && (
+        <div className="flex items-center justify-between gap-3 border-t pt-3">
+          <div className="flex items-center gap-2 text-sm">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            <span className="font-medium">{t("payroll.verifyToggleLabel")}</span>
+          </div>
+          <Switch
+            checked={!!shift.is_verified}
+            disabled={verifyMutation.isPending}
+            onCheckedChange={(v) => verifyMutation.mutate(v)}
+          />
+        </div>
       )}
     </div>
   );
