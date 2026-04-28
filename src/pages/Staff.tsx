@@ -495,14 +495,15 @@ export default function Staff() {
               <div className="space-y-2">
                 <span className="text-xs font-medium text-muted-foreground">{t("staff.weekdays")}</span>
                 <div className="flex gap-1">
-                  {DAY_LABELS.map((label, idx) => {
+                  {(["sun","mon","tue","wed","thu","fri","sat"] as const).map((dayKey, idx) => {
                     const excluded = editForm.excluded_days.includes(idx);
+                    const label = t(`day.short.${dayKey}`);
                     return (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => toggleExcludedDay(idx)}
-                        title={DAY_NAMES[idx]}
+                        title={t(`day.full.${dayKey}`)}
                         className={`w-9 h-9 rounded-md border text-sm font-medium transition-colors flex items-center justify-center ${
                           excluded
                             ? "bg-destructive/10 border-destructive/30 text-destructive"
