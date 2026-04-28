@@ -448,12 +448,10 @@ export default function ManagementCalendar() {
                         onClick={() => !blocked && handleCellClick(dateStr, type)}
                       >
                         {overHeadcount && (
-                          <>
-                            <AlertTriangle className="absolute top-1 right-1 h-3 w-3 text-red-400" />
-                            <div className="mb-1">
-                              <span className="text-[9px] text-red-500 font-medium">{dayShifts.filter(s => !(s as any).is_standby && !(s as any).is_external && (() => { const r = staffRoleMap.get(s.assigned_user_id || ""); return r !== "assistant"; })()).length}/{getHeadcountTarget(type, dateStr, headcountLimits)}</span>
-                            </div>
-                          </>
+                          <div className="absolute top-1 right-1 flex items-center gap-0.5">
+                            <span className="text-[9px] text-red-500 font-medium leading-none">{dayShifts.filter(s => !(s as any).is_standby && !(s as any).is_external && (() => { const r = staffRoleMap.get(s.assigned_user_id || ""); return r !== "assistant"; })()).length}/{getHeadcountTarget(type, dateStr, headcountLimits)}</span>
+                            <AlertTriangle className="h-3 w-3 text-red-400" />
+                          </div>
                         )}
                         {dayShifts.length === 0 ? (
                           <span className="text-xs text-muted-foreground italic">{blocked ? "🔒" : "—"}</span>
