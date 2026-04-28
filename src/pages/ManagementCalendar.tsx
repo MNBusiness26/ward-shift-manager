@@ -362,7 +362,7 @@ export default function ManagementCalendar() {
         </div>
       </div>
 
-      <Card>
+      <Card className="flex-1 flex flex-col">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <Button variant="ghost" size="icon" onClick={() => setWeekStart(subWeeks(weekStart, 1))} title={locale === "he" ? "שבוע קודם" : "Previous week"}>
             {locale === "he" ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -374,13 +374,19 @@ export default function ManagementCalendar() {
             {locale === "he" ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         </CardHeader>
-        <CardContent className="overflow-hidden p-0">
-          <div className="relative isolate overflow-x-auto">
+        <CardContent className="overflow-hidden p-0 flex-1 flex flex-col">
+          <div className="relative isolate overflow-x-auto flex-1 flex flex-col">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-y-0 left-0 z-10 w-[50px] bg-card shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[90px]"
             />
-            <table className="w-full border-separate border-spacing-0 text-xs md:text-sm">
+            <table className="w-full border-separate border-spacing-0 text-xs md:text-sm table-fixed flex-1 h-full">
+              <colgroup>
+                <col className="w-[50px] md:w-[90px]" />
+                {days.map((d) => (
+                  <col key={d.toISOString()} style={{ width: `calc((100% - 90px) / 7)` }} />
+                ))}
+              </colgroup>
             <thead>
               <tr>
                 <th className="sticky left-0 z-30 w-[50px] min-w-[50px] border-b border-r bg-card p-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[90px] md:min-w-[90px] md:p-2">
@@ -391,7 +397,7 @@ export default function ManagementCalendar() {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const blocked = isDateBlocked(dateStr);
                   return (
-                    <th key={d.toISOString()} className={`relative z-10 min-w-[80px] md:min-w-[140px] border-b p-1.5 text-center font-medium text-muted-foreground md:p-2 ${blocked ? "bg-muted/50" : ""}`}>
+                    <th key={d.toISOString()} className={`relative z-10 border-b p-1.5 text-center font-medium text-muted-foreground md:p-2 ${blocked ? "bg-muted/50" : ""}`}>
                       <div className="flex items-center justify-center gap-1">
                         {formatLocale(d, "EEE", locale)}
                         {blocked && <Lock className="h-3 w-3 text-muted-foreground" />}
