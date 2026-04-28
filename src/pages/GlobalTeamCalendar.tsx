@@ -10,6 +10,9 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, Users, Star, Phone, ArrowLeftRight } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
+import { Badge } from "@/components/ui/badge";
+
+const isAssistant = (role?: string | null) => role === "assistant";
 
 const shiftTypes = ["morning", "evening", "night"] as const;
 
