@@ -182,13 +182,24 @@ export default function ManagementCalendar() {
 
   const isDateBlocked = (dateStr: string) => hardBlockedDates.includes(dateStr);
 
-  const getBlockTypeForUser = (userId: string, dateStr: string): "vacation" | "block" | "leave" | null => {
+  const getBlockTypeForUser = (userId: string, dateStr: string): string | null => {
     const match = blockedDates.find((b: any) => {
       if (b.user_id !== userId) return false;
       if (b.end_date) return dateStr >= b.date && dateStr <= b.end_date;
       return b.date === dateStr;
     });
-    return ((match as any)?.request_type as "vacation" | "block" | "leave" | undefined) ?? null;
+    return ((match as any)?.request_type as string | undefined) ?? null;
+  };
+
+  const blockTypeLabel = (bt: string | null): string => {
+    switch (bt) {
+      case "vacation": return t("common.vacation");
+      case "leave": return t("common.leave");
+      case "sick_leave": return t("common.sickLeave");
+      case "maternity_leave": return t("common.maternityLeave");
+      case "yearly_leave": return t("common.yearlyLeave");
+      default: return t("roster.blocked");
+    }
   };
 
   const saveShift = useMutation({
