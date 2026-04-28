@@ -11,6 +11,7 @@ import {
   LogOut,
   ChevronLeft,
   Shield,
+  Wallet,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -56,6 +57,7 @@ export function AppSidebar() {
     { title: t("nav.requests"), url: "/requests", icon: Settings },
     { title: t("nav.staff"), url: "/staff", icon: Users },
     { title: t("nav.analytics"), url: "/analytics", icon: BarChart3 },
+    { title: t("nav.payroll"), url: "/payroll", icon: Wallet, managerOnly: true },
   ];
 
   const handleLinkClick = () => {

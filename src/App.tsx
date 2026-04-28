@@ -25,6 +25,7 @@ import ManagementCalendar from "./pages/ManagementCalendar";
 import Admin from "./pages/Admin";
 import AdminDictionary from "./pages/AdminDictionary";
 import GlobalTeamCalendar from "./pages/GlobalTeamCalendar";
+import PayrollDashboard from "./pages/PayrollDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -94,6 +95,7 @@ function AppRoutes() {
       <Route path="/management-calendar" element={<ProtectedRoute requireManager><ManagementCalendar /></ProtectedRoute>} />
       <Route path="/staff-stats" element={<ProtectedRoute requireManager><StaffStats /></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute requireManager><Analytics /></ProtectedRoute>} />
+      <Route path="/payroll" element={<ProtectedRoute requireManager><PayrollDashboard /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute requireManager><Admin /></ProtectedRoute>} />
       <Route path="/admin/dictionary" element={<ProtectedRoute requireManager><AdminDictionary /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
