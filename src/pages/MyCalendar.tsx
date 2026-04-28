@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sun, Sunset, Moon, Users, RefreshCw, Star } from "lucide-react";
+import { Sun, Sunset, Moon, Users, RefreshCw, Star, CheckCircle2, FileDown } from "lucide-react";
 import { CalendarSyncDialog } from "@/components/calendar/CalendarSyncDialog";
 import {
   format,
@@ -17,6 +17,8 @@ import {
   subWeeks,
 } from "date-fns";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,6 +33,7 @@ import { ShiftDetailCard } from "@/components/calendar/ShiftDetailCard";
 import { useMyShifts, useMyRole, useDayShifts, useAllShiftsInRange, type Shift } from "@/components/calendar/useMyCalendarData";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
+import { exportMyAttendancePDF } from "@/lib/payrollExport";
 
 const shiftDot: Record<string, string> = {
   morning: "bg-shift-morning",
@@ -62,6 +65,25 @@ export default function MyCalendar() {
   const { data: myRoles = [] } = useMyRole();
   const selectedDateStr = selectedDay ? format(selectedDay, "yyyy-MM-dd") : null;
   const { data: dayAllShifts = [] } = useDayShifts(selectedDateStr);
+
+  // Approved leaves overlapping the visible range — used for PDF export
+  const monthStartStr = format(startOfMonth(currentMonth), "yyyy-MM-dd");
+  const monthEndStr = format(endOfMonth(currentMonth), "yyyy-MM-dd");
+  const { data: myLeaves = [] } = useQuery({
+    queryKey: ["my-leaves", user?.id, monthStartStr, monthEndStr],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("availability_requests")
+        .select("request_type, date, end_date, reason")
+        .eq("user_id", user!.id)
+        .eq("status", "approved")
+        .lte("date", monthEndStr)
+        .or(`end_date.gte.${monthStartStr},and(end_date.is.null,date.gte.${monthStartStr})`);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+  });
 
   const myRole = myRoles[0] || "nurse";
 
@@ -141,6 +163,25 @@ export default function MyCalendar() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">{t("page.myCalendar")}</h1>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => exportMyAttendancePDF({
+              fullName: profile?.full_name || "",
+              monthLabel: formatLocale(currentMonth, "MMMM yyyy", locale),
+              shifts: shifts.filter((s) => {
+                const d = new Date(s.date);
+                return d >= startOfMonth(currentMonth) && d <= endOfMonth(currentMonth);
+              }) as any,
+              leave: (myLeaves as any[]).map((l) => ({
+                type: l.request_type, date: l.date, end_date: l.end_date, reason: l.reason,
+              })),
+            })}
+          >
+            <FileDown className="h-4 w-4" />
+            <span className="hidden sm:inline">{t("payroll.exportMyAttendance")}</span>
+          </Button>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setSyncOpen(true)}>
             <RefreshCw className="h-4 w-4" />
             <span className="hidden sm:inline">{hasSyncLink ? t("calendar.manageSync") : t("calendar.syncCalendar")}</span>
@@ -204,6 +245,8 @@ export default function MyCalendar() {
                               {s.is_responsible_on_shift && (
                                 <Star className="h-2.5 w-2.5 fill-primary text-primary flex-shrink-0" />
                               )}
+                              <CheckCircle2 className="h-2.5 w-2.5 text-green-600 flex-shrink-0 ms-auto" />
+
                             </div>
                             {colleagues.length > 0 && (
                               <div className="flex flex-col ps-0.5 mt-px">
