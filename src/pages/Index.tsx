@@ -222,8 +222,12 @@ export default function Index() {
                     {absence && dayShifts.length === 0 && (
                       <Card className="border-muted bg-muted/30 shadow-md">
                         <CardContent className="flex items-center gap-3 py-4 px-4">
-                          {absence.request_type === "vacation" ? (
+                          {absence.request_type === "vacation" || absence.request_type === "yearly_leave" ? (
                             <Palmtree className="h-5 w-5 text-muted-foreground" />
+                          ) : absence.request_type === "sick_leave" ? (
+                            <Bandage className="h-5 w-5 text-muted-foreground" />
+                          ) : absence.request_type === "maternity_leave" ? (
+                            <Baby className="h-5 w-5 text-muted-foreground" />
                           ) : absence.request_type === "leave" ? (
                             <Plane className="h-5 w-5 text-muted-foreground" />
                           ) : (
@@ -231,7 +235,16 @@ export default function Index() {
                           )}
                           <div>
                             <span className="text-sm font-medium capitalize">
-                              {absence.request_type === "vacation" ? t("dashboard.vacation") : absence.request_type === "leave" ? t("dashboard.leave") : t("dashboard.blocked")}
+                              {(() => {
+                                switch (absence.request_type) {
+                                  case "vacation": return t("dashboard.vacation");
+                                  case "leave": return t("dashboard.leave");
+                                  case "sick_leave": return t("dashboard.sickLeave");
+                                  case "maternity_leave": return t("dashboard.maternityLeave");
+                                  case "yearly_leave": return t("dashboard.yearlyLeave");
+                                  default: return t("dashboard.blocked");
+                                }
+                              })()}
                             </span>
                             <span className="text-sm text-muted-foreground ms-1.5">— {t("dashboard.allDay")}</span>
                           </div>
