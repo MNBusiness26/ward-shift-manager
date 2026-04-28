@@ -108,6 +108,76 @@ export function validateExclusions(
   return warnings;
 }
 
+/** Minimum required rest hours between any two regular (non on-call) shifts. */
+export const MIN_REST_HOURS = 8;
+
+interface RestShift {
+  id?: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  type?: string;
+  assigned_user_id: string | null;
+  is_standby?: boolean | null;
+}
+
+/** Build a Date from a yyyy-MM-dd date and HH:mm[:ss] time, treating end < start as next day. */
+function shiftBounds(date: string, start: string, end: string): { start: Date; end: Date } {
+  const startAt = new Date(`${date}T${start.length === 5 ? start + ":00" : start}`);
+  let endAt = new Date(`${date}T${end.length === 5 ? end + ":00" : end}`);
+  if (endAt.getTime() <= startAt.getTime()) {
+    // overnight (e.g. night shift) — push end to next day
+    endAt = new Date(endAt.getTime() + 24 * 60 * 60 * 1000);
+  }
+  return { start: startAt, end: endAt };
+}
+
+/**
+ * Check the back-to-back rest rule: at least MIN_REST_HOURS between the end of one
+ * shift and the start of the next for the same user. On-call (is_standby) shifts
+ * are exempt on either side. Handles night → next-day morning correctly.
+ *
+ * Returns a red-severity FrictionWarning when violated.
+ */
+export function validateRestPeriod(
+  candidate: { assignedUserId: string; date: string; start: string; end: string; isStandby?: boolean; excludeShiftId?: string | null },
+  allShifts: RestShift[],
+  staffName: string,
+): FrictionWarning[] {
+  if (candidate.isStandby) return [];
+  const { start: candStart, end: candEnd } = shiftBounds(candidate.date, candidate.start, candidate.end);
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  // Look at any shift for this user within +/- 24h of the candidate window
+  const neighbors = allShifts.filter((s) => {
+    if (!s.assigned_user_id || s.assigned_user_id !== candidate.assignedUserId) return false;
+    if (candidate.excludeShiftId && s.id === candidate.excludeShiftId) return false;
+    if (s.is_standby) return false; // on-call exempt
+    const diff = Math.abs(new Date(s.date + "T00:00").getTime() - new Date(candidate.date + "T00:00").getTime());
+    return diff <= dayMs * 2;
+  });
+
+  for (const n of neighbors) {
+    const { start: nStart, end: nEnd } = shiftBounds(n.date, n.start_time, n.end_time);
+    // earlier vs later
+    const [earlierEnd, laterStart] =
+      nStart.getTime() < candStart.getTime() ? [nEnd, candStart] : [candEnd, nStart];
+    const restMs = laterStart.getTime() - earlierEnd.getTime();
+    if (restMs < 0) continue; // overlap is a different concern; skip here
+    const restHours = restMs / (60 * 60 * 1000);
+    if (restHours < MIN_REST_HOURS) {
+      return [
+        {
+          type: "rest",
+          severity: "red",
+          message: `${staffName} has insufficient rest between shifts (less than ${MIN_REST_HOURS} hours).`,
+        },
+      ];
+    }
+  }
+  return [];
+}
+
 /**
  * Check FTE and role-rule constraints before saving a shift.
  * Returns an array of warnings that require override confirmation.
@@ -116,14 +186,24 @@ export function validateShiftFriction({
   assignedUserId,
   shiftType,
   shiftDate,
+  shiftStartTime,
+  shiftEndTime,
+  isStandby,
+  editingShiftId,
   weekShiftsForUser,
   staffProfiles,
+  allShifts,
 }: {
   assignedUserId: string | null;
   shiftType: string;
   shiftDate: string;
+  shiftStartTime?: string;
+  shiftEndTime?: string;
+  isStandby?: boolean;
+  editingShiftId?: string | null;
   weekShiftsForUser: number;
   staffProfiles: StaffProfile[];
+  allShifts?: RestShift[];
 }): FrictionWarning[] {
   if (!assignedUserId) return [];
 
@@ -143,6 +223,24 @@ export function validateShiftFriction({
 
   // Exclusion checks (new model + legacy)
   warnings.push(...validateExclusions(profile, shiftType, shiftDate));
+
+  // Back-to-back rest check (skip if on-call)
+  if (allShifts && shiftStartTime && shiftEndTime && !isStandby) {
+    warnings.push(
+      ...validateRestPeriod(
+        {
+          assignedUserId,
+          date: shiftDate,
+          start: shiftStartTime,
+          end: shiftEndTime,
+          isStandby,
+          excludeShiftId: editingShiftId ?? null,
+        },
+        allShifts,
+        profile.full_name,
+      ),
+    );
+  }
 
   return warnings;
 }
