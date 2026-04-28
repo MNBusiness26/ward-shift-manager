@@ -914,9 +914,7 @@ export default function Roster() {
                         )}
                         {blocked && dayShifts.length === 0 && (() => {
                           const bt = getBlockType(member.id, dateStr);
-                          const label = bt === "vacation" ? t("common.vacation") : bt === "leave" ? t("common.leave") : t("roster.blocked");
-                          const cls = bt === "leave" ? "text-purple-600" : bt === "vacation" ? "text-amber-600" : "text-destructive";
-                          return <span className={`text-[10px] ${cls}`}>{label}</span>;
+                          return <span className={`text-[10px] ${blockTypeClass(bt)}`}>{blockTypeLabel(bt)}</span>;
                         })()}
                         {dayShifts.map((s) => {
                           const isExternal = (s as any).is_external;
