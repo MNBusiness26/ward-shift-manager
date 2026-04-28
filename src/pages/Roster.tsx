@@ -181,7 +181,7 @@ export default function Roster() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("availability_requests")
-        .select("user_id, date, end_date")
+        .select("user_id, date, end_date, request_type")
         .eq("status", "approved")
         .lte("date", format(viewEnd, "yyyy-MM-dd"))
         .or(`end_date.gte.${format(viewStart, "yyyy-MM-dd")},end_date.is.null`);
@@ -613,6 +613,15 @@ export default function Roster() {
       return b.date === date;
     });
 
+  const getBlockType = (userId: string, date: string): "vacation" | "block" | null => {
+    const match = blockedDates.find((b) => {
+      if (b.user_id !== userId) return false;
+      if (b.end_date) return date >= b.date && date <= b.end_date;
+      return b.date === date;
+    });
+    return (match?.request_type as "vacation" | "block" | undefined) ?? null;
+  };
+
   const isDateBlocked = (dateStr: string) => hardBlockedDates.includes(dateStr);
 
   const getStaffForDropdown = () => {
@@ -869,7 +878,9 @@ export default function Roster() {
                           <span className="text-[10px] text-muted-foreground">🔒</span>
                         )}
                         {blocked && dayShifts.length === 0 && (
-                          <span className="text-[10px] text-destructive">{t("roster.blocked")}</span>
+                          <span className="text-[10px] text-destructive">
+                            {getBlockType(member.id, dateStr) === "vacation" ? t("common.vacation") : t("roster.blocked")}
+                          </span>
                         )}
                         {dayShifts.map((s) => (
                           <div
@@ -1055,9 +1066,11 @@ export default function Roster() {
                   <SelectItem value="__unassigned__">{t("roster.unassigned")}</SelectItem>
                   {getStaffForDropdown().map((s) => {
                     const blocked = isBlocked(s.id, form.date);
+                    const blockType = blocked ? getBlockType(s.id, form.date) : null;
+                    const blockLabel = blockType === "vacation" ? t("common.vacation") : t("roster.blocked");
                     return (
                       <SelectItem key={s.id} value={s.id} disabled={blocked}>
-                        {s.full_name}{s.kind === "pending" ? " (Pending)" : ""} {blocked ? `🚫 ${t("roster.blocked")}` : ""}
+                        {s.full_name}{s.kind === "pending" ? " (Pending)" : ""} {blocked ? `🚫 ${blockLabel}` : ""}
                       </SelectItem>
                     );
                   })}
