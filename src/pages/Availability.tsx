@@ -308,8 +308,14 @@ export default function Availability() {
                     <SelectItem value="vacation">
                       <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.vacationLabel")}</span>
                     </SelectItem>
-                    <SelectItem value="leave">
-                      <span className="flex items-center gap-2"><Plane className="h-3 w-3" /> {t("avail.leaveLabel")}</span>
+                    <SelectItem value="sick_leave">
+                      <span className="flex items-center gap-2"><Bandage className="h-3 w-3" /> {t("avail.sickLeaveLabel")}</span>
+                    </SelectItem>
+                    <SelectItem value="maternity_leave">
+                      <span className="flex items-center gap-2"><Baby className="h-3 w-3" /> {t("avail.maternityLeaveLabel")}</span>
+                    </SelectItem>
+                    <SelectItem value="yearly_leave">
+                      <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.yearlyLeaveLabel")}</span>
                     </SelectItem>
                   </SelectContent>
                 </Select>
