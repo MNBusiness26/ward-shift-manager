@@ -11,10 +11,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, ChevronDown, ChevronUp, Eye, ShieldAlert, Users, Clock, UserX } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp, Eye, ShieldAlert, Users, Clock, UserX, Moon } from "lucide-react";
 import { format } from "date-fns";
 import { getHeadcountTarget } from "./frictionValidation";
-import { validateExclusions } from "./frictionValidation";
+import { validateExclusions, validateRestPeriod } from "./frictionValidation";
 
 interface StaffProfile {
   id: string;
