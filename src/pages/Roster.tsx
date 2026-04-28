@@ -886,21 +886,21 @@ export default function Roster() {
                           <div
                             key={s.id}
                             onClick={(e) => { e.stopPropagation(); openEdit(s); }}
-                            className={`relative mb-1 rounded-sm border-s-2 px-1.5 py-1.5 text-xs ${dateBlocked ? "cursor-not-allowed" : "cursor-pointer hover:ring-1 hover:ring-primary/50"} transition-all ${
+                            className={`relative mb-0.5 rounded-sm px-1 py-0.5 text-xs shadow-none ${dateBlocked ? "cursor-not-allowed" : "cursor-pointer hover:ring-1 hover:ring-primary/50"} transition-all ${
                               (s as any).is_standby
-                                ? `bg-transparent border-2 border-dashed ${s.type === "morning" ? "border-s-shift-morning text-shift-morning" : s.type === "evening" ? "border-s-shift-evening text-shift-evening" : "border-s-shift-night text-shift-night"}`
+                                ? "bg-blue-50/60 border-l-4 border-blue-400 border-t-0 border-r-0 border-b-0 text-foreground"
                                 : s.is_draft
-                                  ? `${shiftBgDraft[s.type]} opacity-70 border-dashed`
-                                  : `${shiftBgPublished[s.type]} border-solid`
-                            } ${s.type === "morning" ? "border-s-shift-morning" : s.type === "evening" ? "border-s-shift-evening" : "border-s-shift-night"}`}
+                                  ? `${shiftBgDraft[s.type]} opacity-70 border border-dashed ${s.type === "morning" ? "border-s-shift-morning" : s.type === "evening" ? "border-s-shift-evening" : "border-s-shift-night"} border-s-2`
+                                  : `${shiftBgPublished[s.type]} border-s-2 ${s.type === "morning" ? "border-s-shift-morning" : s.type === "evening" ? "border-s-shift-evening" : "border-s-shift-night"}`
+                            }`}
                           >
                             {s.is_responsible_on_shift && (
-                              <Star className="absolute top-0.5 end-0.5 h-3 w-3 fill-primary text-primary" />
+                              <Star className="absolute top-0.5 end-0.5 h-2.5 w-2.5 fill-primary text-primary" />
                             )}
                             <div className="flex items-center justify-center gap-0.5">
                               <span className="capitalize font-medium">{s.type.charAt(0)}</span>
                               {(s as any).is_standby && (
-                                <Phone className="h-2.5 w-2.5 text-shift-morning" />
+                                <Phone className="h-2.5 w-2.5 text-blue-500" />
                               )}
                             </div>
                           </div>
