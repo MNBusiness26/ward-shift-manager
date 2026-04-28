@@ -22,7 +22,7 @@ import {
   Sun, Sunset, Moon, TrendingUp, ArrowLeftRight, CalendarOff,
   Calendar, Users, Star, ChevronLeft, ChevronRight, UserPlus,
   Lock, CheckCircle, AlertTriangle, Check, X, ClipboardCheck, Palmtree, Plane,
-  Pencil, Trash2,
+  Pencil, Trash2, Bandage, Baby,
 } from "lucide-react";
 import {
   format, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
