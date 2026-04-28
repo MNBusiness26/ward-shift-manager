@@ -613,13 +613,13 @@ export default function Roster() {
       return b.date === date;
     });
 
-  const getBlockType = (userId: string, date: string): "vacation" | "block" | null => {
+  const getBlockType = (userId: string, date: string): "vacation" | "block" | "leave" | null => {
     const match = blockedDates.find((b) => {
       if (b.user_id !== userId) return false;
       if (b.end_date) return date >= b.date && date <= b.end_date;
       return b.date === date;
     });
-    return (match?.request_type as "vacation" | "block" | undefined) ?? null;
+    return (match?.request_type as "vacation" | "block" | "leave" | undefined) ?? null;
   };
 
   const isDateBlocked = (dateStr: string) => hardBlockedDates.includes(dateStr);
@@ -897,7 +897,7 @@ export default function Roster() {
                         )}
                         {blocked && dayShifts.length === 0 && (
                           <span className="text-[10px] text-destructive">
-                            {getBlockType(member.id, dateStr) === "vacation" ? t("common.vacation") : t("roster.blocked")}
+                            {(() => { const bt = getBlockType(member.id, dateStr); return bt === "vacation" ? t("common.vacation") : bt === "leave" ? t("common.leave") : t("roster.blocked"); })()}
                           </span>
                         )}
                         {dayShifts.map((s) => {
@@ -1091,7 +1091,7 @@ export default function Roster() {
                   {getStaffForDropdown().map((s) => {
                     const blocked = isBlocked(s.id, form.date);
                     const blockType = blocked ? getBlockType(s.id, form.date) : null;
-                    const blockLabel = blockType === "vacation" ? t("common.vacation") : t("roster.blocked");
+                    const blockLabel = blockType === "vacation" ? t("common.vacation") : blockType === "leave" ? t("common.leave") : t("roster.blocked");
                     return (
                       <SelectItem key={s.id} value={s.id} disabled={blocked}>
                         {s.full_name}{s.kind === "pending" ? " (Pending)" : ""} {blocked ? `🚫 ${blockLabel}` : ""}
