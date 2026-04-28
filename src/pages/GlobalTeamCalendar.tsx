@@ -77,7 +77,7 @@ export default function GlobalTeamCalendar() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 flex flex-col min-h-[calc(100vh-6rem)]">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Users className="h-6 w-6" />
@@ -96,18 +96,23 @@ export default function GlobalTeamCalendar() {
         </div>
       </div>
 
-      <Card>
+      <Card className="flex-1 flex flex-col">
         <CardHeader className="pb-2">
           <CardTitle className="text-base text-center">
             {formatLocale(currentMonth, "MMMM yyyy", locale)}
           </CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto p-2">
-          <table className="w-full text-sm border-collapse">
+        <CardContent className="p-2 flex-1 flex flex-col">
+          <table className="w-full text-sm border-collapse table-fixed flex-1 h-full">
+            <colgroup>
+              {dayHeaders.map((_, i) => (
+                <col key={i} style={{ width: `${100 / 7}%` }} />
+              ))}
+            </colgroup>
             <thead>
               <tr>
                 {dayHeaders.map((d, i) => (
-                  <th key={i} className="p-1.5 text-center font-medium text-muted-foreground text-xs border-b min-w-[140px]">
+                  <th key={i} className="p-1.5 text-center font-medium text-muted-foreground text-xs border-b">
                     {d}
                   </th>
                 ))}
@@ -123,23 +128,23 @@ export default function GlobalTeamCalendar() {
                     return (
                       <td
                         key={dateStr}
-                        className={`p-1 border-s align-top h-[130px] ${!inMonth ? "bg-muted/30" : ""} ${today ? "ring-2 ring-inset ring-primary/40" : ""}`}
+                        className={`p-1 border-s align-top min-h-[140px] h-[14vh] ${!inMonth ? "bg-muted/30" : ""} ${today ? "ring-2 ring-inset ring-primary/40" : ""}`}
                       >
                         <div className={`text-xs font-medium mb-1 ${!inMonth ? "text-muted-foreground/50" : today ? "text-primary font-bold" : "text-muted-foreground"}`}>
                           {format(day, "d")}
                         </div>
                         {inMonth && (
-                          <div className="space-y-0.5">
+                          <div className="space-y-1">
                             {shiftTypes.map((type) => {
                               const typeShifts = getShifts(dateStr, type);
                               if (typeShifts.length === 0) return null;
                               return (
                                 <div key={type} className={`rounded border px-1 py-0.5 ${shiftColors[type]}`}>
-                                  <div className={`text-[9px] font-semibold ${shiftTextColors[type]} flex items-center gap-0.5`}>
+                                  <div className={`text-[9px] font-semibold ${shiftTextColors[type]} flex items-center gap-0.5 mb-1`}>
                                     <span className={`w-1.5 h-1.5 rounded-full ${shiftDotColors[type]}`} />
                                     {shiftLabels[type]}
                                   </div>
-                                  <div className="flex flex-wrap gap-0.5">
+                                  <div className="flex flex-col gap-1">
                                     {typeShifts.map((s) => {
                                       const profile = s.assigned_profile as any;
                                       const isStandby = (s as any).is_standby;
