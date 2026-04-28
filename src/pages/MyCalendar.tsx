@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sun, Sunset, Moon, Users, RefreshCw, Star } from "lucide-react";
+import { Sun, Sunset, Moon, Users, RefreshCw, Star, CheckCircle2, FileDown } from "lucide-react";
 import { CalendarSyncDialog } from "@/components/calendar/CalendarSyncDialog";
 import {
   format,
@@ -17,6 +17,8 @@ import {
   subWeeks,
 } from "date-fns";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,6 +33,7 @@ import { ShiftDetailCard } from "@/components/calendar/ShiftDetailCard";
 import { useMyShifts, useMyRole, useDayShifts, useAllShiftsInRange, type Shift } from "@/components/calendar/useMyCalendarData";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
+import { exportMyAttendancePDF } from "@/lib/payrollExport";
 
 const shiftDot: Record<string, string> = {
   morning: "bg-shift-morning",
