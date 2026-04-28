@@ -10,6 +10,9 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, Users, Star, Phone, ArrowLeftRight } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
+import { Badge } from "@/components/ui/badge";
+
+const isAssistant = (role?: string | null) => role === "assistant";
 
 const shiftTypes = ["morning", "evening", "night"] as const;
 
@@ -55,7 +58,7 @@ export default function GlobalTeamCalendar() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
-        .select("*, assigned_profile:assigned_user_id(full_name, is_responsible), manager_profile:manager_on_duty_id(full_name)")
+        .select("*, assigned_profile:assigned_user_id(full_name, is_responsible, role), manager_profile:manager_on_duty_id(full_name)")
         .eq("is_draft", false)
         .gte("date", format(calendarStart, "yyyy-MM-dd"))
         .lte("date", format(calendarEnd, "yyyy-MM-dd"))
@@ -136,20 +139,31 @@ export default function GlobalTeamCalendar() {
                                     <span className={`w-1.5 h-1.5 rounded-full ${shiftDotColors[type]}`} />
                                     {shiftLabels[type]}
                                   </div>
-                                  <div className="flex flex-wrap gap-x-1">
+                                  <div className="flex flex-wrap gap-0.5">
                                     {typeShifts.map((s) => {
                                       const profile = s.assigned_profile as any;
-                                      const isStandby = s.is_standby;
+                                      const isStandby = (s as any).is_standby;
                                       const isExternal = (s as any).is_external;
                                       const isResp = s.is_responsible_on_shift || profile?.is_responsible;
+                                      const assistantRole = isAssistant(profile?.role);
                                       const firstName = profile?.full_name?.split(" ")[0] || "?";
                                       return (
-                                        <span key={s.id} className={`text-[10px] leading-tight inline-flex items-center ${isStandby ? "opacity-70" : ""} ${isResp ? "font-bold" : ""}`}>
+                                        <Badge
+                                          key={s.id}
+                                          variant={s.is_responsible_on_shift ? "default" : "secondary"}
+                                          className={`text-[10px] px-1.5 py-0 leading-tight shadow-none ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
+                                            isExternal
+                                              ? "bg-slate-50 border-slate-200 text-slate-400 opacity-80"
+                                              : isStandby
+                                              ? "bg-blue-50/60 border-l-4 border-blue-400 border-t-0 border-r-0 border-b-0 rounded-sm text-foreground"
+                                              : (s as any).is_draft ? "opacity-60 border-dashed" : "ring-1 ring-current/20"
+                                          } ${assistantRole && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-gray-100/50 text-muted-foreground border-muted-foreground/20" : ""}`}
+                                        >
                                           {isExternal && <ArrowLeftRight className="me-0.5 h-2.5 w-2.5 inline" />}
                                           {firstName}
                                           {isResp && <Star className="ms-0.5 h-2.5 w-2.5 inline fill-current" />}
-                                          {isStandby && <Phone className="ms-0.5 h-2.5 w-2.5 inline text-blue-500" />}
-                                        </span>
+                                          {isStandby && <Phone className="ms-0.5 h-2.5 w-2.5 inline" />}
+                                        </Badge>
                                       );
                                     })}
                                   </div>
