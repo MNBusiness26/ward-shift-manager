@@ -613,13 +613,30 @@ export default function Roster() {
       return b.date === date;
     });
 
-  const getBlockType = (userId: string, date: string): "vacation" | "block" | "leave" | null => {
+  const getBlockType = (userId: string, date: string): string | null => {
     const match = blockedDates.find((b) => {
       if (b.user_id !== userId) return false;
       if (b.end_date) return date >= b.date && date <= b.end_date;
       return b.date === date;
     });
-    return (match?.request_type as "vacation" | "block" | "leave" | undefined) ?? null;
+    return ((match as any)?.request_type as string | undefined) ?? null;
+  };
+
+  const blockTypeLabel = (bt: string | null): string => {
+    switch (bt) {
+      case "vacation": return t("common.vacation");
+      case "leave": return t("common.leave");
+      case "sick_leave": return t("common.sickLeave");
+      case "maternity_leave": return t("common.maternityLeave");
+      case "yearly_leave": return t("common.yearlyLeave");
+      default: return t("roster.blocked");
+    }
+  };
+
+  const blockTypeClass = (bt: string | null): string => {
+    if (bt === "vacation" || bt === "yearly_leave") return "text-amber-600";
+    if (bt === "leave" || bt === "sick_leave" || bt === "maternity_leave") return "text-purple-600";
+    return "text-destructive";
   };
 
   const isDateBlocked = (dateStr: string) => hardBlockedDates.includes(dateStr);
