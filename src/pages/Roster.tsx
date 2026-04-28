@@ -1066,19 +1066,6 @@ export default function Roster() {
               {form.is_standby && <p className="text-xs text-muted-foreground">{t("roster.onCallHint")}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label>{t("roster.managerOnDuty")}</Label>
-              <Select value={form.manager_on_duty_id || "__none__"} onValueChange={(v) => setForm((f) => ({ ...f, manager_on_duty_id: v === "__none__" ? "" : v }))}>
-                 <SelectTrigger><SelectValue placeholder={t("roster.none")} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">{t("roster.none")}</SelectItem>
-                  {managerStaff.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="flex items-center justify-between">
               <Label>{t("roster.responsibleNurse")}</Label>
               <Switch checked={form.is_responsible_on_shift} onCheckedChange={(v) => setForm((f) => ({ ...f, is_responsible_on_shift: v }))} />
