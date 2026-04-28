@@ -616,6 +616,14 @@ export default function ManagementCalendar() {
               <Switch checked={form.is_standby} onCheckedChange={(v) => setForm((f) => ({ ...f, is_standby: v, assigned_user_id: "" }))} />
             </div>
 
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-1.5">
+                <ArrowLeftRight className="h-3.5 w-3.5" />
+                {locale === "he" ? "מחוץ למחלקה" : "Not at Ward (External)"}
+              </Label>
+              <Switch checked={form.is_external} onCheckedChange={(v) => setForm((f) => ({ ...f, is_external: v }))} />
+            </div>
+
             <div className="space-y-2">
               <Label>{t("roster.assignToStaff")}</Label>
               <Select value={form.assigned_user_id || "__unassigned__"} onValueChange={(v) => setForm((f) => ({ ...f, assigned_user_id: v === "__unassigned__" ? "" : v }))}>
