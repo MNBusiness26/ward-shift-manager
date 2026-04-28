@@ -451,16 +451,20 @@ export default function ManagementCalendar() {
                             {dayShifts.map((s) => {
                               const profile = staff.find((p) => p.id === s.assigned_user_id);
                               const assistantRole = isAssistant(profile?.role ?? profile?.app_role);
+                              const isExternal = (s as any).is_external;
                               return (
                               <Badge
                                 key={s.id}
                                 variant={s.is_responsible_on_shift ? "default" : "secondary"}
                                 className={`text-xs ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
-                                  (s as any).is_standby
+                                  isExternal
+                                    ? "bg-slate-50 border-slate-200 text-slate-400 opacity-80"
+                                    : (s as any).is_standby
                                     ? "bg-transparent border-2 border-dashed border-current"
                                     : s.is_draft ? "opacity-60 border-dashed" : "ring-1 ring-current/20"
-                                } ${assistantRole && !s.is_responsible_on_shift ? "bg-muted text-muted-foreground border-muted-foreground/20" : ""}`}
+                                } ${assistantRole && !s.is_responsible_on_shift && !isExternal ? "bg-muted text-muted-foreground border-muted-foreground/20" : ""}`}
                               >
+                                {isExternal && <ArrowLeftRight className="mr-0.5 h-2.5 w-2.5 inline" />}
                                 {getFirstName(s)}
                                 {s.is_responsible_on_shift && <Star className="ml-0.5 h-2.5 w-2.5 inline fill-current" />}
                                 {(s as any).is_standby && <Phone className="ml-0.5 h-2.5 w-2.5 inline" />}
