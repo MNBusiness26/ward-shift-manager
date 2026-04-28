@@ -13,7 +13,7 @@ import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval }
 import { formatLocale } from "@/i18n/dateLocale";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle, Sun, Sunset, Moon, Phone, Ban } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle, Sun, Sunset, Moon, Phone, Ban, ArrowLeftRight } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
 import { validateShiftFriction, isOverHeadcount, getHeadcountTarget } from "@/components/roster/frictionValidation";
@@ -58,6 +58,7 @@ interface ShiftFormData {
   comments: string;
   is_draft: boolean;
   is_standby: boolean;
+  is_external: boolean;
 }
 
 const defaultForm = (date?: string, type?: ShiftType): ShiftFormData => ({
@@ -71,6 +72,7 @@ const defaultForm = (date?: string, type?: ShiftType): ShiftFormData => ({
   comments: "",
   is_draft: true,
   is_standby: false,
+  is_external: false,
 });
 
 export default function ManagementCalendar() {
@@ -193,6 +195,7 @@ export default function ManagementCalendar() {
         comments: form.comments || null,
         is_draft: form.is_draft,
         is_standby: form.is_standby,
+        is_external: form.is_external,
       };
       if (editingShift) {
         const { error } = await supabase.from("shifts").update(payload).eq("id", editingShift);
@@ -258,6 +261,7 @@ export default function ManagementCalendar() {
       comments: shift.comments || "",
       is_draft: shift.is_draft,
       is_standby: (shift as any).is_standby ?? false,
+      is_external: (shift as any).is_external ?? false,
     });
     setDialogOpen(true);
   };
@@ -351,14 +355,14 @@ export default function ManagementCalendar() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <Button variant="ghost" size="icon" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
-            <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+          <Button variant="ghost" size="icon" onClick={() => setWeekStart(locale === "he" ? addWeeks(weekStart, 1) : subWeeks(weekStart, 1))} title={locale === "he" ? "שבוע הבא" : "Previous week"}>
+            <ChevronLeft className="h-4 w-4" />
           </Button>
           <CardTitle className="text-base">
             {formatLocale(weekStart, "MMM d", locale)} — {formatLocale(weekEnd, "MMM d, yyyy", locale)}
           </CardTitle>
-          <Button variant="ghost" size="icon" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
-            <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+          <Button variant="ghost" size="icon" onClick={() => setWeekStart(locale === "he" ? subWeeks(weekStart, 1) : addWeeks(weekStart, 1))} title={locale === "he" ? "שבוע קודם" : "Next week"}>
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </CardHeader>
         <CardContent className="overflow-hidden p-0">
@@ -447,16 +451,20 @@ export default function ManagementCalendar() {
                             {dayShifts.map((s) => {
                               const profile = staff.find((p) => p.id === s.assigned_user_id);
                               const assistantRole = isAssistant(profile?.role ?? profile?.app_role);
+                              const isExternal = (s as any).is_external;
                               return (
                               <Badge
                                 key={s.id}
                                 variant={s.is_responsible_on_shift ? "default" : "secondary"}
                                 className={`text-xs ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
-                                  (s as any).is_standby
+                                  isExternal
+                                    ? "bg-slate-50 border-slate-200 text-slate-400 opacity-80"
+                                    : (s as any).is_standby
                                     ? "bg-transparent border-2 border-dashed border-current"
                                     : s.is_draft ? "opacity-60 border-dashed" : "ring-1 ring-current/20"
-                                } ${assistantRole && !s.is_responsible_on_shift ? "bg-muted text-muted-foreground border-muted-foreground/20" : ""}`}
+                                } ${assistantRole && !s.is_responsible_on_shift && !isExternal ? "bg-muted text-muted-foreground border-muted-foreground/20" : ""}`}
                               >
+                                {isExternal && <ArrowLeftRight className="mr-0.5 h-2.5 w-2.5 inline" />}
                                 {getFirstName(s)}
                                 {s.is_responsible_on_shift && <Star className="ml-0.5 h-2.5 w-2.5 inline fill-current" />}
                                 {(s as any).is_standby && <Phone className="ml-0.5 h-2.5 w-2.5 inline" />}
@@ -606,6 +614,14 @@ export default function ManagementCalendar() {
             <div className="flex items-center justify-between">
               <Label>{t("roster.onCallShift")}</Label>
               <Switch checked={form.is_standby} onCheckedChange={(v) => setForm((f) => ({ ...f, is_standby: v, assigned_user_id: "" }))} />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-1.5">
+                <ArrowLeftRight className="h-3.5 w-3.5" />
+                {locale === "he" ? "מחוץ למחלקה" : "Not at Ward (External)"}
+              </Label>
+              <Switch checked={form.is_external} onCheckedChange={(v) => setForm((f) => ({ ...f, is_external: v }))} />
             </div>
 
             <div className="space-y-2">
