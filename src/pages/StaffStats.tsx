@@ -727,9 +727,17 @@ export default function StaffStats() {
                             <Badge variant="outline" className="ms-2 text-[10px]">Manager</Badge>
                           )}
                         </div>
-                         <Badge variant="outline" className={statusColor[ar.status] || ""}>
-                          {t(`status.${ar.status}`)}
-                        </Badge>
+                         <div className="flex items-center gap-2">
+                           <Badge variant="outline" className={statusColor[ar.status] || ""}>
+                            {t(`status.${ar.status}`)}
+                          </Badge>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(ar)} title={t("requests.editRequest")}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setConfirmDelete(ar)} title={t("requests.cancelBlock")}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
