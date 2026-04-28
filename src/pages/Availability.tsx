@@ -142,6 +142,9 @@ export default function Availability() {
     if (type === "vacation") {
       return req.status === "approved" ? "bg-blue-100 border-blue-300" : "bg-blue-50 border-blue-200";
     }
+    if (type === "leave") {
+      return req.status === "approved" ? "bg-purple-100 border-purple-300" : "bg-purple-50 border-purple-200";
+    }
     return req.status === "approved" ? "bg-destructive/10 border-destructive/30" : "bg-yellow-50 border-yellow-200";
   };
 
@@ -173,6 +176,9 @@ export default function Availability() {
         </span>
         <span className="inline-flex items-center gap-1">
           <span className="h-3 w-3 rounded-sm border bg-blue-100 border-blue-300" /> {t("avail.legend.vacation")}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-3 w-3 rounded-sm border bg-purple-100 border-purple-300" /> {t("avail.legend.leave")}
         </span>
         <span className="inline-flex items-center gap-1">
           <span className="h-3 w-3 rounded-sm border bg-green-100 border-green-200" /> {t("avail.legend.approved")}
@@ -251,7 +257,7 @@ export default function Availability() {
                         </p>
                         <Badge variant="outline" className="text-[9px] md:text-[10px] capitalize">
                           {typeIcons[rType]}
-                          <span className="ms-1">{rType === "vacation" ? t("avail.vacationLabel") : t("avail.blockDates")}</span>
+                          <span className="ms-1">{t(typeLabelKey[rType as AvailType] || "avail.blockDates")}</span>
                         </Badge>
                         {blockedLabel && (
                           <Badge variant="outline" className="text-[9px] md:text-[10px]">
@@ -294,6 +300,9 @@ export default function Availability() {
                     </SelectItem>
                     <SelectItem value="vacation">
                       <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.vacationLabel")}</span>
+                    </SelectItem>
+                    <SelectItem value="leave">
+                      <span className="flex items-center gap-2"><Plane className="h-3 w-3" /> {t("avail.leaveLabel")}</span>
                     </SelectItem>
                   </SelectContent>
                 </Select>
