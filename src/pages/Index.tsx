@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Sun, Sunset, Moon, Users, ArrowLeftRight, Ban, Palmtree, Plane, Star } from "lucide-react";
+import { Calendar, Sun, Sunset, Moon, Users, ArrowLeftRight, Ban, Palmtree, Plane, Star, Bandage, Baby } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { format, addDays, startOfToday, isSameDay } from "date-fns";
