@@ -451,7 +451,7 @@ export default function ManagementCalendar() {
                           <>
                             <AlertTriangle className="absolute top-1 right-1 h-3 w-3 text-red-400" />
                             <div className="mb-1">
-                              <span className="text-[9px] text-red-500 font-medium">{dayShifts.filter(s => !(s as any).is_standby && (() => { const r = staffRoleMap.get(s.assigned_user_id || ""); return r !== "assistant"; })()).length}/{getHeadcountTarget(type, dateStr, headcountLimits)}</span>
+                              <span className="text-[9px] text-red-500 font-medium">{dayShifts.filter(s => !(s as any).is_standby && !(s as any).is_external && (() => { const r = staffRoleMap.get(s.assigned_user_id || ""); return r !== "assistant"; })()).length}/{getHeadcountTarget(type, dateStr, headcountLimits)}</span>
                             </div>
                           </>
                         )}
