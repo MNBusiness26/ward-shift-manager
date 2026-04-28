@@ -436,7 +436,7 @@ export type Database = {
     }
     Enums: {
       app_role: "nurse" | "assistant" | "manager" | "assistant_manager"
-      availability_type: "block" | "vacation"
+      availability_type: "block" | "vacation" | "leave"
       request_status: "pending" | "approved" | "declined"
       shift_type: "morning" | "evening" | "night"
       swap_status: "pending" | "peer_accepted" | "manager_approved" | "denied"
@@ -568,7 +568,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["nurse", "assistant", "manager", "assistant_manager"],
-      availability_type: ["block", "vacation"],
+      availability_type: ["block", "vacation", "leave"],
       request_status: ["pending", "approved", "declined"],
       shift_type: ["morning", "evening", "night"],
       swap_status: ["pending", "peer_accepted", "manager_approved", "denied"],
