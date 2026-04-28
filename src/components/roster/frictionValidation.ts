@@ -160,10 +160,11 @@ export function countsTowardHeadcount(role?: string | null): boolean {
  * Check headcount for a given date/type.
  * Returns true if headcount exceeds the day-aware target.
  * On Call shifts do NOT count.
+ * External (Not at Ward) shifts do NOT count toward headcount.
  * Assistants do NOT count toward headcount capacity.
  */
 export function isOverHeadcount(
-  shifts: Array<{ date: string; type: string; assigned_user_id: string | null; is_standby?: boolean }>,
+  shifts: Array<{ date: string; type: string; assigned_user_id: string | null; is_standby?: boolean; is_external?: boolean }>,
   date: string,
   type: string,
   customLimits?: Record<string, number>,
@@ -174,6 +175,7 @@ export function isOverHeadcount(
   const count = shifts.filter((s) => {
     if (s.date !== date || s.type !== type || !s.assigned_user_id) return false;
     if ((s as any).is_standby) return false;
+    if ((s as any).is_external) return false;
     if (staffRoles) {
       const role = staffRoles.get(s.assigned_user_id);
       if (!countsTowardHeadcount(role)) return false;
