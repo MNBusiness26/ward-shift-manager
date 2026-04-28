@@ -251,26 +251,48 @@ export default function Requests() {
                             )}
                           </div>
                         </div>
-                        {req.status === "pending" && (
-                          <div className="flex gap-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-green-600 hover:bg-green-50"
-                              onClick={() => handleAvailability.mutate({ id: req.id, status: "approved" })}
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                              onClick={() => handleAvailability.mutate({ id: req.id, status: "declined" })}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex gap-1">
+                          {req.status === "pending" && (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-green-600 hover:bg-green-50"
+                                title={t("requests.approve")}
+                                onClick={() => handleAvailability.mutate({ id: req.id, status: "approved" })}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                title={t("common.cancel")}
+                                onClick={() => handleAvailability.mutate({ id: req.id, status: "declined" })}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            title={t("requests.editRequest")}
+                            onClick={() => openEdit(req)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            title={t("requests.cancelBlock")}
+                            onClick={() => setConfirmDelete(req)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
