@@ -61,6 +61,7 @@ interface ShiftFormData {
   comments: string;
   is_draft: boolean;
   is_standby: boolean;
+  is_external: boolean;
 }
 
 const defaultForm = (date?: string): ShiftFormData => ({
@@ -74,6 +75,7 @@ const defaultForm = (date?: string): ShiftFormData => ({
   comments: "",
   is_draft: true,
   is_standby: false,
+  is_external: false,
 });
 
 interface CopiedWeek {
@@ -240,6 +242,7 @@ export default function Roster() {
         comments: form.comments || null,
         is_draft: form.is_draft,
         is_standby: form.is_standby,
+        is_external: form.is_external,
       };
       if (editingShift) {
         const { error } = await supabase.from("shifts").update(payload).eq("id", editingShift);
@@ -594,6 +597,7 @@ export default function Roster() {
       comments: shift.comments || "",
       is_draft: shift.is_draft,
       is_standby: shift.is_standby ?? false,
+      is_external: (shift as any).is_external ?? false,
     });
     setDialogOpen(true);
   };
@@ -1031,6 +1035,16 @@ export default function Roster() {
             <div className="flex items-center justify-between">
               <Label>{t("roster.onCallShift")}</Label>
               <Switch checked={form.is_standby} onCheckedChange={(v) => setForm((f) => ({ ...f, is_standby: v, assigned_user_id: "" }))} />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>{locale === "he" ? "מחוץ למחלקה" : "Not at Ward"}</Label>
+                <p className="text-xs text-muted-foreground">
+                  {locale === "he" ? "לא נספר במכסת המחלקה, אך נספר ב-FTE" : "Excluded from ward headcount, still counts toward FTE"}
+                </p>
+              </div>
+              <Switch checked={form.is_external} onCheckedChange={(v) => setForm((f) => ({ ...f, is_external: v }))} />
             </div>
 
             <div className="space-y-2">
