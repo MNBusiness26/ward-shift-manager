@@ -386,7 +386,89 @@ export default function Requests() {
         </TabsContent>
       </Tabs>
 
-      {/* Info confirmation popup */}
+      {/* Edit availability request dialog */}
+      <Dialog open={!!editingReq} onOpenChange={(open) => !open && setEditingReq(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("requests.editRequest")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t("avail.blockDates")}</Label>
+              <Select value={editForm.request_type} onValueChange={(v) => setEditForm((f) => ({ ...f, request_type: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="block">🚫 {t("avail.blockDates")}</SelectItem>
+                  <SelectItem value="vacation">🌴 {t("avail.vacationLabel")}</SelectItem>
+                  <SelectItem value="leave">✈️ {t("avail.leaveLabel")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>{t("avail.startDate")}</Label>
+                <Input type="date" value={editForm.date} onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("avail.endDate")}</Label>
+                <Input type="date" value={editForm.end_date} onChange={(e) => setEditForm((f) => ({ ...f, end_date: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("avail.blockShifts")}</Label>
+              <div className="flex gap-3">
+                {(["morning", "evening", "night"] as const).map((s) => (
+                  <label key={s} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={editForm.blocked_shifts.includes(s)}
+                      onCheckedChange={(c) =>
+                        setEditForm((f) => ({
+                          ...f,
+                          blocked_shifts: c ? [...f.blocked_shifts, s] : f.blocked_shifts.filter((x) => x !== s),
+                        }))
+                      }
+                    />
+                    {t(`shift.${s}`)}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("avail.reasonOptional")}</Label>
+              <Textarea
+                value={editForm.reason}
+                placeholder={t("avail.reasonPlaceholder")}
+                onChange={(e) => setEditForm((f) => ({ ...f, reason: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditingReq(null)}>{t("common.cancel")}</Button>
+            <Button onClick={() => saveEdit.mutate()} disabled={saveEdit.isPending}>
+              {t("requests.saveChanges")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm cancel/delete block */}
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("requests.cancelBlock")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("requests.cancelBlockConfirm")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmDelete && deleteRequest.mutate(confirmDelete.id)}
+            >
+              {t("requests.cancelBlock")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={!!infoPopup} onOpenChange={(open) => !open && setInfoPopup(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
