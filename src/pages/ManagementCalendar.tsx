@@ -13,7 +13,7 @@ import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval }
 import { formatLocale } from "@/i18n/dateLocale";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle, Sun, Sunset, Moon, Phone, Ban } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, ShieldAlert, AlertTriangle, Sun, Sunset, Moon, Phone, Ban, ArrowLeftRight } from "lucide-react";
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
 import { validateShiftFriction, isOverHeadcount, getHeadcountTarget } from "@/components/roster/frictionValidation";
@@ -58,6 +58,7 @@ interface ShiftFormData {
   comments: string;
   is_draft: boolean;
   is_standby: boolean;
+  is_external: boolean;
 }
 
 const defaultForm = (date?: string, type?: ShiftType): ShiftFormData => ({
@@ -71,6 +72,7 @@ const defaultForm = (date?: string, type?: ShiftType): ShiftFormData => ({
   comments: "",
   is_draft: true,
   is_standby: false,
+  is_external: false,
 });
 
 export default function ManagementCalendar() {
@@ -193,6 +195,7 @@ export default function ManagementCalendar() {
         comments: form.comments || null,
         is_draft: form.is_draft,
         is_standby: form.is_standby,
+        is_external: form.is_external,
       };
       if (editingShift) {
         const { error } = await supabase.from("shifts").update(payload).eq("id", editingShift);
@@ -258,6 +261,7 @@ export default function ManagementCalendar() {
       comments: shift.comments || "",
       is_draft: shift.is_draft,
       is_standby: (shift as any).is_standby ?? false,
+      is_external: (shift as any).is_external ?? false,
     });
     setDialogOpen(true);
   };
