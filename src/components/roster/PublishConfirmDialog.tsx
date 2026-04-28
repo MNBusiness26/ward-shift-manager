@@ -11,10 +11,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, ChevronDown, ChevronUp, Eye, ShieldAlert, Users, Clock, UserX } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp, Eye, ShieldAlert, Users, Clock, UserX, Moon } from "lucide-react";
 import { format } from "date-fns";
 import { getHeadcountTarget } from "./frictionValidation";
-import { validateExclusions } from "./frictionValidation";
+import { validateExclusions, validateRestPeriod } from "./frictionValidation";
 
 interface StaffProfile {
   id: string;
@@ -37,7 +37,7 @@ interface ShiftInfo {
 }
 
 interface PreFlightWarning {
-  category: "headcount" | "exclusion" | "fte" | "responsible";
+  category: "headcount" | "exclusion" | "fte" | "responsible" | "rest";
   severity: "amber" | "red";
   message: string;
 }
@@ -125,6 +125,52 @@ function runPreFlightChecks(
     }
   }
 
+  // 3b. Back-to-back rest violations across post-publish state.
+  // Check each draft assignment against the user's other shifts within ±1 day.
+  const byUser = new Map<string, ShiftInfo[]>();
+  for (const s of assigned) {
+    if (!s.assigned_user_id) continue;
+    if (!byUser.has(s.assigned_user_id)) byUser.set(s.assigned_user_id, []);
+    byUser.get(s.assigned_user_id)!.push(s);
+  }
+  const seenRestKeys = new Set<string>();
+  for (const s of drafts) {
+    if (!s.assigned_user_id || s.is_standby) continue;
+    const profile = staffMap.get(s.assigned_user_id);
+    if (!profile) continue;
+    const userShifts = (byUser.get(s.assigned_user_id) ?? []).filter((o) => o.id !== s.id);
+    const restWarnings = validateRestPeriod(
+      {
+        assignedUserId: s.assigned_user_id,
+        date: s.date,
+        start: s.start_time,
+        end: s.end_time,
+        isStandby: s.is_standby,
+        excludeShiftId: s.id,
+      },
+      userShifts.map((o) => ({
+        id: o.id,
+        date: o.date,
+        start_time: o.start_time,
+        end_time: o.end_time,
+        type: o.type,
+        assigned_user_id: o.assigned_user_id,
+        is_standby: o.is_standby,
+      })),
+      profile.full_name,
+    );
+    for (const w of restWarnings) {
+      const key = `${s.assigned_user_id}|${s.date}|${s.type}`;
+      if (seenRestKeys.has(key)) continue;
+      seenRestKeys.add(key);
+      warnings.push({
+        category: "rest",
+        severity: "red",
+        message: `${format(new Date(s.date + "T00:00"), "EEE, MMM d")} ${s.type}: ${w.message}`,
+      });
+    }
+  }
+
   // 4. Missing responsible nurse
   const grouped = new Map<string, ShiftInfo[]>();
   for (const s of assigned) {
@@ -150,6 +196,7 @@ const categoryMeta: Record<string, { label: string; icon: React.ReactNode }> = {
   headcount: { label: "Headcount Gaps", icon: <Users className="h-4 w-4" /> },
   exclusion: { label: "Staffing Conflicts", icon: <ShieldAlert className="h-4 w-4" /> },
   fte: { label: "FTE Overages", icon: <Clock className="h-4 w-4" /> },
+  rest: { label: "Insufficient Rest (Back-to-Back)", icon: <Moon className="h-4 w-4" /> },
   responsible: { label: "Missing Responsible Nurse", icon: <UserX className="h-4 w-4" /> },
 };
 

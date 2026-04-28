@@ -13,8 +13,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertTriangle } from "lucide-react";
 
 export interface FrictionWarning {
-  type: "fte" | "role_rule";
+  type: "fte" | "role_rule" | "rest";
   message: string;
+  severity?: "amber" | "red";
 }
 
 interface FrictionDialogProps {
@@ -44,22 +45,36 @@ export function FrictionDialog({ open, onOpenChange, warnings, onConfirm, isPend
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-4 pt-2">
-              {warnings.map((w, i) => (
-                <div key={i} className="rounded-lg border border-amber-300/50 bg-amber-50 dark:bg-amber-950/20 p-3 space-y-2">
-                  <p className="text-sm font-medium text-amber-800 dark:text-amber-300">{w.message}</p>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <Checkbox
-                      checked={!!checked[i]}
-                      onCheckedChange={(v) => setChecked((prev) => ({ ...prev, [i]: !!v }))}
-                    />
-                    <span className="text-sm text-foreground">
-                      {w.type === "fte"
-                        ? "I agree to override this FTE limit."
-                        : "I agree to override this policy."}
-                    </span>
-                  </label>
-                </div>
-              ))}
+              {warnings.map((w, i) => {
+                const isRed = w.severity === "red";
+                return (
+                  <div
+                    key={i}
+                    className={`rounded-lg border p-3 space-y-2 ${
+                      isRed
+                        ? "border-destructive/40 bg-destructive/10"
+                        : "border-amber-300/50 bg-amber-50 dark:bg-amber-950/20"
+                    }`}
+                  >
+                    <p className={`text-sm font-medium ${isRed ? "text-destructive" : "text-amber-800 dark:text-amber-300"}`}>
+                      {w.message}
+                    </p>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={!!checked[i]}
+                        onCheckedChange={(v) => setChecked((prev) => ({ ...prev, [i]: !!v }))}
+                      />
+                      <span className="text-sm text-foreground">
+                        {w.type === "fte"
+                          ? "I agree to override this FTE limit."
+                          : w.type === "rest"
+                          ? "I agree to override this rest period rule."
+                          : "I agree to override this policy."}
+                      </span>
+                    </label>
+                  </div>
+                );
+              })}
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
