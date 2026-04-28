@@ -501,28 +501,18 @@ export default function ManagementCalendar() {
         </CardContent>
       </Card>
 
-      <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-        <div className="flex items-center gap-1">
-          <Badge variant="default" className="text-[10px] font-bold">{t("common.name")} ★</Badge>
+      <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+        <div className="flex items-center gap-1.5">
+          <Star className="h-3.5 w-3.5 fill-current text-foreground" />
           <span>{t("roster.responsibleNurse")}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Badge variant="secondary" className="text-[10px]">{t("common.name")}</Badge>
-          <span>{t("roster.assigned")}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Badge variant="secondary" className="text-[10px]">
-            {t("common.name")} <span className="bg-amber-500/20 text-amber-700 rounded-sm px-0.5">S</span>
-          </Badge>
+        <div className="flex items-center gap-1.5">
+          <Phone className="h-3.5 w-3.5 text-blue-500" />
           <span>{t("calendar.onCall")}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Badge variant="secondary" className="text-[10px] opacity-60 border-dashed">{t("common.name")} D</Badge>
-          <span>{t("roster.draft")}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Lock className="h-3 w-3" />
-          <span>{t("roster.blockedDate")}</span>
+        <div className="flex items-center gap-1.5">
+          <ArrowLeftRight className="h-3.5 w-3.5" />
+          <span>{t("common.external") || "Out of ward"}</span>
         </div>
       </div>
 
