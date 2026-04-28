@@ -347,7 +347,7 @@ export default function ManagementCalendar() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 flex flex-col min-h-[calc(100vh-6rem)]">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Management Calendar</h1>
         <div className="flex gap-1.5 md:gap-2 flex-wrap">
