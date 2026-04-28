@@ -4,10 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Check, X, CalendarOff, ArrowLeftRight, Clock, Filter } from "lucide-react";
+import { Check, X, CalendarOff, ArrowLeftRight, Clock, Filter, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -25,6 +30,61 @@ export default function Requests() {
   const [availFilter, setAvailFilter] = useState<"pending" | "all">("pending");
   const [swapFilter, setSwapFilter] = useState<"pending_all" | "peer_accepted" | "all">("pending_all");
   const [infoPopup, setInfoPopup] = useState<{ title: string; message: string } | null>(null);
+  const [editingReq, setEditingReq] = useState<any>(null);
+  const [confirmDelete, setConfirmDelete] = useState<any>(null);
+  const [editForm, setEditForm] = useState<{ date: string; end_date: string; reason: string; blocked_shifts: string[]; request_type: string }>({
+    date: "",
+    end_date: "",
+    reason: "",
+    blocked_shifts: [],
+    request_type: "block",
+  });
+
+  const openEdit = (req: any) => {
+    setEditingReq(req);
+    setEditForm({
+      date: req.date ?? "",
+      end_date: req.end_date ?? req.date ?? "",
+      reason: req.reason ?? "",
+      blocked_shifts: req.blocked_shifts ?? [],
+      request_type: req.request_type ?? "block",
+    });
+  };
+
+  const saveEdit = useMutation({
+    mutationFn: async () => {
+      if (!editingReq) return;
+      if (!editForm.date) throw new Error("Start date required");
+      const payload: any = {
+        date: editForm.date,
+        end_date: editForm.end_date || editForm.date,
+        reason: editForm.reason || null,
+        blocked_shifts: editForm.blocked_shifts,
+        request_type: editForm.request_type,
+      };
+      const { error } = await supabase.from("availability_requests").update(payload).eq("id", editingReq.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["manager-avail-requests"] });
+      setEditingReq(null);
+      toast.success(t("requests.requestUpdated"));
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteRequest = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("availability_requests").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["manager-avail-requests"] });
+      setConfirmDelete(null);
+      toast.success(t("requests.requestDeleted"));
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   const { data: availRequests = [] } = useQuery({
     queryKey: ["manager-avail-requests", availFilter],
@@ -191,26 +251,48 @@ export default function Requests() {
                             )}
                           </div>
                         </div>
-                        {req.status === "pending" && (
-                          <div className="flex gap-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-green-600 hover:bg-green-50"
-                              onClick={() => handleAvailability.mutate({ id: req.id, status: "approved" })}
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                              onClick={() => handleAvailability.mutate({ id: req.id, status: "declined" })}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex gap-1">
+                          {req.status === "pending" && (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-green-600 hover:bg-green-50"
+                                title={t("requests.approve")}
+                                onClick={() => handleAvailability.mutate({ id: req.id, status: "approved" })}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                title={t("common.cancel")}
+                                onClick={() => handleAvailability.mutate({ id: req.id, status: "declined" })}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            title={t("requests.editRequest")}
+                            onClick={() => openEdit(req)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            title={t("requests.cancelBlock")}
+                            onClick={() => setConfirmDelete(req)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
@@ -304,7 +386,89 @@ export default function Requests() {
         </TabsContent>
       </Tabs>
 
-      {/* Info confirmation popup */}
+      {/* Edit availability request dialog */}
+      <Dialog open={!!editingReq} onOpenChange={(open) => !open && setEditingReq(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("requests.editRequest")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t("avail.blockDates")}</Label>
+              <Select value={editForm.request_type} onValueChange={(v) => setEditForm((f) => ({ ...f, request_type: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="block">🚫 {t("avail.blockDates")}</SelectItem>
+                  <SelectItem value="vacation">🌴 {t("avail.vacationLabel")}</SelectItem>
+                  <SelectItem value="leave">✈️ {t("avail.leaveLabel")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>{t("avail.startDate")}</Label>
+                <Input type="date" value={editForm.date} onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("avail.endDate")}</Label>
+                <Input type="date" value={editForm.end_date} onChange={(e) => setEditForm((f) => ({ ...f, end_date: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("avail.blockShifts")}</Label>
+              <div className="flex gap-3">
+                {(["morning", "evening", "night"] as const).map((s) => (
+                  <label key={s} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={editForm.blocked_shifts.includes(s)}
+                      onCheckedChange={(c) =>
+                        setEditForm((f) => ({
+                          ...f,
+                          blocked_shifts: c ? [...f.blocked_shifts, s] : f.blocked_shifts.filter((x) => x !== s),
+                        }))
+                      }
+                    />
+                    {t(`shift.${s}`)}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("avail.reasonOptional")}</Label>
+              <Textarea
+                value={editForm.reason}
+                placeholder={t("avail.reasonPlaceholder")}
+                onChange={(e) => setEditForm((f) => ({ ...f, reason: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditingReq(null)}>{t("common.cancel")}</Button>
+            <Button onClick={() => saveEdit.mutate()} disabled={saveEdit.isPending}>
+              {t("requests.saveChanges")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm cancel/delete block */}
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("requests.cancelBlock")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("requests.cancelBlockConfirm")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmDelete && deleteRequest.mutate(confirmDelete.id)}
+            >
+              {t("requests.cancelBlock")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={!!infoPopup} onOpenChange={(open) => !open && setInfoPopup(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
