@@ -364,14 +364,14 @@ export default function ManagementCalendar() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <Button variant="ghost" size="icon" onClick={() => setWeekStart(locale === "he" ? addWeeks(weekStart, 1) : subWeeks(weekStart, 1))} title={locale === "he" ? "שבוע הבא" : "Previous week"}>
-            <ChevronLeft className="h-4 w-4" />
+          <Button variant="ghost" size="icon" onClick={() => setWeekStart(subWeeks(weekStart, 1))} title={locale === "he" ? "שבוע קודם" : "Previous week"}>
+            {locale === "he" ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
           <CardTitle className="text-base">
             {formatLocale(weekStart, "MMM d", locale)} — {formatLocale(weekEnd, "MMM d, yyyy", locale)}
           </CardTitle>
-          <Button variant="ghost" size="icon" onClick={() => setWeekStart(locale === "he" ? subWeeks(weekStart, 1) : addWeeks(weekStart, 1))} title={locale === "he" ? "שבוע קודם" : "Next week"}>
-            <ChevronRight className="h-4 w-4" />
+          <Button variant="ghost" size="icon" onClick={() => setWeekStart(addWeeks(weekStart, 1))} title={locale === "he" ? "שבוע הבא" : "Next week"}>
+            {locale === "he" ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         </CardHeader>
         <CardContent className="overflow-hidden p-0">
