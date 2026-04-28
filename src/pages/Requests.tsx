@@ -242,7 +242,17 @@ export default function Requests() {
                               {req.reason && ` — "${req.reason}"`}
                             </p>
                             <Badge variant="outline" className="text-[10px] capitalize">
-                              {(req as any).request_type === "vacation" ? `🌴 ${t("avail.vacationLabel")}` : (req as any).request_type === "leave" ? `✈️ ${t("avail.leaveLabel")}` : `🚫 ${t("avail.blockDates")}`}
+                              {(() => {
+                                const rt = (req as any).request_type;
+                                switch (rt) {
+                                  case "vacation": return `🌴 ${t("avail.vacationLabel")}`;
+                                  case "leave": return `✈️ ${t("avail.leaveLabel")}`;
+                                  case "sick_leave": return `🩹 ${t("avail.sickLeaveLabel")}`;
+                                  case "maternity_leave": return `🍼 ${t("avail.maternityLeaveLabel")}`;
+                                  case "yearly_leave": return `🌴 ${t("avail.yearlyLeaveLabel")}`;
+                                  default: return `🚫 ${t("avail.blockDates")}`;
+                                }
+                              })()}
                             </Badge>
                             {blockedLabel && (
                               <Badge variant="outline" className="text-[10px]">
@@ -400,7 +410,9 @@ export default function Requests() {
                 <SelectContent>
                   <SelectItem value="block">🚫 {t("avail.blockDates")}</SelectItem>
                   <SelectItem value="vacation">🌴 {t("avail.vacationLabel")}</SelectItem>
-                  <SelectItem value="leave">✈️ {t("avail.leaveLabel")}</SelectItem>
+                  <SelectItem value="sick_leave">🩹 {t("avail.sickLeaveLabel")}</SelectItem>
+                  <SelectItem value="maternity_leave">🍼 {t("avail.maternityLeaveLabel")}</SelectItem>
+                  <SelectItem value="yearly_leave">🌴 {t("avail.yearlyLeaveLabel")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

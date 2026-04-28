@@ -19,9 +19,10 @@ import {
   addMonths, subMonths, isWithinInterval, parseISO, isToday,
 } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, X, CalendarOff, Palmtree, Plane } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, CalendarOff, Palmtree, Plane, Bandage, Baby } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
+import { isLeaveType } from "@/lib/availabilityTypes";
 
 const SHIFT_TYPES = ["morning", "evening", "night"] as const;
 
@@ -34,15 +35,21 @@ const statusColors: Record<string, string> = {
 const typeIcons: Record<string, React.ReactNode> = {
   block: <CalendarOff className="h-3 w-3 shrink-0" />,
   vacation: <Palmtree className="h-3 w-3 shrink-0" />,
-  leave: <Plane className="h-3 w-3 shrink-0" />,
+  leave: <Plane className="h-3 w-3 shrink-0" />, // legacy
+  sick_leave: <Bandage className="h-3 w-3 shrink-0" />,
+  maternity_leave: <Baby className="h-3 w-3 shrink-0" />,
+  yearly_leave: <Palmtree className="h-3 w-3 shrink-0" />,
 };
 
-type AvailType = "block" | "vacation" | "leave";
+type AvailType = "block" | "vacation" | "sick_leave" | "maternity_leave" | "yearly_leave";
 
-const typeLabelKey: Record<AvailType, string> = {
+const typeLabelKey: Record<string, string> = {
   block: "avail.blockDates",
   vacation: "avail.vacationLabel",
   leave: "avail.leaveLabel",
+  sick_leave: "avail.sickLeaveLabel",
+  maternity_leave: "avail.maternityLeaveLabel",
+  yearly_leave: "avail.yearlyLeaveLabel",
 };
 
 export default function Availability() {
@@ -142,7 +149,7 @@ export default function Availability() {
     if (type === "vacation") {
       return req.status === "approved" ? "bg-blue-100 border-blue-300" : "bg-blue-50 border-blue-200";
     }
-    if (type === "leave") {
+    if (isLeaveType(type)) {
       return req.status === "approved" ? "bg-purple-100 border-purple-300" : "bg-purple-50 border-purple-200";
     }
     return req.status === "approved" ? "bg-destructive/10 border-destructive/30" : "bg-yellow-50 border-yellow-200";
@@ -257,7 +264,7 @@ export default function Availability() {
                         </p>
                         <Badge variant="outline" className="text-[9px] md:text-[10px] capitalize">
                           {typeIcons[rType]}
-                          <span className="ms-1">{t(typeLabelKey[rType as AvailType] || "avail.blockDates")}</span>
+                          <span className="ms-1">{t(typeLabelKey[rType] || "avail.blockDates")}</span>
                         </Badge>
                         {blockedLabel && (
                           <Badge variant="outline" className="text-[9px] md:text-[10px]">
@@ -301,8 +308,14 @@ export default function Availability() {
                     <SelectItem value="vacation">
                       <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.vacationLabel")}</span>
                     </SelectItem>
-                    <SelectItem value="leave">
-                      <span className="flex items-center gap-2"><Plane className="h-3 w-3" /> {t("avail.leaveLabel")}</span>
+                    <SelectItem value="sick_leave">
+                      <span className="flex items-center gap-2"><Bandage className="h-3 w-3" /> {t("avail.sickLeaveLabel")}</span>
+                    </SelectItem>
+                    <SelectItem value="maternity_leave">
+                      <span className="flex items-center gap-2"><Baby className="h-3 w-3" /> {t("avail.maternityLeaveLabel")}</span>
+                    </SelectItem>
+                    <SelectItem value="yearly_leave">
+                      <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.yearlyLeaveLabel")}</span>
                     </SelectItem>
                   </SelectContent>
                 </Select>

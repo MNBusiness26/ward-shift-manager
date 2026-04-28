@@ -22,7 +22,7 @@ import {
   Sun, Sunset, Moon, TrendingUp, ArrowLeftRight, CalendarOff,
   Calendar, Users, Star, ChevronLeft, ChevronRight, UserPlus,
   Lock, CheckCircle, AlertTriangle, Check, X, ClipboardCheck, Palmtree, Plane,
-  Pencil, Trash2,
+  Pencil, Trash2, Bandage, Baby,
 } from "lucide-react";
 import {
   format, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
@@ -78,7 +78,7 @@ export default function StaffStats() {
 
   // Proxy request dialog state
   const [proxyOpen, setProxyOpen] = useState(false);
-  const [proxyType, setProxyType] = useState<"block" | "vacation" | "leave">("block");
+  const [proxyType, setProxyType] = useState<"block" | "vacation" | "sick_leave" | "maternity_leave" | "yearly_leave">("block");
   const [proxyDate, setProxyDate] = useState("");
   const [proxyEndDate, setProxyEndDate] = useState("");
   const [proxyReason, setProxyReason] = useState("");
@@ -614,7 +614,16 @@ export default function StaffStats() {
                           {ar.end_date && ar.end_date !== ar.date && (
                              <span className="text-muted-foreground"> — {formatLocale(new Date(ar.end_date), "MMM d", locale)}</span>
                           )}
-                          <Badge variant="outline" className="ms-2 capitalize text-xs">{ar.request_type}</Badge>
+                          <Badge variant="outline" className="ms-2 capitalize text-xs">{(() => {
+                            switch (ar.request_type) {
+                              case "vacation": return t("common.vacation");
+                              case "leave": return t("common.leave");
+                              case "sick_leave": return t("common.sickLeave");
+                              case "maternity_leave": return t("common.maternityLeave");
+                              case "yearly_leave": return t("common.yearlyLeave");
+                              default: return t("common.block");
+                            }
+                          })()}</Badge>
                           {blockedLabel && (
                              <span className="ms-2 text-xs text-muted-foreground">({blockedLabel} {t("common.only")})</span>
                           )}
@@ -719,7 +728,16 @@ export default function StaffStats() {
                           {ar.end_date && ar.end_date !== ar.date && (
                             <span className="text-muted-foreground"> — {format(new Date(ar.end_date), "MMM d")}</span>
                           )}
-                           <Badge variant="outline" className="ms-2 capitalize text-xs">{ar.request_type === "vacation" ? t("common.vacation") : ar.request_type === "leave" ? t("common.leave") : t("common.block")}</Badge>
+                          <Badge variant="outline" className="ms-2 capitalize text-xs">{(() => {
+                            switch (ar.request_type) {
+                              case "vacation": return t("common.vacation");
+                              case "leave": return t("common.leave");
+                              case "sick_leave": return t("common.sickLeave");
+                              case "maternity_leave": return t("common.maternityLeave");
+                              case "yearly_leave": return t("common.yearlyLeave");
+                              default: return t("common.block");
+                            }
+                          })()}</Badge>
                           {blockedLabel && (
                             <span className="ms-2 text-xs text-muted-foreground">({blockedLabel} {t("common.only")})</span>
                           )}
@@ -766,8 +784,14 @@ export default function StaffStats() {
                   <SelectItem value="vacation">
                     <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.vacationLabel")}</span>
                   </SelectItem>
-                  <SelectItem value="leave">
-                    <span className="flex items-center gap-2"><Plane className="h-3 w-3" /> {t("avail.leaveLabel")}</span>
+                  <SelectItem value="sick_leave">
+                    <span className="flex items-center gap-2"><Bandage className="h-3 w-3" /> {t("avail.sickLeaveLabel")}</span>
+                  </SelectItem>
+                  <SelectItem value="maternity_leave">
+                    <span className="flex items-center gap-2"><Baby className="h-3 w-3" /> {t("avail.maternityLeaveLabel")}</span>
+                  </SelectItem>
+                  <SelectItem value="yearly_leave">
+                    <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.yearlyLeaveLabel")}</span>
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -859,7 +883,9 @@ export default function StaffStats() {
                 <SelectContent>
                   <SelectItem value="block">🚫 {t("avail.blockDates")}</SelectItem>
                   <SelectItem value="vacation">🌴 {t("avail.vacationLabel")}</SelectItem>
-                  <SelectItem value="leave">✈️ {t("avail.leaveLabel")}</SelectItem>
+                  <SelectItem value="sick_leave">🩹 {t("avail.sickLeaveLabel")}</SelectItem>
+                  <SelectItem value="maternity_leave">🍼 {t("avail.maternityLeaveLabel")}</SelectItem>
+                  <SelectItem value="yearly_leave">🌴 {t("avail.yearlyLeaveLabel")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
