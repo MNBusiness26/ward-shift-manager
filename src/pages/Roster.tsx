@@ -753,10 +753,10 @@ export default function Roster() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={() => setViewStart(subWeeks(viewStart, 1))} title="Previous week">
+            <Button variant="ghost" size="icon" onClick={() => setViewStart(locale === "he" ? addWeeks(viewStart, 1) : subWeeks(viewStart, 1))} title={locale === "he" ? "שבוע הבא" : "Previous week"}>
               <ChevronsLeft className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => setViewStart(subDays(viewStart, 1))} title="Previous day">
+            <Button variant="ghost" size="icon" onClick={() => setViewStart(locale === "he" ? addDays(viewStart, 1) : subDays(viewStart, 1))} title={locale === "he" ? "יום הבא" : "Previous day"}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
           </div>
@@ -764,10 +764,10 @@ export default function Roster() {
             {formatLocale(viewStart, "MMM d", locale)} — {formatLocale(viewEnd, "MMM d, yyyy", locale)}
           </CardTitle>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={() => setViewStart(addDays(viewStart, 1))} title="Next day">
+            <Button variant="ghost" size="icon" onClick={() => setViewStart(locale === "he" ? subDays(viewStart, 1) : addDays(viewStart, 1))} title={locale === "he" ? "יום קודם" : "Next day"}>
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => setViewStart(addWeeks(viewStart, 1))} title="Next week">
+            <Button variant="ghost" size="icon" onClick={() => setViewStart(locale === "he" ? subWeeks(viewStart, 1) : addWeeks(viewStart, 1))} title={locale === "he" ? "שבוע קודם" : "Next week"}>
               <ChevronsRight className="h-4 w-4" />
             </Button>
           </div>
