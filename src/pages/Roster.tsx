@@ -613,6 +613,15 @@ export default function Roster() {
       return b.date === date;
     });
 
+  const getBlockType = (userId: string, date: string): "vacation" | "block" | null => {
+    const match = blockedDates.find((b) => {
+      if (b.user_id !== userId) return false;
+      if (b.end_date) return date >= b.date && date <= b.end_date;
+      return b.date === date;
+    });
+    return (match?.request_type as "vacation" | "block" | undefined) ?? null;
+  };
+
   const isDateBlocked = (dateStr: string) => hardBlockedDates.includes(dateStr);
 
   const getStaffForDropdown = () => {
