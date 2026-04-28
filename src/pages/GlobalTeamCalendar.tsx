@@ -7,7 +7,7 @@ import {
   eachDayOfInterval, addMonths, subMonths, isToday, isSameMonth,
 } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Users, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, Star, Phone, ArrowLeftRight } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
 
@@ -140,13 +140,15 @@ export default function GlobalTeamCalendar() {
                                     {typeShifts.map((s) => {
                                       const profile = s.assigned_profile as any;
                                       const isStandby = s.is_standby;
+                                      const isExternal = (s as any).is_external;
                                       const isResp = s.is_responsible_on_shift || profile?.is_responsible;
                                       const firstName = profile?.full_name?.split(" ")[0] || "?";
                                       return (
-                                        <span key={s.id} className={`text-[10px] leading-tight ${isStandby ? "opacity-50 italic" : ""} ${isResp ? "font-bold" : ""}`}>
+                                        <span key={s.id} className={`text-[10px] leading-tight inline-flex items-center ${isStandby ? "opacity-70" : ""} ${isResp ? "font-bold" : ""}`}>
+                                          {isExternal && <ArrowLeftRight className="me-0.5 h-2.5 w-2.5 inline" />}
                                           {firstName}
-                                          {isResp && <Star className="inline h-2 w-2 ms-0.5 -mt-0.5" />}
-                                          {isStandby && <span className="text-[8px] ms-0.5">OC</span>}
+                                          {isResp && <Star className="ms-0.5 h-2.5 w-2.5 inline fill-current" />}
+                                          {isStandby && <Phone className="ms-0.5 h-2.5 w-2.5 inline text-blue-500" />}
                                         </span>
                                       );
                                     })}
