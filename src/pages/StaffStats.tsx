@@ -265,6 +265,59 @@ export default function StaffStats() {
     );
   };
 
+  // Edit / Delete availability request
+  const [editingReq, setEditingReq] = useState<any>(null);
+  const [confirmDelete, setConfirmDelete] = useState<any>(null);
+  const [editForm, setEditForm] = useState<{ date: string; end_date: string; reason: string; blocked_shifts: string[]; request_type: string }>({
+    date: "", end_date: "", reason: "", blocked_shifts: [], request_type: "block",
+  });
+
+  const openEdit = (req: any) => {
+    setEditingReq(req);
+    setEditForm({
+      date: req.date ?? "",
+      end_date: req.end_date ?? req.date ?? "",
+      reason: req.reason ?? "",
+      blocked_shifts: req.blocked_shifts ?? [],
+      request_type: req.request_type ?? "block",
+    });
+  };
+
+  const saveEdit = useMutation({
+    mutationFn: async () => {
+      if (!editingReq) return;
+      if (!editForm.date) throw new Error("Start date required");
+      const payload: any = {
+        date: editForm.date,
+        end_date: editForm.end_date || editForm.date,
+        reason: editForm.reason || null,
+        blocked_shifts: editForm.blocked_shifts,
+        request_type: editForm.request_type,
+      };
+      const { error } = await supabase.from("availability_requests").update(payload).eq("id", editingReq.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-stats-avail"] });
+      setEditingReq(null);
+      toast.success(t("requests.requestUpdated"));
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteRequest = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("availability_requests").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-stats-avail"] });
+      setConfirmDelete(null);
+      toast.success(t("requests.requestDeleted"));
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const fte = selectedProfile?.target_fte_percent ?? 1;
   let expectedShifts: number;
   if (mode === "weekly") {
