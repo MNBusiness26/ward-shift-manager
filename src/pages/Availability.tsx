@@ -149,7 +149,7 @@ export default function Availability() {
     if (type === "vacation") {
       return req.status === "approved" ? "bg-blue-100 border-blue-300" : "bg-blue-50 border-blue-200";
     }
-    if (type === "leave") {
+    if (isLeaveType(type)) {
       return req.status === "approved" ? "bg-purple-100 border-purple-300" : "bg-purple-50 border-purple-200";
     }
     return req.status === "approved" ? "bg-destructive/10 border-destructive/30" : "bg-yellow-50 border-yellow-200";
