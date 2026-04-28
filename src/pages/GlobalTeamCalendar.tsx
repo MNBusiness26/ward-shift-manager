@@ -177,12 +177,17 @@ export default function GlobalTeamCalendar() {
         ))}
         <div className="flex items-center gap-1">
           <span className="font-bold text-foreground text-[11px]">{t("common.name")}</span>
-          <Star className="h-2.5 w-2.5" />
+          <Star className="h-2.5 w-2.5 fill-current" />
           <span>{t("calendar.responsible")}</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="italic opacity-50 text-[11px]">{t("common.name")} OC</span>
+          <span className="text-[11px]">{t("common.name")}</span>
+          <Phone className="h-2.5 w-2.5 text-blue-500" />
           <span>{t("calendar.onCall")}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <ArrowLeftRight className="h-2.5 w-2.5" />
+          <span>{t("common.external") || "External"}</span>
         </div>
       </div>
     </div>
