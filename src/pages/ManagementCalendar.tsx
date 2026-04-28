@@ -142,7 +142,7 @@ export default function ManagementCalendar() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("availability_requests")
-        .select("user_id, date, end_date")
+        .select("user_id, date, end_date, request_type")
         .eq("status", "approved")
         .lte("date", format(weekEnd, "yyyy-MM-dd"))
         .or(`end_date.gte.${format(weekStart, "yyyy-MM-dd")},end_date.is.null`);
