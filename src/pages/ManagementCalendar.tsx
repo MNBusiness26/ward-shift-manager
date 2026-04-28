@@ -412,7 +412,7 @@ export default function ManagementCalendar() {
               {shiftTypes.map((type) => {
                 const Icon = type === "morning" ? Eye : type === "evening" ? Star : Lock;
                 return (
-                <tr key={type} className="border-t">
+                <tr key={type} className="border-t" style={{ height: `${100 / 3}%` }}>
                   <td className={`sticky left-0 z-20 w-[50px] min-w-[50px] overflow-hidden border-r bg-card p-1.5 font-semibold shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[90px] md:min-w-[90px] md:p-2 ${shiftTextColors[type]}`}>
                     <span className="hidden md:inline">{shiftLabels[type]}</span>
                     <span className="md:hidden flex items-center gap-0.5">
