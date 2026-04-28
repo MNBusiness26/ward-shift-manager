@@ -264,7 +264,7 @@ export default function Availability() {
                         </p>
                         <Badge variant="outline" className="text-[9px] md:text-[10px] capitalize">
                           {typeIcons[rType]}
-                          <span className="ms-1">{t(typeLabelKey[rType as AvailType] || "avail.blockDates")}</span>
+                          <span className="ms-1">{t(typeLabelKey[rType] || "avail.blockDates")}</span>
                         </Badge>
                         {blockedLabel && (
                           <Badge variant="outline" className="text-[9px] md:text-[10px]">
