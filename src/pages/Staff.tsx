@@ -493,7 +493,7 @@ export default function Staff() {
               </div>
 
               <div className="space-y-2">
-                <span className="text-xs font-medium text-muted-foreground">Weekdays</span>
+                <span className="text-xs font-medium text-muted-foreground">{t("staff.weekdays")}</span>
                 <div className="flex gap-1">
                   {DAY_LABELS.map((label, idx) => {
                     const excluded = editForm.excluded_days.includes(idx);
@@ -518,9 +518,9 @@ export default function Staff() {
             </div>
 
             <div className="flex gap-2 justify-end">
-              <Button variant="ghost" onClick={() => setEditDialog(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setEditDialog(false)}>{t("common.cancel")}</Button>
               <Button onClick={() => updateProfile.mutate()} disabled={updateProfile.isPending}>
-                Save Changes
+                {t("staff.saveChanges")}
               </Button>
             </div>
           </div>
