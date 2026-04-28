@@ -1107,7 +1107,7 @@ export default function Roster() {
                   {getStaffForDropdown().map((s) => {
                     const blocked = isBlocked(s.id, form.date);
                     const blockType = blocked ? getBlockType(s.id, form.date) : null;
-                    const blockLabel = blockType === "vacation" ? t("common.vacation") : blockType === "leave" ? t("common.leave") : t("roster.blocked");
+                    const blockLabel = blockTypeLabel(blockType);
                     return (
                       <SelectItem key={s.id} value={s.id} disabled={blocked}>
                         {s.full_name}{s.kind === "pending" ? " (Pending)" : ""} {blocked ? `🚫 ${blockLabel}` : ""}
