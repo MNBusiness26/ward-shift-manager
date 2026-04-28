@@ -58,7 +58,7 @@ export default function GlobalTeamCalendar() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
-        .select("*, assigned_profile:assigned_user_id(full_name, is_responsible), manager_profile:manager_on_duty_id(full_name)")
+        .select("*, assigned_profile:assigned_user_id(full_name, is_responsible, role), manager_profile:manager_on_duty_id(full_name)")
         .eq("is_draft", false)
         .gte("date", format(calendarStart, "yyyy-MM-dd"))
         .lte("date", format(calendarEnd, "yyyy-MM-dd"))
