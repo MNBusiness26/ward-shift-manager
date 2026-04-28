@@ -635,7 +635,7 @@ export default function Roster() {
   };
 
   // Friction pre-save check
-  const handleSaveWithFriction = () => {
+  const handleSaveWithFriction = async () => {
     if (!form.assigned_user_id) {
       saveShift.mutate();
       return;
@@ -643,12 +643,30 @@ export default function Roster() {
     const weekShiftsForUser = shifts.filter(
       (s) => s.assigned_user_id === form.assigned_user_id && (editingShift ? s.id !== editingShift : true)
     ).length;
+
+    // Fetch user's neighboring shifts (±1 day) from DB to validate rest period
+    // across week boundaries (e.g. Sunday night → Monday morning).
+    const dateObj = new Date(form.date + "T00:00");
+    const prevDay = format(new Date(dateObj.getTime() - 86400000), "yyyy-MM-dd");
+    const nextDay = format(new Date(dateObj.getTime() + 86400000), "yyyy-MM-dd");
+    const { data: neighborShifts } = await supabase
+      .from("shifts")
+      .select("id, date, start_time, end_time, type, assigned_user_id, is_standby")
+      .eq("assigned_user_id", form.assigned_user_id)
+      .gte("date", prevDay)
+      .lte("date", nextDay);
+
     const warnings = validateShiftFriction({
       assignedUserId: form.assigned_user_id,
       shiftType: form.type,
       shiftDate: form.date,
+      shiftStartTime: form.start_time,
+      shiftEndTime: form.end_time,
+      isStandby: form.is_standby,
+      editingShiftId: editingShift,
       weekShiftsForUser,
       staffProfiles: staff as any[],
+      allShifts: (neighborShifts as any[]) ?? [],
     });
     if (warnings.length > 0) {
       setFrictionWarnings(warnings);
