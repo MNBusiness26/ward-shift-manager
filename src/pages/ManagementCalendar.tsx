@@ -444,39 +444,42 @@ export default function ManagementCalendar() {
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`relative z-0 border-l p-2 align-top ${blocked ? "cursor-not-allowed bg-muted/50" : `${shiftColors[type]} cursor-pointer hover:opacity-80`} ${overHeadcount ? "ring-2 ring-inset ring-amber-400/60" : ""}`}
+                        className={`relative z-0 border-l p-2 align-top ${blocked ? "cursor-not-allowed bg-muted/50" : `${shiftColors[type]} cursor-pointer hover:opacity-80`} ${overHeadcount ? "bg-red-50/50 border border-red-200" : ""}`}
                         onClick={() => !blocked && handleCellClick(dateStr, type)}
                       >
                         {overHeadcount && (
-                          <div className="flex items-center gap-0.5 mb-1">
-                            <AlertTriangle className="h-3 w-3 text-amber-500" />
-                            <span className="text-[9px] text-amber-600 font-medium">{dayShifts.filter(s => !(s as any).is_standby && (() => { const r = staffRoleMap.get(s.assigned_user_id || ""); return r !== "assistant"; })()).length}/{getHeadcountTarget(type, dateStr, headcountLimits)}</span>
-                          </div>
+                          <>
+                            <AlertTriangle className="absolute top-1 right-1 h-3 w-3 text-red-400" />
+                            <div className="mb-1">
+                              <span className="text-[9px] text-red-500 font-medium">{dayShifts.filter(s => !(s as any).is_standby && (() => { const r = staffRoleMap.get(s.assigned_user_id || ""); return r !== "assistant"; })()).length}/{getHeadcountTarget(type, dateStr, headcountLimits)}</span>
+                            </div>
+                          </>
                         )}
                         {dayShifts.length === 0 ? (
                           <span className="text-xs text-muted-foreground italic">{blocked ? "🔒" : "—"}</span>
                         ) : (
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex flex-wrap gap-0.5">
                             {dayShifts.map((s) => {
                               const profile = staff.find((p) => p.id === s.assigned_user_id);
                               const assistantRole = isAssistant(profile?.role ?? profile?.app_role);
                               const isExternal = (s as any).is_external;
+                              const isStandby = (s as any).is_standby;
                               return (
                               <Badge
                                 key={s.id}
                                 variant={s.is_responsible_on_shift ? "default" : "secondary"}
-                                className={`text-xs ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
+                                className={`text-[11px] px-1.5 py-0 leading-tight shadow-none ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
                                   isExternal
                                     ? "bg-slate-50 border-slate-200 text-slate-400 opacity-80"
-                                    : (s as any).is_standby
-                                    ? "bg-transparent border-2 border-dashed border-current"
+                                    : isStandby
+                                    ? "bg-blue-50/60 border-l-4 border-blue-400 border-t-0 border-r-0 border-b-0 rounded-sm text-foreground"
                                     : s.is_draft ? "opacity-60 border-dashed" : "ring-1 ring-current/20"
-                                } ${assistantRole && !s.is_responsible_on_shift && !isExternal ? "bg-muted text-muted-foreground border-muted-foreground/20" : ""}`}
+                                } ${assistantRole && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-gray-100/50 text-muted-foreground border-muted-foreground/20" : ""}`}
                               >
                                 {isExternal && <ArrowLeftRight className="mr-0.5 h-2.5 w-2.5 inline" />}
                                 {getFirstName(s)}
                                 {s.is_responsible_on_shift && <Star className="ml-0.5 h-2.5 w-2.5 inline fill-current" />}
-                                {(s as any).is_standby && <Phone className="ml-0.5 h-2.5 w-2.5 inline" />}
+                                {isStandby && <Phone className="ml-0.5 h-2.5 w-2.5 inline" />}
                               </Badge>
                               );
                             })}
