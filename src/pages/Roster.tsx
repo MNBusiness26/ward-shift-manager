@@ -895,11 +895,12 @@ export default function Roster() {
                         {dateBlocked && dayShifts.length === 0 && !blocked && (
                           <span className="text-[10px] text-muted-foreground">🔒</span>
                         )}
-                        {blocked && dayShifts.length === 0 && (
-                          <span className="text-[10px] text-destructive">
-                            {(() => { const bt = getBlockType(member.id, dateStr); return bt === "vacation" ? t("common.vacation") : bt === "leave" ? t("common.leave") : t("roster.blocked"); })()}
-                          </span>
-                        )}
+                        {blocked && dayShifts.length === 0 && (() => {
+                          const bt = getBlockType(member.id, dateStr);
+                          const label = bt === "vacation" ? t("common.vacation") : bt === "leave" ? t("common.leave") : t("roster.blocked");
+                          const cls = bt === "leave" ? "text-purple-600" : bt === "vacation" ? "text-amber-600" : "text-destructive";
+                          return <span className={`text-[10px] ${cls}`}>{label}</span>;
+                        })()}
                         {dayShifts.map((s) => {
                           const isExternal = (s as any).is_external;
                           return (
