@@ -130,7 +130,7 @@ export function AppSidebar() {
             <SidebarGroupLabel className="text-sidebar-foreground/60 text-[10px] uppercase tracking-wider">{t("nav.management")}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {managerItems.map((item) => {
+                {managerItems.filter((it: any) => !it.managerOnly || isManager).map((item) => {
                   const active = isActive(item.url);
                   return (
                     <SidebarMenuItem key={item.url}>
