@@ -640,17 +640,19 @@ export default function ManagementCalendar() {
                 <SelectContent>
                   <SelectItem value="__unassigned__">{t("roster.unassigned")}</SelectItem>
                   {getStaffForDropdown().map((s) => {
-                    const userBlocked = blockedDates.some((b) => {
+                    const userBlocked = blockedDates.some((b: any) => {
                       if (b.user_id !== s.id) return false;
                       if (b.end_date) return form.date >= b.date && form.date <= b.end_date;
                       return b.date === form.date;
                     });
+                    const blockType = userBlocked ? getBlockTypeForUser(s.id, form.date) : null;
+                    const blockLabel = blockType === "vacation" ? t("common.vacation") : t("roster.blocked");
                     return (
                       <SelectItem key={s.id} value={s.id} disabled={userBlocked}>
                         <span className="flex items-center gap-1">
                           {userBlocked && <Ban className="h-3 w-3 text-destructive" />}
                           {s.full_name}{(s as any).kind === "pending" ? " (Pending)" : ""}
-                          {userBlocked ? ` — ${t("roster.blocked")}` : ""}
+                          {userBlocked ? ` — ${blockLabel}` : ""}
                         </span>
                       </SelectItem>
                     );
