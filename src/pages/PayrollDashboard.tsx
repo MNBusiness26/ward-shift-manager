@@ -51,14 +51,13 @@ export default function PayrollDashboard() {
   const endStr = format(end, "yyyy-MM-dd");
   const monthLabel = format(month, "MMMM yyyy", { locale: dateLocale });
 
-  // 1. Active staff
+  // 1. All staff (active + pending activation)
   const { data: staff = [] } = useQuery({
     queryKey: ["payroll-staff"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name")
-        .eq("is_active", true)
+        .select("id, full_name, is_active")
         .order("full_name");
       if (error) throw error;
       return data;
