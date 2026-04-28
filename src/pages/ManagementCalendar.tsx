@@ -363,7 +363,7 @@ export default function ManagementCalendar() {
       </div>
 
       <Card className="flex-1 flex flex-col">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardHeader className="flex flex-row items-center justify-between py-2 px-4">
           <Button variant="ghost" size="icon" onClick={() => setWeekStart(subWeeks(weekStart, 1))} title={locale === "he" ? "שבוע קודם" : "Previous week"}>
             {locale === "he" ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
