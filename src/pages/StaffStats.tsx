@@ -16,11 +16,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Sun, Sunset, Moon, TrendingUp, ArrowLeftRight, CalendarOff,
   Calendar, Users, Star, ChevronLeft, ChevronRight, UserPlus,
   Lock, CheckCircle, AlertTriangle, Check, X, ClipboardCheck, Palmtree, Plane,
+  Pencil, Trash2,
 } from "lucide-react";
 import {
   format, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
@@ -262,6 +264,59 @@ export default function StaffStats() {
       prev.includes(shift) ? prev.filter((s) => s !== shift) : [...prev, shift]
     );
   };
+
+  // Edit / Delete availability request
+  const [editingReq, setEditingReq] = useState<any>(null);
+  const [confirmDelete, setConfirmDelete] = useState<any>(null);
+  const [editForm, setEditForm] = useState<{ date: string; end_date: string; reason: string; blocked_shifts: string[]; request_type: string }>({
+    date: "", end_date: "", reason: "", blocked_shifts: [], request_type: "block",
+  });
+
+  const openEdit = (req: any) => {
+    setEditingReq(req);
+    setEditForm({
+      date: req.date ?? "",
+      end_date: req.end_date ?? req.date ?? "",
+      reason: req.reason ?? "",
+      blocked_shifts: req.blocked_shifts ?? [],
+      request_type: req.request_type ?? "block",
+    });
+  };
+
+  const saveEdit = useMutation({
+    mutationFn: async () => {
+      if (!editingReq) return;
+      if (!editForm.date) throw new Error("Start date required");
+      const payload: any = {
+        date: editForm.date,
+        end_date: editForm.end_date || editForm.date,
+        reason: editForm.reason || null,
+        blocked_shifts: editForm.blocked_shifts,
+        request_type: editForm.request_type,
+      };
+      const { error } = await supabase.from("availability_requests").update(payload).eq("id", editingReq.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-stats-avail"] });
+      setEditingReq(null);
+      toast.success(t("requests.requestUpdated"));
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteRequest = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("availability_requests").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-stats-avail"] });
+      setConfirmDelete(null);
+      toast.success(t("requests.requestDeleted"));
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   const fte = selectedProfile?.target_fte_percent ?? 1;
   let expectedShifts: number;
@@ -672,9 +727,17 @@ export default function StaffStats() {
                             <Badge variant="outline" className="ms-2 text-[10px]">Manager</Badge>
                           )}
                         </div>
-                         <Badge variant="outline" className={statusColor[ar.status] || ""}>
-                          {t(`status.${ar.status}`)}
-                        </Badge>
+                         <div className="flex items-center gap-2">
+                           <Badge variant="outline" className={statusColor[ar.status] || ""}>
+                            {t(`status.${ar.status}`)}
+                          </Badge>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(ar)} title={t("requests.editRequest")}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setConfirmDelete(ar)} title={t("requests.cancelBlock")}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
@@ -777,6 +840,89 @@ export default function StaffStats() {
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={() => { setVerifyShift(reauditConfirm); setReauditConfirm(null); }}>
               {t("common.continue")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit availability request dialog */}
+      <Dialog open={!!editingReq} onOpenChange={(open) => !open && setEditingReq(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("requests.editRequest")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t("common.type")}</Label>
+              <Select value={editForm.request_type} onValueChange={(v) => setEditForm((f) => ({ ...f, request_type: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="block">🚫 {t("avail.blockDates")}</SelectItem>
+                  <SelectItem value="vacation">🌴 {t("avail.vacationLabel")}</SelectItem>
+                  <SelectItem value="leave">✈️ {t("avail.leaveLabel")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>{t("avail.startDate")}</Label>
+                <Input type="date" value={editForm.date} onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("avail.endDate")}</Label>
+                <Input type="date" value={editForm.end_date} onChange={(e) => setEditForm((f) => ({ ...f, end_date: e.target.value }))} />
+              </div>
+            </div>
+            {editForm.request_type === "block" && (
+              <div className="space-y-2">
+                <Label>{t("avail.blockShifts")}</Label>
+                <div className="flex gap-3">
+                  {(["morning", "evening", "night"] as const).map((s) => (
+                    <label key={s} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={editForm.blocked_shifts.includes(s)}
+                        onCheckedChange={(c) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            blocked_shifts: c ? [...f.blocked_shifts, s] : f.blocked_shifts.filter((x) => x !== s),
+                          }))
+                        }
+                      />
+                      {t(`shift.${s}`)}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>{t("avail.reasonOptional")}</Label>
+              <Textarea
+                value={editForm.reason}
+                placeholder={t("avail.reasonPlaceholder")}
+                onChange={(e) => setEditForm((f) => ({ ...f, reason: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditingReq(null)}>{t("common.cancel")}</Button>
+            <Button onClick={() => saveEdit.mutate()} disabled={saveEdit.isPending}>
+              {t("requests.saveChanges")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm delete */}
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("requests.cancelBlock")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("requests.cancelBlockConfirm")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmDelete && deleteRequest.mutate(confirmDelete.id)}>
+              {t("requests.cancelBlock")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
