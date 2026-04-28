@@ -196,6 +196,7 @@ const categoryMeta: Record<string, { label: string; icon: React.ReactNode }> = {
   headcount: { label: "Headcount Gaps", icon: <Users className="h-4 w-4" /> },
   exclusion: { label: "Staffing Conflicts", icon: <ShieldAlert className="h-4 w-4" /> },
   fte: { label: "FTE Overages", icon: <Clock className="h-4 w-4" /> },
+  rest: { label: "Insufficient Rest (Back-to-Back)", icon: <Moon className="h-4 w-4" /> },
   responsible: { label: "Missing Responsible Nurse", icon: <UserX className="h-4 w-4" /> },
 };
 
