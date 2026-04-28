@@ -163,6 +163,25 @@ export default function MyCalendar() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">{t("page.myCalendar")}</h1>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => exportMyAttendancePDF({
+              fullName: profile?.full_name || "",
+              monthLabel: formatLocale(currentMonth, "MMMM yyyy", locale),
+              shifts: shifts.filter((s) => {
+                const d = new Date(s.date);
+                return d >= startOfMonth(currentMonth) && d <= endOfMonth(currentMonth);
+              }) as any,
+              leave: (myLeaves as any[]).map((l) => ({
+                type: l.request_type, date: l.date, end_date: l.end_date, reason: l.reason,
+              })),
+            })}
+          >
+            <FileDown className="h-4 w-4" />
+            <span className="hidden sm:inline">{t("payroll.exportMyAttendance")}</span>
+          </Button>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setSyncOpen(true)}>
             <RefreshCw className="h-4 w-4" />
             <span className="hidden sm:inline">{hasSyncLink ? t("calendar.manageSync") : t("calendar.syncCalendar")}</span>
