@@ -431,9 +431,9 @@ export default function Staff() {
                 <Select value={editForm.role} onValueChange={(v) => setEditForm((f) => ({ ...f, role: v as AppRole }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="nurse">{t("staff.nurse")}</SelectItem>
-                    <SelectItem value="assistant">{t("staff.assistant")}</SelectItem>
-                    <SelectItem value="manager">{t("staff.manager")}</SelectItem>
+                    {ROLE_OPTIONS.filter((r) => r !== "assistant_manager").map((r) => (
+                      <SelectItem key={r} value={r}>{getRoleLabel(r, locale)}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
