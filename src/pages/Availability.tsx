@@ -165,6 +165,10 @@ export default function Availability() {
     if (dayReqs.length === 0) return "hover:bg-accent/50";
     const req = dayReqs[0];
     const type = (req as any).request_type || "block";
+    if (type === "preference") {
+      // Soft "placeholder" look — dashed blue
+      return "shift-preferred-placeholder";
+    }
     if (type === "vacation") {
       return req.status === "approved" ? "bg-blue-100 border-blue-300" : "bg-blue-50 border-blue-200";
     }
