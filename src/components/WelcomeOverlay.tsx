@@ -9,9 +9,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PartyPopper } from "lucide-react";
+import { getRoleLabel } from "@/lib/roles";
+import { useTranslation } from "@/i18n/useTranslation";
 
 export function WelcomeOverlay() {
   const { user, profile, roles } = useAuth();
+  const { locale } = useTranslation();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -26,8 +29,8 @@ export function WelcomeOverlay() {
   if (!profile) return null;
 
   const roleLabel = roles.length > 0
-    ? roles.map((r) => r.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())).join(", ")
-    : profile.role || "Staff";
+    ? roles.map((r) => getRoleLabel(r, locale)).join(", ")
+    : (profile.role ? getRoleLabel(profile.role, locale) : "Staff");
 
   const ftePercent = Math.round(Number(profile.target_fte_percent) * 100);
 

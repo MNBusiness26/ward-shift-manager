@@ -17,6 +17,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
+import { getRoleLabel, ROLE_OPTIONS } from "@/lib/roles";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -27,7 +28,7 @@ const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function Staff() {
   const { isManager } = useAuth();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [editDialog, setEditDialog] = useState(false);
@@ -229,9 +230,9 @@ export default function Staff() {
           <p className="text-sm font-medium">{member.full_name}</p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             {member.roles?.map((role: string) => (
-              <Badge key={role} variant="outline" className={`text-xs capitalize ${role === "manager" ? "bg-primary/10 text-primary border-primary/20" : ""}`}>
+              <Badge key={role} variant="outline" className={`text-xs ${role === "manager" ? "bg-primary/10 text-primary border-primary/20" : ""}`}>
                 {role === "manager" && <Shield className="mr-0.5 h-2.5 w-2.5" />}
-                {role}
+                {getRoleLabel(role, locale)}
               </Badge>
             ))}
             <span className="text-xs text-muted-foreground">
@@ -279,7 +280,7 @@ export default function Staff() {
           </Badge>
         </div>
         <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-muted-foreground">
-          <span className="capitalize">{entry.app_role}</span>
+          <span>{getRoleLabel(entry.app_role, locale)}</span>
           <span className="flex items-center gap-1">
             <Mail className="h-3 w-3" /> {entry.email}
           </span>
@@ -430,9 +431,9 @@ export default function Staff() {
                 <Select value={editForm.role} onValueChange={(v) => setEditForm((f) => ({ ...f, role: v as AppRole }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="nurse">{t("staff.nurse")}</SelectItem>
-                    <SelectItem value="assistant">{t("staff.assistant")}</SelectItem>
-                    <SelectItem value="manager">{t("staff.manager")}</SelectItem>
+                    {ROLE_OPTIONS.filter((r) => r !== "assistant_manager").map((r) => (
+                      <SelectItem key={r} value={r}>{getRoleLabel(r, locale)}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

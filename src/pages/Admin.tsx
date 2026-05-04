@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { LocalizationPanel } from "@/components/admin/LocalizationPanel";
+import { getRoleLabel, ROLE_OPTIONS } from "@/lib/roles";
 
 const ADMIN_EMAIL = "michael.nejman@gmail.com";
 
@@ -193,7 +194,7 @@ export default function Admin() {
     addStaff.mutate();
   };
 
-  const roleLabel = (r: string) => r.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const roleLabel = (r: string) => getRoleLabel(r, locale);
 
   const templateVars = ["{{title}}", "{{first_name}}", "{{last_name}}"];
 
@@ -253,10 +254,9 @@ export default function Admin() {
               <Select value={newRole} onValueChange={setNewRole}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="nurse">Nurse</SelectItem>
-                  <SelectItem value="assistant">Assistant</SelectItem>
-                  <SelectItem value="assistant_manager">Assistant Manager</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
+                  {ROLE_OPTIONS.map((r) => (
+                    <SelectItem key={r} value={r}>{getRoleLabel(r, locale)}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -295,10 +295,9 @@ export default function Admin() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="nurse">Nurse</SelectItem>
-                        <SelectItem value="assistant">Assistant</SelectItem>
-                        <SelectItem value="assistant_manager">Assistant Manager</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
+                        {ROLE_OPTIONS.map((r) => (
+                          <SelectItem key={r} value={r}>{getRoleLabel(r, locale)}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   )}
