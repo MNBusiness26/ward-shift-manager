@@ -371,11 +371,30 @@ export default function ManagementCalendar() {
     }
   };
 
+  const handleExportPdf = async () => {
+    if (!calendarRef.current) return;
+    setIsExporting(true);
+    try {
+      const titleStr = `${formatLocale(weekStart, "MMM d", locale)} — ${formatLocale(weekEnd, "MMM d, yyyy", locale)}`;
+      await exportCalendarToPdf({
+        element: calendarRef.current,
+        fileName: `weekly-overview-${format(weekStart, "yyyy-MM-dd")}`,
+        title: `${t("nav.weeklyOverview") || "Weekly Overview"} — ${titleStr}`,
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-2 flex flex-col min-h-[calc(100vh-5rem)]">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-xl font-bold">Management Calendar</h1>
         <div className="flex gap-1.5 md:gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={isExporting}>
+            <FileDown className="h-4 w-4 md:mr-2" />
+            <span className="hidden sm:inline">{t("common.exportPdf") || "Export PDF"}</span>
+          </Button>
           <Button variant="outline" size="sm" onClick={() => { setBulkDate(undefined); setBulkType(undefined); setBulkOpen(true); }}>
             <Users className="h-4 w-4 md:mr-2" />
             <span className="hidden sm:inline">Bulk Assign</span>
@@ -387,7 +406,7 @@ export default function ManagementCalendar() {
         </div>
       </div>
 
-      <Card className="flex-1 flex flex-col">
+      <Card ref={calendarRef} className="flex-1 flex flex-col">
         <CardHeader className="flex flex-row items-center justify-between py-2 px-4">
           <Button variant="ghost" size="icon" onClick={() => setWeekStart(subWeeks(weekStart, 1))} title={locale === "he" ? "שבוע קודם" : "Previous week"}>
             {locale === "he" ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
