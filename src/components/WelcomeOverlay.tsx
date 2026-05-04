@@ -9,9 +9,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PartyPopper } from "lucide-react";
+import { getRoleLabel } from "@/lib/roles";
+import { useTranslation } from "@/i18n/useTranslation";
 
 export function WelcomeOverlay() {
   const { user, profile, roles } = useAuth();
+  const { locale } = useTranslation();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
