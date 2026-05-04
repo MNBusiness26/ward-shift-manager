@@ -50,10 +50,14 @@ export default function Admin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("staff_directory")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .select("*");
       if (error) throw error;
-      return data;
+      return [...(data ?? [])].sort((a: any, b: any) =>
+        compareStaff(
+          { full_name: a.full_name || "", role: a.app_role },
+          { full_name: b.full_name || "", role: b.app_role }
+        )
+      );
     },
   });
 
