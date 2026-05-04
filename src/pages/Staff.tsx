@@ -280,7 +280,7 @@ export default function Staff() {
           </Badge>
         </div>
         <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-muted-foreground">
-          <span className="capitalize">{entry.app_role}</span>
+          <span>{getRoleLabel(entry.app_role, locale)}</span>
           <span className="flex items-center gap-1">
             <Mail className="h-3 w-3" /> {entry.email}
           </span>
