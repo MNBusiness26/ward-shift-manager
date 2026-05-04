@@ -22,6 +22,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useHolidayMap } from "@/hooks/useHolidays";
+import { HolidayCellBackground, HolidayCornerIcon } from "@/components/holidays/HolidayCell";
 import {
   Dialog,
   DialogContent,
