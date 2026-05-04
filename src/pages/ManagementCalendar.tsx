@@ -17,7 +17,7 @@ import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, Shield
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
 import { validateShiftFriction, isOverHeadcount, getHeadcountTarget } from "@/components/roster/frictionValidation";
-import { compareStaff, isAssistant } from "@/components/roster/staffSort";
+import { compareStaff, compareShiftAssignment, isAssistant } from "@/components/roster/staffSort";
 import { useStaffPool } from "@/hooks/useStaffPool";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
