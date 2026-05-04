@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
 import { getRoleLabel, ROLE_OPTIONS } from "@/lib/roles";
+import { compareStaff } from "@/components/roster/staffSort";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
