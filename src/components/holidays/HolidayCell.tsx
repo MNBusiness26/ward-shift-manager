@@ -25,13 +25,16 @@ const Dove = ({ className = "" }: { className?: string }) => (
   </svg>
 );
 
+// Israeli flag in true colors (white background, blue stripes & Star of David)
 const IsraeliFlag = ({ className = "" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="3" y="5" width="18" height="14" rx="1" />
-    <line x1="3" y1="8" x2="21" y2="8" />
-    <line x1="3" y1="16" x2="21" y2="16" />
-    <polygon points="12,10.2 13.6,12.9 10.4,12.9" />
-    <polygon points="12,13.8 10.4,11.1 13.6,11.1" />
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+    <rect x="2.5" y="5" width="19" height="14" rx="1" fill="#ffffff" stroke="#0038b8" strokeWidth="0.6" />
+    <rect x="2.5" y="6.5" width="19" height="2" fill="#0038b8" />
+    <rect x="2.5" y="15.5" width="19" height="2" fill="#0038b8" />
+    <g fill="none" stroke="#0038b8" strokeWidth="0.9" strokeLinejoin="round">
+      <polygon points="12,9.2 14.6,13.6 9.4,13.6" />
+      <polygon points="12,14.4 9.4,10 14.6,10" />
+    </g>
   </svg>
 );
 
