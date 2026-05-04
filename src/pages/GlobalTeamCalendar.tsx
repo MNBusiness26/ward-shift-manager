@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  eachDayOfInterval, addMonths, subMonths, isToday, isSameMonth,
+  eachDayOfInterval, addMonths, subMonths, addWeeks, subWeeks, isToday, isSameMonth,
 } from "date-fns";
 import { useState } from "react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ChevronLeft, ChevronRight, Users, Star, Phone, ArrowLeftRight } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
@@ -37,6 +38,7 @@ const shiftDotColors: Record<string, string> = {
 export default function GlobalTeamCalendar() {
   const { t, locale } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [view, setView] = useState<"month" | "week">("month");
 
   const shiftLabels: Record<string, string> = {
     morning: t("shift.morning"), evening: t("shift.evening"), night: t("shift.night"),
@@ -47,10 +49,15 @@ export default function GlobalTeamCalendar() {
     t("calendar.wed"), t("calendar.thu"), t("calendar.fri"), t("calendar.sat"),
   ];
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+  const isWeek = view === "week";
+  const rangeStart = isWeek
+    ? startOfWeek(currentMonth, { weekStartsOn: 0 })
+    : startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 0 });
+  const rangeEnd = isWeek
+    ? endOfWeek(currentMonth, { weekStartsOn: 0 })
+    : endOfWeek(endOfMonth(currentMonth), { weekStartsOn: 0 });
+  const calendarStart = rangeStart;
+  const calendarEnd = rangeEnd;
   const allDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const { data: shifts = [] } = useQuery({
@@ -84,13 +91,35 @@ export default function GlobalTeamCalendar() {
           {t("page.teamCalendar")}
         </h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => setCurrentMonth((m) => subMonths(m, 1))}>
+          <ToggleGroup
+            type="single"
+            value={view}
+            onValueChange={(v) => v && setView(v as "month" | "week")}
+            size="sm"
+            variant="outline"
+          >
+            <ToggleGroupItem value="month">{t("calendar.month") || "Month"}</ToggleGroupItem>
+            <ToggleGroupItem value="week">{t("calendar.week") || "Week"}</ToggleGroupItem>
+          </ToggleGroup>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() =>
+              setCurrentMonth((m) => (isWeek ? subWeeks(m, 1) : subMonths(m, 1)))
+            }
+          >
             <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
           </Button>
           <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>
-            {t("calendar.thisMonth")}
+            {isWeek ? t("calendar.thisWeek") : t("calendar.thisMonth")}
           </Button>
-          <Button variant="outline" size="icon" onClick={() => setCurrentMonth((m) => addMonths(m, 1))}>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() =>
+              setCurrentMonth((m) => (isWeek ? addWeeks(m, 1) : addMonths(m, 1)))
+            }
+          >
             <ChevronRight className="h-4 w-4 rtl:rotate-180" />
           </Button>
         </div>
@@ -99,7 +128,9 @@ export default function GlobalTeamCalendar() {
       <Card className="flex-1 flex flex-col">
         <CardHeader className="pb-2">
           <CardTitle className="text-base text-center">
-            {formatLocale(currentMonth, "MMMM yyyy", locale)}
+            {isWeek
+              ? `${formatLocale(calendarStart, "d MMM", locale)} – ${formatLocale(calendarEnd, "d MMM yyyy", locale)}`
+              : formatLocale(currentMonth, "MMMM yyyy", locale)}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 flex-1 flex flex-col">
@@ -123,7 +154,7 @@ export default function GlobalTeamCalendar() {
                 <tr key={wi} className="border-t">
                   {week.map((day) => {
                     const dateStr = format(day, "yyyy-MM-dd");
-                    const inMonth = isSameMonth(day, currentMonth);
+                    const inMonth = isWeek || isSameMonth(day, currentMonth);
                     const today = isToday(day);
                     return (
                       <td
