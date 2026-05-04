@@ -23,6 +23,8 @@ import { useStaffPool } from "@/hooks/useStaffPool";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { useHolidayMap } from "@/hooks/useHolidays";
+import { HolidayCornerIcon } from "@/components/holidays/HolidayCell";
 
 type ShiftType = Database["public"]["Enums"]["shift_type"];
 
