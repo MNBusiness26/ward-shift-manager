@@ -263,55 +263,79 @@ export default function Availability() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="px-3 md:px-6">
-          <CardTitle className="text-sm md:text-base">{t("avail.yourRequests")}</CardTitle>
-        </CardHeader>
-        <CardContent className="px-3 md:px-6">
-          {requests.length === 0 ? (
-            <p className="text-xs md:text-sm text-muted-foreground">{t("avail.noRequests")}</p>
-          ) : (
-            <div className="space-y-2">
-              {requests.map((r) => {
-                const rType = (r as any).request_type || "block";
-                const rEnd = (r as any).end_date;
-                const isRange = rEnd && rEnd !== r.date;
-                const blockedLabel = formatBlockedShifts(r);
-                return (
-                  <div key={r.id} className="flex items-start md:items-center justify-between rounded-lg border p-2 md:p-3 gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-                        <p className="text-xs md:text-sm font-medium">
-                          {formatLocale(new Date(r.date), "EEE, MMM d", locale)}
-                          {isRange && ` → ${formatLocale(new Date(rEnd), "EEE, MMM d", locale)}`}
-                        </p>
-                        <Badge variant="outline" className="text-[9px] md:text-[10px] capitalize">
-                          {typeIcons[rType]}
-                          <span className="ms-1">{t(typeLabelKey[rType] || "avail.blockDates")}</span>
-                        </Badge>
-                        {blockedLabel && (
-                          <Badge variant="outline" className="text-[9px] md:text-[10px]">
-                            {blockedLabel} {t("avail.only")}
-                          </Badge>
-                        )}
-                      </div>
-                      {r.reason && <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{r.reason}</p>}
-                    </div>
-                    <div className="flex items-center gap-1 md:gap-2 shrink-0">
-                      <Badge variant="outline" className={`text-[9px] md:text-xs ${statusColors[r.status]}`}>{statusLabel(r.status)}</Badge>
-                      {r.status === "pending" && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteRequest.mutate(r.id)}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+      {(() => {
+        const blockReqs = requests.filter((r: any) => (r.request_type || "block") !== "preference");
+        const prefReqs = requests.filter((r: any) => (r.request_type || "block") === "preference");
+        const renderRow = (r: any) => {
+          const rType = r.request_type || "block";
+          const rEnd = r.end_date;
+          const isRange = rEnd && rEnd !== r.date;
+          const blockedLabel = formatBlockedShifts(r);
+          return (
+            <div key={r.id} className="flex items-start md:items-center justify-between rounded-lg border p-2 md:p-3 gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+                  <p className="text-xs md:text-sm font-medium">
+                    {formatLocale(new Date(r.date), "EEE, MMM d", locale)}
+                    {isRange && ` → ${formatLocale(new Date(rEnd), "EEE, MMM d", locale)}`}
+                  </p>
+                  <Badge variant="outline" className="text-[9px] md:text-[10px] capitalize">
+                    {typeIcons[rType]}
+                    <span className="ms-1">{t(typeLabelKey[rType] || "avail.blockDates")}</span>
+                  </Badge>
+                  {blockedLabel && (
+                    <Badge variant="outline" className="text-[9px] md:text-[10px]">
+                      {blockedLabel} {rType === "preference" ? "" : t("avail.only")}
+                    </Badge>
+                  )}
+                </div>
+                {r.reason && <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{r.reason}</p>}
+              </div>
+              <div className="flex items-center gap-1 md:gap-2 shrink-0">
+                <Badge variant="outline" className={`text-[9px] md:text-xs ${statusColors[r.status]}`}>{statusLabel(r.status)}</Badge>
+                {r.status === "pending" && (
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteRequest.mutate(r.id)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          );
+        };
+
+        return (
+          <>
+            <Card>
+              <CardHeader className="px-3 md:px-6">
+                <CardTitle className="text-sm md:text-base">{t("avail.yourRequests")}</CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 md:px-6">
+                {blockReqs.length === 0 ? (
+                  <p className="text-xs md:text-sm text-muted-foreground">{t("avail.noRequests")}</p>
+                ) : (
+                  <div className="space-y-2">{blockReqs.map(renderRow)}</div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="px-3 md:px-6">
+                <CardTitle className="text-sm md:text-base flex items-center gap-2">
+                  <Star className="h-4 w-4 text-blue-600" />
+                  {t("avail.preferences")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 md:px-6">
+                {prefReqs.length === 0 ? (
+                  <p className="text-xs md:text-sm text-muted-foreground">{t("avail.noPreferences")}</p>
+                ) : (
+                  <div className="space-y-2">{prefReqs.map(renderRow)}</div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        );
+      })()}
 
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
         <DialogContent className="max-w-[95vw] md:max-w-lg">
