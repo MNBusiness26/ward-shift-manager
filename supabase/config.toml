@@ -1,1 +1,4 @@
 project_id = "fveyhlbqdaeffrnmjxtu"
+
+[functions.sync-holidays]
+verify_jwt = false
