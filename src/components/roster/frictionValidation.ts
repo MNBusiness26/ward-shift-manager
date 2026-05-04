@@ -246,7 +246,7 @@ export function validateShiftFriction({
 }
 
 /** Roles that count toward shift headcount capacity (assistants are excluded). */
-export const HEADCOUNT_ROLES = new Set(["nurse", "manager", "assistant_manager"]);
+export const HEADCOUNT_ROLES = new Set(["nurse", "manager", "assistant_manager", "team_leader"]);
 
 /** Returns true if a staff role counts toward headcount capacity. */
 export function countsTowardHeadcount(role?: string | null): boolean {
