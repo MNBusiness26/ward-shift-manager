@@ -26,8 +26,8 @@ export function WelcomeOverlay() {
   if (!profile) return null;
 
   const roleLabel = roles.length > 0
-    ? roles.map((r) => r.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())).join(", ")
-    : profile.role || "Staff";
+    ? roles.map((r) => getRoleLabel(r, locale)).join(", ")
+    : (profile.role ? getRoleLabel(profile.role, locale) : "Staff");
 
   const ftePercent = Math.round(Number(profile.target_fte_percent) * 100);
 
