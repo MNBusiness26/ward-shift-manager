@@ -142,13 +142,6 @@ export default function Staff() {
           }
           await supabase.from("user_roles").insert({ user_id: editMember.id, role: editForm.role });
         }
-
-        const hadAM = (editMember.roles ?? []).includes("assistant_manager");
-        if (editForm.is_assistant_manager && !hadAM) {
-          await supabase.from("user_roles").insert({ user_id: editMember.id, role: "assistant_manager" as AppRole });
-        } else if (!editForm.is_assistant_manager && hadAM) {
-          await supabase.from("user_roles").delete().eq("user_id", editMember.id).eq("role", "assistant_manager");
-        }
       }
     },
     onSuccess: () => {
