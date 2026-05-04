@@ -405,6 +405,8 @@ export default function Admin() {
           </Button>
         </CardContent>
       </Card>
+
+      <LocalizationPanel />
     </div>
   );
 }
