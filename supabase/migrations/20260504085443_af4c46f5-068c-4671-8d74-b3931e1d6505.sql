@@ -1,0 +1,1 @@
+ALTER TYPE public.availability_type ADD VALUE IF NOT EXISTS 'study';
