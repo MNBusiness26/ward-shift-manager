@@ -79,13 +79,10 @@ export const HolidayCellBackground = forwardRef<HTMLDivElement, { holiday: Publi
  * In RTL, day-number is top-right → icon goes top-left.
  * Wrapped with tooltip showing both names.
  */
-export function HolidayCornerIcon({
-  holiday,
-  size = "sm",
-}: {
-  holiday: PublicHoliday | undefined;
-  size?: "sm" | "md";
-}) {
+export const HolidayCornerIcon = forwardRef<
+  HTMLSpanElement,
+  { holiday: PublicHoliday | undefined; size?: "sm" | "md" }
+>(function HolidayCornerIcon({ holiday, size = "sm" }, ref) {
   const { locale } = useTranslation();
   if (!holiday) return null;
   const Icon = ICONS[holiday.category];
@@ -98,6 +95,7 @@ export function HolidayCornerIcon({
       <Tooltip>
         <TooltipTrigger asChild>
           <span
+            ref={ref}
             className="pointer-events-auto absolute top-1 end-1 ltr:right-1 ltr:left-auto rtl:left-1 rtl:right-auto z-10 inline-flex items-center justify-center rounded-sm text-destructive/70 hover:text-destructive"
             aria-label={primary}
           >
@@ -114,4 +112,4 @@ export function HolidayCornerIcon({
       </Tooltip>
     </TooltipProvider>
   );
-}
+});
