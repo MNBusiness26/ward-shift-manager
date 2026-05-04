@@ -190,12 +190,15 @@ export default function Staff() {
     }));
   };
 
-  const hebrewSort = <T extends { full_name?: string | null }>(arr: T[]) =>
+  const sortByRoleAndName = <T extends { full_name?: string | null; roles?: string[]; role?: string | null; app_role?: string | null }>(arr: T[]) =>
     [...arr].sort((a, b) =>
-      (a.full_name || "").localeCompare(b.full_name || "", "he", { sensitivity: "base" })
+      compareStaff(
+        { full_name: a.full_name || "", role: (a.roles?.[0] ?? a.role ?? a.app_role) as any },
+        { full_name: b.full_name || "", role: (b.roles?.[0] ?? b.role ?? b.app_role) as any }
+      )
     );
-  const inactiveProfiles = hebrewSort(staff.filter((s) => !s.is_active));
-  const activeStaff = hebrewSort(staff.filter((s) => s.is_active));
+  const inactiveProfiles = sortByRoleAndName(staff.filter((s) => !s.is_active));
+  const activeStaff = sortByRoleAndName(staff.filter((s) => s.is_active));
   // "Pending" for the demo = unclaimed staff_directory entries (no profile yet)
   const pendingStaff = pendingDirectory;
   const totalRoster = activeStaff.length + pendingStaff.length;
