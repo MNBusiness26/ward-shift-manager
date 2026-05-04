@@ -142,6 +142,7 @@ export default function Availability() {
   const closeDialog = () => {
     setDialogOpen(false); setReason(""); setEndDate("");
     setRequestType("block"); setBlockedShifts([]); setSelectedDate(null);
+    setDialogMode("block");
   };
 
   const toggleShift = (shift: string) => {
