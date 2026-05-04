@@ -914,6 +914,7 @@ export default function Roster() {
                           }
                         }}
                       >
+                        <HolidayCellBackground holiday={holidayMap.get(dateStr)} />
                         {dateBlocked && dayShifts.length === 0 && !blocked && (
                           <span className="text-[10px] text-muted-foreground">🔒</span>
                         )}
