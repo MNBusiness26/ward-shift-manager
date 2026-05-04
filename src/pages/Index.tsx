@@ -8,6 +8,7 @@ import { format, addDays, startOfToday, isSameDay } from "date-fns";
 import { formatLocale } from "@/i18n/dateLocale";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useTranslation } from "@/i18n/useTranslation";
+import { getRoleLabel } from "@/lib/roles";
 
 const shiftIcons: Record<string, React.ElementType> = {
   morning: Sun,
