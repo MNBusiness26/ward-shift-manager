@@ -448,12 +448,6 @@ export default function Staff() {
                 <span className="text-sm">{t("staff.canBeResponsible")}</span>
                 <Switch checked={editForm.is_responsible} onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_responsible: v }))} />
               </div>
-              {isManager && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">{t("staff.assistantManager")}</span>
-                  <Switch checked={editForm.is_assistant_manager} onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_assistant_manager: v }))} />
-                </div>
-              )}
             </div>
 
             {/* Work Exclusions */}
