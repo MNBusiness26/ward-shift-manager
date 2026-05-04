@@ -44,7 +44,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   preference: <Star className="h-3 w-3 shrink-0" />,
 };
 
-type AvailType = "block" | "vacation" | "sick_leave" | "maternity_leave" | "yearly_leave" | "study";
+type AvailType = "block" | "vacation" | "sick_leave" | "maternity_leave" | "yearly_leave" | "study" | "preference";
 
 const typeLabelKey: Record<string, string> = {
   block: "avail.blockDates",
@@ -54,6 +54,7 @@ const typeLabelKey: Record<string, string> = {
   maternity_leave: "avail.maternityLeaveLabel",
   yearly_leave: "avail.yearlyLeaveLabel",
   study: "avail.studyLabel",
+  preference: "avail.preferenceLabel",
 };
 
 export default function Availability() {
