@@ -53,14 +53,6 @@ const ICONS: Record<HolidayCategory, React.FC<{ className?: string }>> = {
  * - Erev (eve): 45deg repeating red stripes
  * Sits absolutely inside the cell (which must be `position: relative`).
  */
-export function HolidayCellBackground({ holiday }: { holiday: PublicHoliday | undefined }) {
-  if (!holiday) return null;
-  const style: React.CSSProperties = holiday.is_eve
-    ? {
-        backgroundImage:
-          "repeating-linear-gradient(45deg, rgba(239,68,68,0.10) 0 6px, transparent 6px 14px)",
-      }
-    : { backgroundColor: "rgba(239, 68, 68, 0.08)" };
 export const HolidayCellBackground = forwardRef<HTMLDivElement, { holiday: PublicHoliday | undefined }>(
   function HolidayCellBackground({ holiday }, ref) {
     if (!holiday) return null;
