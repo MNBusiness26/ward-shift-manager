@@ -22,41 +22,45 @@ export async function exportCalendarToPdf({ element, fileName }: ExportOptions) 
   const bgColor =
     getComputedStyle(document.body).backgroundColor || "#ffffff";
 
-  // Force a wide layout for the capture so flex/grid cells get enough room
-  // and badges don't overlap. The PDF stylesheet below makes the view compact
-  // enough to fit while preserving one staff row per line.
-  const CAPTURE_WIDTH = 2200;
+  // Capture in the same aspect ratio as the landscape PDF page. This keeps the
+  // calendar from becoming an ultra-wide strip with large empty margins above
+  // and below, while still giving each day column enough width for names.
+  const CAPTURE_WIDTH = 1600;
+  const CAPTURE_HEIGHT = 1080;
   const prevWidth = element.style.width;
+  const prevHeight = element.style.height;
   const prevMaxWidth = element.style.maxWidth;
   const prevMinWidth = element.style.minWidth;
+  const prevMaxHeight = element.style.maxHeight;
+  const prevMinHeight = element.style.minHeight;
   const prevDatasetValue = element.getAttribute("data-pdf-export");
   const style = document.createElement("style");
   style.id = "calendar-pdf-export-styles";
   style.textContent = `
     [data-pdf-export="true"] { direction: inherit; }
-    [data-pdf-export="true"] .overflow-hidden { overflow: visible !important; }
-    [data-pdf-export="true"] .flex-1 { flex: none !important; }
-    [data-pdf-export="true"] .h-full { height: auto !important; }
-    [data-pdf-export="true"] table { height: auto !important; min-height: 0 !important; }
+    [data-pdf-export="true"] { height: ${CAPTURE_HEIGHT}px !important; min-height: ${CAPTURE_HEIGHT}px !important; }
+    [data-pdf-export="true"] .overflow-hidden { overflow: hidden !important; }
+    [data-pdf-export="true"] table { height: 100% !important; min-height: 100% !important; }
+    [data-pdf-export="true"] tbody { height: 100% !important; }
     [data-pdf-export="true"] tr { height: auto !important; }
-    [data-pdf-export="true"] td { height: auto !important; min-height: 0 !important; overflow: hidden !important; }
-    [data-pdf-export="true"] .calendar-shift-box { overflow: hidden !important; padding: 2px 4px !important; }
-    [data-pdf-export="true"] .calendar-staff-list { gap: 2px !important; min-width: 0 !important; }
+    [data-pdf-export="true"] td { overflow: hidden !important; }
+    [data-pdf-export="true"] .calendar-shift-box { overflow: hidden !important; padding: 4px 5px !important; }
+    [data-pdf-export="true"] .calendar-staff-list { gap: 4px !important; min-width: 0 !important; }
     [data-pdf-export="true"] .calendar-staff-badge {
       display: flex !important;
       align-items: center !important;
       width: 100% !important;
       max-width: 100% !important;
       min-width: 0 !important;
-      height: 13px !important;
-      min-height: 13px !important;
-      max-height: 13px !important;
-      padding: 0 3px !important;
+      height: 18px !important;
+      min-height: 18px !important;
+      max-height: 18px !important;
+      padding: 1px 5px !important;
       overflow: hidden !important;
       white-space: nowrap !important;
-      line-height: 12px !important;
-      font-size: 8px !important;
-      border-radius: 2px !important;
+      line-height: 16px !important;
+      font-size: 10px !important;
+      border-radius: 4px !important;
     }
     [data-pdf-export="true"] .calendar-staff-name {
       min-width: 0 !important;
@@ -64,11 +68,11 @@ export async function exportCalendarToPdf({ element, fileName }: ExportOptions) 
       overflow: hidden !important;
       text-overflow: ellipsis !important;
       white-space: nowrap !important;
-      line-height: 12px !important;
+      line-height: 16px !important;
     }
     [data-pdf-export="true"] .calendar-staff-badge svg {
-      width: 8px !important;
-      height: 8px !important;
+      width: 10px !important;
+      height: 10px !important;
       flex: 0 0 auto !important;
     }
   `;
@@ -76,8 +80,11 @@ export async function exportCalendarToPdf({ element, fileName }: ExportOptions) 
   document.head.appendChild(style);
   element.setAttribute("data-pdf-export", "true");
   element.style.width = `${CAPTURE_WIDTH}px`;
+  element.style.height = `${CAPTURE_HEIGHT}px`;
   element.style.maxWidth = `${CAPTURE_WIDTH}px`;
   element.style.minWidth = `${CAPTURE_WIDTH}px`;
+  element.style.maxHeight = `${CAPTURE_HEIGHT}px`;
+  element.style.minHeight = `${CAPTURE_HEIGHT}px`;
 
   // Allow layout to settle
   await new Promise((r) => requestAnimationFrame(() => r(null)));
@@ -89,14 +96,18 @@ export async function exportCalendarToPdf({ element, fileName }: ExportOptions) 
       useCORS: true,
       backgroundColor: bgColor,
       width: CAPTURE_WIDTH,
+      height: CAPTURE_HEIGHT,
       windowWidth: CAPTURE_WIDTH,
-      windowHeight: element.scrollHeight,
+      windowHeight: CAPTURE_HEIGHT,
       logging: false,
     });
   } finally {
     element.style.width = prevWidth;
+    element.style.height = prevHeight;
     element.style.maxWidth = prevMaxWidth;
     element.style.minWidth = prevMinWidth;
+    element.style.maxHeight = prevMaxHeight;
+    element.style.minHeight = prevMinHeight;
     if (prevDatasetValue === null) {
       element.removeAttribute("data-pdf-export");
     } else {
