@@ -632,6 +632,7 @@ export default function Roster() {
       case "sick_leave": return t("common.sickLeave");
       case "maternity_leave": return t("common.maternityLeave");
       case "yearly_leave": return t("common.yearlyLeave");
+      case "study": return t("common.study");
       default: return t("roster.blocked");
     }
   };
@@ -639,6 +640,7 @@ export default function Roster() {
   const blockTypeClass = (bt: string | null): string => {
     if (bt === "vacation" || bt === "yearly_leave") return "text-amber-600";
     if (bt === "leave" || bt === "sick_leave" || bt === "maternity_leave") return "text-purple-600";
+    if (bt === "study") return "text-sky-600";
     return "text-destructive";
   };
 

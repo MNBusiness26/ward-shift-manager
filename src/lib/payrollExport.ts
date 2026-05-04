@@ -15,6 +15,7 @@ const LEAVE_LABEL_HE: Record<string, string> = {
   sick_leave: "מחלה",
   maternity_leave: "חופשת לידה",
   yearly_leave: "חופשה שנתית",
+  study: "ימי לימודים",
   vacation: "חופשה",
   block: "חסום",
   leave: "חופשה",
