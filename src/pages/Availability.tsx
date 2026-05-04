@@ -68,6 +68,7 @@ export default function Availability() {
   const [requestType, setRequestType] = useState<AvailType>("block");
   const [blockedShifts, setBlockedShifts] = useState<string[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"block" | "preference">("block");
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
