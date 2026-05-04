@@ -76,8 +76,10 @@ export async function exportCalendarToPdf({
     }
     [data-pdf-export="true"] .overflow-hidden,
     [data-pdf-export="true"] .overflow-x-auto,
-    [data-pdf-export="true"] .overflow-y-auto {
+    [data-pdf-export="true"] .overflow-y-auto,
+    [data-pdf-export="true"] .truncate {
       overflow: visible !important;
+      text-overflow: clip !important;
     }
 
     /* Force fixed table layout with even column widths. */
