@@ -28,7 +28,7 @@ const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function Staff() {
   const { isManager } = useAuth();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [editDialog, setEditDialog] = useState(false);
