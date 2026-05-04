@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
 import { getRoleLabel, ROLE_OPTIONS } from "@/lib/roles";
+import { compareStaff } from "@/components/roster/staffSort";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -39,7 +40,6 @@ export default function Staff() {
     target_fte_percent: 1,
     role: "nurse" as AppRole,
     is_responsible: false,
-    is_assistant_manager: false,
     no_nights: false,
     no_weekends: false,
     excluded_shifts: [] as string[],
@@ -143,13 +143,6 @@ export default function Staff() {
           }
           await supabase.from("user_roles").insert({ user_id: editMember.id, role: editForm.role });
         }
-
-        const hadAM = (editMember.roles ?? []).includes("assistant_manager");
-        if (editForm.is_assistant_manager && !hadAM) {
-          await supabase.from("user_roles").insert({ user_id: editMember.id, role: "assistant_manager" as AppRole });
-        } else if (!editForm.is_assistant_manager && hadAM) {
-          await supabase.from("user_roles").delete().eq("user_id", editMember.id).eq("role", "assistant_manager");
-        }
       }
     },
     onSuccess: () => {
@@ -171,7 +164,7 @@ export default function Staff() {
       target_fte_percent: member.target_fte_percent ?? 1,
       role: (isPending ? member.app_role : member.roles?.[0]) || "nurse",
       is_responsible: !!member.is_responsible,
-      is_assistant_manager: (member.roles ?? []).includes("assistant_manager"),
+      
       no_nights: !!(constraints as any).no_nights,
       no_weekends: !!(constraints as any).no_weekends,
       excluded_shifts: (constraints as any).excluded_shifts || [],
@@ -198,12 +191,15 @@ export default function Staff() {
     }));
   };
 
-  const hebrewSort = <T extends { full_name?: string | null }>(arr: T[]) =>
+  const sortByRoleAndName = <T extends { full_name?: string | null; roles?: string[]; role?: string | null; app_role?: string | null }>(arr: T[]) =>
     [...arr].sort((a, b) =>
-      (a.full_name || "").localeCompare(b.full_name || "", "he", { sensitivity: "base" })
+      compareStaff(
+        { full_name: a.full_name || "", role: (a.roles?.[0] ?? a.role ?? a.app_role) as any },
+        { full_name: b.full_name || "", role: (b.roles?.[0] ?? b.role ?? b.app_role) as any }
+      )
     );
-  const inactiveProfiles = hebrewSort(staff.filter((s) => !s.is_active));
-  const activeStaff = hebrewSort(staff.filter((s) => s.is_active));
+  const inactiveProfiles = sortByRoleAndName(staff.filter((s) => !s.is_active));
+  const activeStaff = sortByRoleAndName(staff.filter((s) => s.is_active));
   // "Pending" for the demo = unclaimed staff_directory entries (no profile yet)
   const pendingStaff = pendingDirectory;
   const totalRoster = activeStaff.length + pendingStaff.length;
@@ -431,7 +427,7 @@ export default function Staff() {
                 <Select value={editForm.role} onValueChange={(v) => setEditForm((f) => ({ ...f, role: v as AppRole }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {ROLE_OPTIONS.filter((r) => r !== "assistant_manager").map((r) => (
+                    {ROLE_OPTIONS.map((r) => (
                       <SelectItem key={r} value={r}>{getRoleLabel(r, locale)}</SelectItem>
                     ))}
                   </SelectContent>
@@ -456,12 +452,6 @@ export default function Staff() {
                 <span className="text-sm">{t("staff.canBeResponsible")}</span>
                 <Switch checked={editForm.is_responsible} onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_responsible: v }))} />
               </div>
-              {isManager && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">{t("staff.assistantManager")}</span>
-                  <Switch checked={editForm.is_assistant_manager} onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_assistant_manager: v }))} />
-                </div>
-              )}
             </div>
 
             {/* Work Exclusions */}

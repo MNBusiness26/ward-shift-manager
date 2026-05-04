@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { compareStaff } from "@/components/roster/staffSort";
 import {
   startOfMonth,
   endOfMonth,
@@ -57,10 +58,21 @@ export default function PayrollDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, is_active")
+        .select("id, full_name, is_active, role")
         .order("full_name");
       if (error) throw error;
-      return data;
+      const { data: roles } = await supabase.from("user_roles").select("user_id, role");
+      const withRoles = (data ?? []).map((p: any) => ({
+        ...p,
+        app_role: (roles ?? []).find((r) => r.user_id === p.id)?.role ?? p.role ?? "nurse",
+      }));
+      withRoles.sort((a, b) =>
+        compareStaff(
+          { full_name: a.full_name || "", role: a.app_role },
+          { full_name: b.full_name || "", role: b.app_role }
+        )
+      );
+      return withRoles;
     },
   });
 

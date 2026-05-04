@@ -52,7 +52,8 @@ export function compareShiftAssignment(a: SortableShiftAssignment, b: SortableSh
   const aRank = getRoleRank(a.role ?? a.app_role);
   const bRank = getRoleRank(b.role ?? b.app_role);
   if (aRank !== bRank) return aRank - bRank;
-  return a.full_name.localeCompare(b.full_name, "he", { sensitivity: "base" });
+  // Alphabetical descending within role
+  return b.full_name.localeCompare(a.full_name, "he", { sensitivity: "base" });
 }
 
 export function compareStaff(a: SortableStaff, b: SortableStaff): number {
@@ -66,8 +67,8 @@ export function compareStaff(a: SortableStaff, b: SortableStaff): number {
   const bRank = getRoleRank(b.role ?? b.app_role);
   if (aRank !== bRank) return aRank - bRank;
 
-  // Tertiary: alphabetical Hebrew
-  return a.full_name.localeCompare(b.full_name, "he", { sensitivity: "base" });
+  // Tertiary: alphabetical descending (Z→A) within role
+  return b.full_name.localeCompare(a.full_name, "he", { sensitivity: "base" });
 }
 
 /** Light grey background class for assistant role badges/cells. */

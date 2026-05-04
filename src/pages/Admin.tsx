@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { LocalizationPanel } from "@/components/admin/LocalizationPanel";
 import { getRoleLabel, ROLE_OPTIONS } from "@/lib/roles";
+import { compareStaff } from "@/components/roster/staffSort";
 
 const ADMIN_EMAIL = "michael.nejman@gmail.com";
 
@@ -50,10 +51,14 @@ export default function Admin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("staff_directory")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .select("*");
       if (error) throw error;
-      return data;
+      return [...(data ?? [])].sort((a: any, b: any) =>
+        compareStaff(
+          { full_name: a.full_name || "", role: a.app_role },
+          { full_name: b.full_name || "", role: b.app_role }
+        )
+      );
     },
   });
 
