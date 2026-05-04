@@ -20,7 +20,7 @@ import {
   addMonths, subMonths, isWithinInterval, parseISO, isToday,
 } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, X, CalendarOff, Palmtree, Plane, Bandage, Baby, GraduationCap } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, CalendarOff, Palmtree, Plane, Bandage, Baby, GraduationCap, Star } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
 import { isLeaveType } from "@/lib/availabilityTypes";
