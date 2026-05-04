@@ -183,7 +183,7 @@ export async function exportCalendarToPdf({
   let canvas: HTMLCanvasElement;
   try {
     canvas = await html2canvas(clone, {
-      scale: 2,
+      scale: 3,
       useCORS: true,
       backgroundColor: bgColor,
       width: SANDBOX_WIDTH,
