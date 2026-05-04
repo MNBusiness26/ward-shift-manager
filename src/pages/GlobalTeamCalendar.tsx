@@ -167,7 +167,26 @@ export default function GlobalTeamCalendar() {
                         {inMonth && (
                           <div className="space-y-1">
                             {shiftTypes.map((type) => {
-                              const typeShifts = getShifts(dateStr, type);
+                              const typeShifts = getShifts(dateStr, type).slice().sort((a, b) => {
+                                const pa = (a as any).assigned_profile;
+                                const pb = (b as any).assigned_profile;
+                                return compareShiftAssignment(
+                                  {
+                                    full_name: pa?.full_name || "",
+                                    is_responsible_on_shift: (a as any).is_responsible_on_shift,
+                                    is_responsible: pa?.is_responsible,
+                                    role: pa?.role,
+                                    is_standby: (a as any).is_standby,
+                                  },
+                                  {
+                                    full_name: pb?.full_name || "",
+                                    is_responsible_on_shift: (b as any).is_responsible_on_shift,
+                                    is_responsible: pb?.is_responsible,
+                                    role: pb?.role,
+                                    is_standby: (b as any).is_standby,
+                                  },
+                                );
+                              });
                               if (typeShifts.length === 0) return null;
                               return (
                                 <div key={type} className={`rounded border px-1 py-0.5 ${shiftColors[type]}`}>
