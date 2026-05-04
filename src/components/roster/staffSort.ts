@@ -9,8 +9,9 @@
 export const ROLE_RANK: Record<string, number> = {
   manager: 0,
   assistant_manager: 1,
-  nurse: 2,
-  assistant: 3,
+  team_leader: 2,
+  nurse: 3,
+  assistant: 4,
 };
 
 export interface SortableStaff {
