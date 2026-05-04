@@ -184,7 +184,7 @@ export default function Roster() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("availability_requests")
-        .select("user_id, date, end_date, request_type")
+        .select("user_id, date, end_date, request_type, blocked_shifts, reason")
         .eq("status", "approved")
         .lte("date", format(viewEnd, "yyyy-MM-dd"))
         .or(`end_date.gte.${format(viewStart, "yyyy-MM-dd")},end_date.is.null`);
@@ -612,6 +612,7 @@ export default function Roster() {
   const isBlocked = (userId: string, date: string) =>
     blockedDates.some((b) => {
       if (b.user_id !== userId) return false;
+      if ((b as any).request_type === "preference") return false; // soft hint, not blocking
       if (b.end_date) return date >= b.date && date <= b.end_date;
       return b.date === date;
     });
@@ -619,10 +620,25 @@ export default function Roster() {
   const getBlockType = (userId: string, date: string): string | null => {
     const match = blockedDates.find((b) => {
       if (b.user_id !== userId) return false;
+      if ((b as any).request_type === "preference") return false;
       if (b.end_date) return date >= b.date && date <= b.end_date;
       return b.date === date;
     });
     return ((match as any)?.request_type as string | undefined) ?? null;
+  };
+
+  // Returns the set of preferred shift types for a given user/date (empty array
+  // means no preference). A preference is a SOFT hint — never blocks assignment.
+  const getPreferredShifts = (userId: string, date: string): string[] => {
+    const match = blockedDates.find((b) => {
+      if (b.user_id !== userId) return false;
+      if ((b as any).request_type !== "preference") return false;
+      if (b.end_date) return date >= b.date && date <= b.end_date;
+      return b.date === date;
+    });
+    if (!match) return [];
+    const shifts = ((match as any).blocked_shifts as string[] | null) ?? [];
+    return Array.isArray(shifts) ? shifts : [];
   };
 
   const blockTypeLabel = (bt: string | null): string => {
@@ -906,6 +922,10 @@ export default function Roster() {
                     );
                     const blocked = isBlocked(member.id, dateStr);
                     const dateBlocked = isDateBlocked(dateStr);
+                    const preferredShifts = (!blocked && !dateBlocked) ? getPreferredShifts(member.id, dateStr) : [];
+                    // Hide preference placeholder for any shift type already assigned
+                    const assignedTypes = new Set(dayShifts.map((s) => s.type));
+                    const visiblePreferred = preferredShifts.filter((p) => !assignedTypes.has(p as any));
                     return (
                       <td
                         key={d.toISOString()}
@@ -956,6 +976,22 @@ export default function Roster() {
                           </div>
                           );
                         })}
+                        {visiblePreferred.map((shiftType) => (
+                          <div
+                            key={`pref-${shiftType}`}
+                            className="shift-preferred-placeholder mb-0.5 mt-0.5"
+                            title={t("avail.preferenceLabel")}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingShift(null);
+                              setForm({ ...defaultForm(dateStr), assigned_user_id: member.id, type: shiftType as any, start_time: shiftTimes[shiftType as ShiftType].start, end_time: shiftTimes[shiftType as ShiftType].end });
+                              setDialogOpen(true);
+                            }}
+                          >
+                            <span className="font-medium uppercase">{shiftType.charAt(0)}</span>
+                            <span className="ms-1">{t("avail.requested")}</span>
+                          </div>
+                        ))}
                       </td>
                     );
                   })}

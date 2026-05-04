@@ -492,6 +492,7 @@ export type Database = {
         | "maternity_leave"
         | "yearly_leave"
         | "study"
+        | "preference"
       holiday_category: "jewish" | "muslim" | "christian" | "national" | "ward"
       request_status: "pending" | "approved" | "declined"
       shift_type: "morning" | "evening" | "night"
@@ -632,6 +633,7 @@ export const Constants = {
         "maternity_leave",
         "yearly_leave",
         "study",
+        "preference",
       ],
       holiday_category: ["jewish", "muslim", "christian", "national", "ward"],
       request_status: ["pending", "approved", "declined"],

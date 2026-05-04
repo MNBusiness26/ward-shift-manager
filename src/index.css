@@ -132,3 +132,15 @@
     hsl(0 0% 50% / 0.06) 8px
   );
 }
+
+/* Preferred shift placeholder (soft request, not assigned) */
+.shift-preferred-placeholder {
+  background-color: hsl(214 100% 97% / 0.5) !important;
+  border: 2px dashed hsl(217 91% 60%) !important;
+  border-radius: 0.25rem;
+  color: hsl(221 83% 53%);
+  text-align: center;
+  padding: 0.125rem 0.25rem;
+  font-size: 10px;
+  line-height: 1.1;
+}

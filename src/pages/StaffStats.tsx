@@ -380,7 +380,12 @@ export default function StaffStats() {
     return acc;
   }, {});
 
-  const pendingAvail = availRequests.filter((ar) => ar.status === "pending");
+  const isPref = (ar: any) => (ar.request_type || "block") === "preference";
+  const blockingAvail = availRequests.filter((ar) => !isPref(ar));
+  const preferenceAvail = availRequests.filter(isPref);
+  // Pending unavailability quick-actions: only true blocks (preferences are soft)
+  const pendingAvail = blockingAvail.filter((ar) => ar.status === "pending");
+  const pendingPreferences = preferenceAvail.filter((ar) => ar.status === "pending");
 
   return (
     <div className="space-y-6">
@@ -701,12 +706,13 @@ export default function StaffStats() {
             </CardContent>
           </Card>
 
-          {/* All Availability Requests */}
+          {/* All Availability Requests — BLOCKS only */}
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <CalendarOff className="h-4 w-4" /> {t("staffStats.availRequests")}
+                  <Badge variant="outline" className="ms-1 text-[10px]">{t("common.blocks")}: {blockingAvail.length}</Badge>
                 </CardTitle>
                 <Button size="sm" variant="outline" onClick={() => setProxyOpen(true)}>
                   <UserPlus className="me-1 h-4 w-4" />
@@ -715,11 +721,11 @@ export default function StaffStats() {
               </div>
             </CardHeader>
             <CardContent>
-               {availRequests.length === 0 ? (
+               {blockingAvail.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("staffStats.noAvailRequests")}</p>
               ) : (
                 <div className="space-y-2">
-                  {availRequests.map((ar) => {
+                  {blockingAvail.map((ar) => {
                     const blockedLabel = formatBlockedShifts(ar);
                     return (
                       <div key={ar.id} className="flex items-center justify-between rounded-sm border p-3">
@@ -752,6 +758,51 @@ export default function StaffStats() {
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(ar)} title={t("requests.editRequest")}>
                             <Pencil className="h-4 w-4" />
                           </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setConfirmDelete(ar)} title={t("requests.cancelBlock")}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Preferred Shifts (soft) */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Star className="h-4 w-4 text-blue-600" /> {t("avail.preferences")}
+                <Badge variant="outline" className="ms-1 text-[10px]">{preferenceAvail.length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {preferenceAvail.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("avail.noPreferences")}</p>
+              ) : (
+                <div className="space-y-2">
+                  {preferenceAvail.map((ar) => {
+                    const blockedLabel = formatBlockedShifts(ar);
+                    return (
+                      <div key={ar.id} className="flex items-center justify-between rounded-sm border-2 border-dashed border-blue-300 bg-blue-50/40 p-3">
+                        <div className="text-sm">
+                          <span className="font-medium">{formatLocale(new Date(ar.date), "MMM d", locale)}</span>
+                          <Badge variant="outline" className="ms-2 capitalize text-xs border-blue-400 text-blue-700">
+                            {t("avail.preferenceLabel")}
+                          </Badge>
+                          {blockedLabel && (
+                            <span className="ms-2 text-xs text-muted-foreground">({blockedLabel})</span>
+                          )}
+                          {ar.reason && (
+                            <span className="ms-2 text-xs text-muted-foreground italic">— {ar.reason}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={statusColor[ar.status] || ""}>
+                            {t(`status.${ar.status}`)}
+                          </Badge>
                           <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setConfirmDelete(ar)} title={t("requests.cancelBlock")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
