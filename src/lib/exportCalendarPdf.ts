@@ -34,6 +34,9 @@ export async function exportCalendarToPdf({ element, fileName }: ExportOptions) 
   style.id = "calendar-pdf-export-styles";
   style.textContent = `
     [data-pdf-export="true"] { direction: inherit; }
+    [data-pdf-export="true"] .overflow-hidden { overflow: visible !important; }
+    [data-pdf-export="true"] .flex-1 { flex: none !important; }
+    [data-pdf-export="true"] .h-full { height: auto !important; }
     [data-pdf-export="true"] table { height: auto !important; min-height: 0 !important; }
     [data-pdf-export="true"] tr { height: auto !important; }
     [data-pdf-export="true"] td { height: auto !important; min-height: 0 !important; overflow: hidden !important; }
