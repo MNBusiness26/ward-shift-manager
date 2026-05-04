@@ -87,6 +87,26 @@ export default function GlobalTeamCalendar() {
     weeks.push(allDays.slice(i, i + 7));
   }
 
+  const handleExportPdf = async () => {
+    if (!calendarRef.current) return;
+    setIsExporting(true);
+    try {
+      const titleStr = isWeek
+        ? `${formatLocale(calendarStart, "d MMM", locale)} – ${formatLocale(calendarEnd, "d MMM yyyy", locale)}`
+        : formatLocale(currentMonth, "MMMM yyyy", locale);
+      const fileBase = isWeek
+        ? `team-calendar-week-${format(calendarStart, "yyyy-MM-dd")}`
+        : `team-calendar-${format(currentMonth, "yyyy-MM")}`;
+      await exportCalendarToPdf({
+        element: calendarRef.current,
+        fileName: fileBase,
+        title: `${t("page.teamCalendar")} — ${titleStr}`,
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-4 flex flex-col min-h-[calc(100vh-6rem)]">
       <div className="flex items-center justify-between">
