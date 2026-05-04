@@ -94,7 +94,7 @@ function AppRoutes() {
       <Route path="/staff" element={<ProtectedRoute requireManager><Staff /></ProtectedRoute>} />
       <Route path="/management-calendar" element={<ProtectedRoute requireManager><ManagementCalendar /></ProtectedRoute>} />
       <Route path="/staff-stats" element={<ProtectedRoute requireManager><StaffStats /></ProtectedRoute>} />
-      <Route path="/analytics" element={<ProtectedRoute requireManager><Analytics /></ProtectedRoute>} />
+      {/* <Route path="/analytics" element={<ProtectedRoute requireManager><Analytics /></ProtectedRoute>} /> */}
       <Route path="/payroll" element={<ProtectedRoute requireManager><PayrollDashboard /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute requireManager><Admin /></ProtectedRoute>} />
       <Route path="/admin/dictionary" element={<ProtectedRoute requireManager><AdminDictionary /></ProtectedRoute>} />

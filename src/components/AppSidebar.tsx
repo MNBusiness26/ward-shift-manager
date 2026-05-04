@@ -56,7 +56,7 @@ export function AppSidebar() {
     { title: t("nav.shiftManager"), url: "/roster", icon: ClipboardList },
     { title: t("nav.requests"), url: "/requests", icon: Settings },
     { title: t("nav.staff"), url: "/staff", icon: Users },
-    { title: t("nav.analytics"), url: "/analytics", icon: BarChart3 },
+    // { title: t("nav.analytics"), url: "/analytics", icon: BarChart3 },
     { title: t("nav.payroll"), url: "/payroll", icon: Wallet, managerOnly: true },
   ];
 
