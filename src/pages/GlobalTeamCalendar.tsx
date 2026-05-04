@@ -239,7 +239,7 @@ export default function GlobalTeamCalendar() {
                                         <Badge
                                           key={s.id}
                                           variant={s.is_responsible_on_shift ? "default" : "secondary"}
-                                          className={`text-[10px] px-1.5 py-0 leading-tight shadow-none ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
+                                          className={`flex w-full min-w-0 items-center gap-0.5 text-[10px] px-1.5 py-0 leading-tight shadow-none whitespace-nowrap overflow-hidden ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
                                             isExternal
                                               ? "bg-slate-50 border-slate-200 text-slate-400 opacity-80"
                                               : isStandby
@@ -247,10 +247,10 @@ export default function GlobalTeamCalendar() {
                                               : (s as any).is_draft ? "opacity-60 border-dashed" : "ring-1 ring-current/20"
                                           } ${assistantRole && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-gray-100/50 text-muted-foreground border-muted-foreground/20" : ""}`}
                                         >
-                                          {isExternal && <ArrowLeftRight className="me-0.5 h-2.5 w-2.5 inline" />}
-                                          {firstName}
-                                          {isResp && <Star className="ms-0.5 h-2.5 w-2.5 inline fill-current" />}
-                                          {isStandby && <Phone className="ms-0.5 h-2.5 w-2.5 inline" />}
+                                          {isExternal && <ArrowLeftRight className="h-2.5 w-2.5 shrink-0" />}
+                                          <span className="truncate min-w-0 flex-1">{firstName}</span>
+                                          {isResp && <Star className="h-2.5 w-2.5 fill-current shrink-0" />}
+                                          {isStandby && <Phone className="h-2.5 w-2.5 shrink-0" />}
                                         </Badge>
                                       );
                                     })}
