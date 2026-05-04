@@ -295,10 +295,9 @@ export default function Admin() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="nurse">Nurse</SelectItem>
-                        <SelectItem value="assistant">Assistant</SelectItem>
-                        <SelectItem value="assistant_manager">Assistant Manager</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
+                        {ROLE_OPTIONS.map((r) => (
+                          <SelectItem key={r} value={r}>{getRoleLabel(r, locale)}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   )}
