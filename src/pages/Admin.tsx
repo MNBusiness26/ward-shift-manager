@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { LocalizationPanel } from "@/components/admin/LocalizationPanel";
+import { getRoleLabel, ROLE_OPTIONS } from "@/lib/roles";
 
 const ADMIN_EMAIL = "michael.nejman@gmail.com";
 
