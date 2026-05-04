@@ -17,6 +17,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
+import { getRoleLabel, ROLE_OPTIONS } from "@/lib/roles";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
