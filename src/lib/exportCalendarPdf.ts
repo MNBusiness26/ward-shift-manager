@@ -23,12 +23,55 @@ export async function exportCalendarToPdf({ element, fileName }: ExportOptions) 
     getComputedStyle(document.body).backgroundColor || "#ffffff";
 
   // Force a wide layout for the capture so flex/grid cells get enough room
-  // and badges don't overlap. 1600px matches a typical desktop calendar view.
-  const CAPTURE_WIDTH = 1600;
+  // and badges don't overlap. The PDF stylesheet below makes the view compact
+  // enough to fit while preserving one staff row per line.
+  const CAPTURE_WIDTH = 2200;
   const prevWidth = element.style.width;
   const prevMaxWidth = element.style.maxWidth;
   const prevMinWidth = element.style.minWidth;
+  const prevDatasetValue = element.getAttribute("data-pdf-export");
+  const style = document.createElement("style");
+  style.id = "calendar-pdf-export-styles";
+  style.textContent = `
+    [data-pdf-export="true"] { direction: inherit; }
+    [data-pdf-export="true"] table { height: auto !important; min-height: 0 !important; }
+    [data-pdf-export="true"] tr { height: auto !important; }
+    [data-pdf-export="true"] td { height: auto !important; min-height: 0 !important; overflow: hidden !important; }
+    [data-pdf-export="true"] .calendar-shift-box { overflow: hidden !important; padding: 2px 4px !important; }
+    [data-pdf-export="true"] .calendar-staff-list { gap: 2px !important; min-width: 0 !important; }
+    [data-pdf-export="true"] .calendar-staff-badge {
+      display: flex !important;
+      align-items: center !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      height: 13px !important;
+      min-height: 13px !important;
+      max-height: 13px !important;
+      padding: 0 3px !important;
+      overflow: hidden !important;
+      white-space: nowrap !important;
+      line-height: 12px !important;
+      font-size: 8px !important;
+      border-radius: 2px !important;
+    }
+    [data-pdf-export="true"] .calendar-staff-name {
+      min-width: 0 !important;
+      flex: 1 1 auto !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+      line-height: 12px !important;
+    }
+    [data-pdf-export="true"] .calendar-staff-badge svg {
+      width: 8px !important;
+      height: 8px !important;
+      flex: 0 0 auto !important;
+    }
+  `;
 
+  document.head.appendChild(style);
+  element.setAttribute("data-pdf-export", "true");
   element.style.width = `${CAPTURE_WIDTH}px`;
   element.style.maxWidth = `${CAPTURE_WIDTH}px`;
   element.style.minWidth = `${CAPTURE_WIDTH}px`;
@@ -51,6 +94,12 @@ export async function exportCalendarToPdf({ element, fileName }: ExportOptions) 
     element.style.width = prevWidth;
     element.style.maxWidth = prevMaxWidth;
     element.style.minWidth = prevMinWidth;
+    if (prevDatasetValue === null) {
+      element.removeAttribute("data-pdf-export");
+    } else {
+      element.setAttribute("data-pdf-export", prevDatasetValue);
+    }
+    style.remove();
   }
 
   const pdf = new jsPDF({
