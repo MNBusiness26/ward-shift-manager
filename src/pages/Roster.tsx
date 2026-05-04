@@ -27,6 +27,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useAuth } from "@/contexts/AuthContext";
 import { useStaffPool } from "@/hooks/useStaffPool";
 import type { Database } from "@/integrations/supabase/types";
+import { useHolidayMap } from "@/hooks/useHolidays";
+import { HolidayCellBackground, HolidayCornerIcon } from "@/components/holidays/HolidayCell";
 
 type ShiftType = Database["public"]["Enums"]["shift_type"];
 
