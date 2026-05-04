@@ -184,7 +184,7 @@ export default function Roster() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("availability_requests")
-        .select("user_id, date, end_date, request_type")
+        .select("user_id, date, end_date, request_type, blocked_shifts, reason")
         .eq("status", "approved")
         .lte("date", format(viewEnd, "yyyy-MM-dd"))
         .or(`end_date.gte.${format(viewStart, "yyyy-MM-dd")},end_date.is.null`);
