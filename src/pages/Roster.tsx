@@ -612,6 +612,7 @@ export default function Roster() {
   const isBlocked = (userId: string, date: string) =>
     blockedDates.some((b) => {
       if (b.user_id !== userId) return false;
+      if ((b as any).request_type === "preference") return false; // soft hint, not blocking
       if (b.end_date) return date >= b.date && date <= b.end_date;
       return b.date === date;
     });
@@ -619,10 +620,25 @@ export default function Roster() {
   const getBlockType = (userId: string, date: string): string | null => {
     const match = blockedDates.find((b) => {
       if (b.user_id !== userId) return false;
+      if ((b as any).request_type === "preference") return false;
       if (b.end_date) return date >= b.date && date <= b.end_date;
       return b.date === date;
     });
     return ((match as any)?.request_type as string | undefined) ?? null;
+  };
+
+  // Returns the set of preferred shift types for a given user/date (empty array
+  // means no preference). A preference is a SOFT hint — never blocks assignment.
+  const getPreferredShifts = (userId: string, date: string): string[] => {
+    const match = blockedDates.find((b) => {
+      if (b.user_id !== userId) return false;
+      if ((b as any).request_type !== "preference") return false;
+      if (b.end_date) return date >= b.date && date <= b.end_date;
+      return b.date === date;
+    });
+    if (!match) return [];
+    const shifts = ((match as any).blocked_shifts as string[] | null) ?? [];
+    return Array.isArray(shifts) ? shifts : [];
   };
 
   const blockTypeLabel = (bt: string | null): string => {
