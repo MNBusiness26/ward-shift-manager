@@ -182,10 +182,11 @@ export default function Roster() {
   const { data: blockedDates = [] } = useQuery({
     queryKey: ["approved-blocks", format(viewStart, "yyyy-MM-dd")],
     queryFn: async () => {
+      // Approved blocks (hard) + any preference (soft hint, regardless of status)
       const { data, error } = await supabase
         .from("availability_requests")
-        .select("user_id, date, end_date, request_type, blocked_shifts, reason")
-        .eq("status", "approved")
+        .select("user_id, date, end_date, request_type, blocked_shifts, reason, status")
+        .or("status.eq.approved,request_type.eq.preference")
         .lte("date", format(viewEnd, "yyyy-MM-dd"))
         .or(`end_date.gte.${format(viewStart, "yyyy-MM-dd")},end_date.is.null`);
       if (error) throw error;

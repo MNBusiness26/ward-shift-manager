@@ -250,13 +250,15 @@ export default function Requests() {
                                   case "sick_leave": return `🩹 ${t("avail.sickLeaveLabel")}`;
                                   case "maternity_leave": return `🍼 ${t("avail.maternityLeaveLabel")}`;
                                   case "yearly_leave": return `🌴 ${t("avail.yearlyLeaveLabel")}`;
+                                  case "study": return `📚 ${t("avail.studyLabel")}`;
+                                  case "preference": return `⭐ ${t("avail.preferenceLabel")}`;
                                   default: return `🚫 ${t("avail.blockDates")}`;
                                 }
                               })()}
                             </Badge>
                             {blockedLabel && (
                               <Badge variant="outline" className="text-[10px]">
-                                {blockedLabel} {t("avail.only")}
+                                {blockedLabel}{(req as any).request_type === "preference" ? "" : ` ${t("avail.only")}`}
                               </Badge>
                             )}
                           </div>
