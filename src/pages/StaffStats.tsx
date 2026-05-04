@@ -380,7 +380,12 @@ export default function StaffStats() {
     return acc;
   }, {});
 
-  const pendingAvail = availRequests.filter((ar) => ar.status === "pending");
+  const isPref = (ar: any) => (ar.request_type || "block") === "preference";
+  const blockingAvail = availRequests.filter((ar) => !isPref(ar));
+  const preferenceAvail = availRequests.filter(isPref);
+  // Pending unavailability quick-actions: only true blocks (preferences are soft)
+  const pendingAvail = blockingAvail.filter((ar) => ar.status === "pending");
+  const pendingPreferences = preferenceAvail.filter((ar) => ar.status === "pending");
 
   return (
     <div className="space-y-6">
