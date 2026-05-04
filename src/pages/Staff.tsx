@@ -230,9 +230,9 @@ export default function Staff() {
           <p className="text-sm font-medium">{member.full_name}</p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             {member.roles?.map((role: string) => (
-              <Badge key={role} variant="outline" className={`text-xs capitalize ${role === "manager" ? "bg-primary/10 text-primary border-primary/20" : ""}`}>
+              <Badge key={role} variant="outline" className={`text-xs ${role === "manager" ? "bg-primary/10 text-primary border-primary/20" : ""}`}>
                 {role === "manager" && <Shield className="mr-0.5 h-2.5 w-2.5" />}
-                {role}
+                {getRoleLabel(role, locale)}
               </Badge>
             ))}
             <span className="text-xs text-muted-foreground">
