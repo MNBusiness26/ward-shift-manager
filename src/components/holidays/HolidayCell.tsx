@@ -86,24 +86,24 @@ export const HolidayCellBackground = forwardRef<HTMLDivElement, { holiday: Publi
  */
 export const HolidayCornerIcon = forwardRef<
   HTMLSpanElement,
-  { holiday: PublicHoliday | undefined; size?: "sm" | "md" }
->(function HolidayCornerIcon({ holiday, size = "sm" }, ref) {
+  { holiday: PublicHoliday | undefined; size?: "sm" | "md"; inline?: boolean }
+>(function HolidayCornerIcon({ holiday, size = "sm", inline = false }, ref) {
   const { locale } = useTranslation();
   if (!holiday) return null;
   const Icon = ICONS[holiday.category];
-  const dim = size === "md" ? "h-3.5 w-3.5" : "h-3 w-3";
+  const dim = size === "md" ? "h-4 w-4" : "h-3.5 w-3.5";
   const primary = locale === "he" ? holiday.name_he : holiday.name_en;
   const secondary = locale === "he" ? holiday.name_en : holiday.name_he;
+
+  const positioning = inline
+    ? "inline-flex items-center justify-center"
+    : "pointer-events-auto absolute top-1 end-1 ltr:right-1 ltr:left-auto rtl:left-1 rtl:right-auto z-10 inline-flex items-center justify-center rounded-sm text-destructive/70 hover:text-destructive";
 
   return (
     <TooltipProvider delayDuration={150}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span
-            ref={ref}
-            className="pointer-events-auto absolute top-1 end-1 ltr:right-1 ltr:left-auto rtl:left-1 rtl:right-auto z-10 inline-flex items-center justify-center rounded-sm text-destructive/70 hover:text-destructive"
-            aria-label={primary}
-          >
+          <span ref={ref} className={positioning} aria-label={primary}>
             <Icon className={dim} />
           </span>
         </TooltipTrigger>
