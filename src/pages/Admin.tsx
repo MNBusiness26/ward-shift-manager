@@ -194,7 +194,7 @@ export default function Admin() {
     addStaff.mutate();
   };
 
-  const roleLabel = (r: string) => r.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const roleLabel = (r: string) => getRoleLabel(r, locale);
 
   const templateVars = ["{{title}}", "{{first_name}}", "{{last_name}}"];
 
