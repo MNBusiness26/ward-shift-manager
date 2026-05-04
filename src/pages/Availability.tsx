@@ -41,6 +41,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   maternity_leave: <Baby className="h-3 w-3 shrink-0" />,
   yearly_leave: <Palmtree className="h-3 w-3 shrink-0" />,
   study: <GraduationCap className="h-3 w-3 shrink-0" />,
+  preference: <Star className="h-3 w-3 shrink-0" />,
 };
 
 type AvailType = "block" | "vacation" | "sick_leave" | "maternity_leave" | "yearly_leave" | "study";
