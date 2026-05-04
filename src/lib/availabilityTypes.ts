@@ -7,9 +7,10 @@ export type AvailabilityType =
   | "leave" // legacy, do not offer in new UI
   | "sick_leave"
   | "maternity_leave"
-  | "yearly_leave";
+  | "yearly_leave"
+  | "study";
 
-export const LEAVE_TYPES = ["sick_leave", "maternity_leave", "yearly_leave"] as const;
+export const LEAVE_TYPES = ["sick_leave", "maternity_leave", "yearly_leave", "study"] as const;
 
 export const AVAIL_TYPE_LABEL_KEY: Record<string, string> = {
   block: "common.block",
@@ -18,6 +19,7 @@ export const AVAIL_TYPE_LABEL_KEY: Record<string, string> = {
   sick_leave: "common.sickLeave",
   maternity_leave: "common.maternityLeave",
   yearly_leave: "common.yearlyLeave",
+  study: "common.study",
 };
 
 export const AVAIL_TYPE_FULL_KEY: Record<string, string> = {
@@ -27,6 +29,7 @@ export const AVAIL_TYPE_FULL_KEY: Record<string, string> = {
   sick_leave: "avail.sickLeaveLabel",
   maternity_leave: "avail.maternityLeaveLabel",
   yearly_leave: "avail.yearlyLeaveLabel",
+  study: "avail.studyLabel",
 };
 
 // Returns the matching emoji for select items / chips in legacy code paths.
@@ -37,8 +40,16 @@ export const AVAIL_TYPE_EMOJI: Record<string, string> = {
   sick_leave: "🩹",
   maternity_leave: "🍼",
   yearly_leave: "🌴",
+  study: "📚",
 };
 
 export function isLeaveType(t: string | null | undefined): boolean {
-  return t === "leave" || t === "sick_leave" || t === "maternity_leave" || t === "yearly_leave";
+  return (
+    t === "leave" ||
+    t === "sick_leave" ||
+    t === "maternity_leave" ||
+    t === "yearly_leave" ||
+    t === "study"
+  );
 }
+
