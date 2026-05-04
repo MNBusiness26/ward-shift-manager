@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PublicHoliday, HolidayCategory } from "@/hooks/useHolidays";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -52,22 +53,25 @@ const ICONS: Record<HolidayCategory, React.FC<{ className?: string }>> = {
  * - Erev (eve): 45deg repeating red stripes
  * Sits absolutely inside the cell (which must be `position: relative`).
  */
-export function HolidayCellBackground({ holiday }: { holiday: PublicHoliday | undefined }) {
-  if (!holiday) return null;
-  const style: React.CSSProperties = holiday.is_eve
-    ? {
-        backgroundImage:
-          "repeating-linear-gradient(45deg, rgba(239,68,68,0.10) 0 6px, transparent 6px 14px)",
-      }
-    : { backgroundColor: "rgba(239, 68, 68, 0.08)" };
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 -z-10 rounded-[inherit]"
-      style={style}
-    />
-  );
-}
+export const HolidayCellBackground = forwardRef<HTMLDivElement, { holiday: PublicHoliday | undefined }>(
+  function HolidayCellBackground({ holiday }, ref) {
+    if (!holiday) return null;
+    const style: React.CSSProperties = holiday.is_eve
+      ? {
+          backgroundImage:
+            "repeating-linear-gradient(45deg, rgba(239,68,68,0.10) 0 6px, transparent 6px 14px)",
+        }
+      : { backgroundColor: "rgba(239, 68, 68, 0.08)" };
+    return (
+      <div
+        ref={ref}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-[inherit]"
+        style={style}
+      />
+    );
+  },
+);
 
 /**
  * Top-corner icon (opposite the day number).
@@ -75,13 +79,10 @@ export function HolidayCellBackground({ holiday }: { holiday: PublicHoliday | un
  * In RTL, day-number is top-right → icon goes top-left.
  * Wrapped with tooltip showing both names.
  */
-export function HolidayCornerIcon({
-  holiday,
-  size = "sm",
-}: {
-  holiday: PublicHoliday | undefined;
-  size?: "sm" | "md";
-}) {
+export const HolidayCornerIcon = forwardRef<
+  HTMLSpanElement,
+  { holiday: PublicHoliday | undefined; size?: "sm" | "md" }
+>(function HolidayCornerIcon({ holiday, size = "sm" }, ref) {
   const { locale } = useTranslation();
   if (!holiday) return null;
   const Icon = ICONS[holiday.category];
@@ -94,6 +95,7 @@ export function HolidayCornerIcon({
       <Tooltip>
         <TooltipTrigger asChild>
           <span
+            ref={ref}
             className="pointer-events-auto absolute top-1 end-1 ltr:right-1 ltr:left-auto rtl:left-1 rtl:right-auto z-10 inline-flex items-center justify-center rounded-sm text-destructive/70 hover:text-destructive"
             aria-label={primary}
           >
@@ -110,4 +112,4 @@ export function HolidayCornerIcon({
       </Tooltip>
     </TooltipProvider>
   );
-}
+});
