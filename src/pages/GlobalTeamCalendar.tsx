@@ -14,6 +14,8 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
 import { Badge } from "@/components/ui/badge";
 import { compareShiftAssignment, formatDisplayName } from "@/components/roster/staffSort";
+import { useHolidayMap } from "@/hooks/useHolidays";
+import { HolidayCellBackground, HolidayCornerIcon } from "@/components/holidays/HolidayCell";
 
 const isAssistant = (role?: string | null) => role === "assistant";
 
@@ -43,6 +45,7 @@ export default function GlobalTeamCalendar() {
   const [view, setView] = useState<"month" | "week">("month");
   const [isExporting, setIsExporting] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
+  const holidayMap = useHolidayMap();
 
   const shiftLabels: Record<string, string> = {
     morning: t("shift.morning"), evening: t("shift.evening"), night: t("shift.night"),
@@ -189,11 +192,14 @@ export default function GlobalTeamCalendar() {
                     const dateStr = format(day, "yyyy-MM-dd");
                     const inMonth = isWeek || isSameMonth(day, currentMonth);
                     const today = isToday(day);
+                    const holiday = holidayMap.get(dateStr);
                     return (
                       <td
                         key={dateStr}
-                        className={`p-1 border-s align-top min-h-[140px] h-[14vh] ${!inMonth ? "bg-muted/30" : ""} ${today ? "ring-2 ring-inset ring-primary/40" : ""}`}
+                        className={`relative p-1 border-s align-top min-h-[140px] h-[14vh] ${!inMonth ? "bg-muted/30" : ""} ${today ? "ring-2 ring-inset ring-primary/40" : ""}`}
                       >
+                        <HolidayCellBackground holiday={holiday} />
+                        <HolidayCornerIcon holiday={holiday} />
                         <div className={`text-xs font-medium mb-1 ${!inMonth ? "text-muted-foreground/50" : today ? "text-primary font-bold" : "text-muted-foreground"}`}>
                           {format(day, "d")}
                         </div>

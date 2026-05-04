@@ -22,6 +22,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useHolidayMap } from "@/hooks/useHolidays";
+import { HolidayCellBackground, HolidayCornerIcon } from "@/components/holidays/HolidayCell";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +51,7 @@ const shiftBadgeColors: Record<string, string> = {
 
 export default function MyCalendar() {
   const { user, profile } = useAuth();
+  const holidayMap = useHolidayMap();
   const { t, locale } = useTranslation();
   const [view, setView] = useState<"month" | "week">("month");
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -220,14 +223,17 @@ export default function MyCalendar() {
               {monthDays.map((day) => {
                 const dayShifts = getShiftsForDay(day);
                 const isSelected = selectedDay && isSameDay(day, selectedDay);
+                const holiday = holidayMap.get(format(day, "yyyy-MM-dd"));
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`min-h-[5rem] md:min-h-[7rem] rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
+                    className={`relative min-h-[5rem] md:min-h-[7rem] rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
                       isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
                     } ${isSelected ? "ring-2 ring-primary" : ""}`}
                     onClick={() => setSelectedDay(day)}
                   >
+                    <HolidayCellBackground holiday={holiday} />
+                    <HolidayCornerIcon holiday={holiday} />
                     <span className="text-muted-foreground">{format(day, "d")}</span>
                     <div className="mt-0.5 flex flex-col gap-1 overflow-hidden">
                       {dayShifts.map((s) => {

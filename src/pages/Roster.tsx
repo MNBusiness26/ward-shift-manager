@@ -27,6 +27,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useAuth } from "@/contexts/AuthContext";
 import { useStaffPool } from "@/hooks/useStaffPool";
 import type { Database } from "@/integrations/supabase/types";
+import { useHolidayMap } from "@/hooks/useHolidays";
+import { HolidayCellBackground, HolidayCornerIcon } from "@/components/holidays/HolidayCell";
 
 type ShiftType = Database["public"]["Enums"]["shift_type"];
 
@@ -98,6 +100,7 @@ export default function Roster() {
   const [viewStart, setViewStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
   const viewEnd = addDays(viewStart, 6);
   const days = eachDayOfInterval({ start: viewStart, end: viewEnd });
+  const holidayMap = useHolidayMap();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -835,6 +838,8 @@ export default function Roster() {
                   const dateBlocked = isDateBlocked(dateStr);
                   return (
                     <th key={d.toISOString()} className={`relative z-10 min-w-[70px] md:min-w-[120px] py-4 px-1 md:py-5 md:px-2 text-center font-medium text-muted-foreground border-b border-r border-border/30 ${dateBlocked ? "bg-muted/50" : ""}`}>
+                      <HolidayCellBackground holiday={holidayMap.get(dateStr)} />
+                      <HolidayCornerIcon holiday={holidayMap.get(dateStr)} />
                       <div className="flex items-center justify-center gap-1">
                         {formatLocale(d, "EEE", locale)}
                         {dateBlocked && <Lock className="h-3 w-3" />}
@@ -909,6 +914,7 @@ export default function Roster() {
                           }
                         }}
                       >
+                        <HolidayCellBackground holiday={holidayMap.get(dateStr)} />
                         {dateBlocked && dayShifts.length === 0 && !blocked && (
                           <span className="text-[10px] text-muted-foreground">🔒</span>
                         )}
