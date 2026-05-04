@@ -4,9 +4,11 @@ import type { PublicHoliday, HolidayCategory } from "@/hooks/useHolidays";
 import { useTranslation } from "@/i18n/useTranslation";
 
 // Inline SVG icons (Lucide doesn't have Star of David, Crescent, or Israeli flag)
+// True 6-pointed Star of David: two overlapping equilateral triangles (hexagram)
 const StarOfDavid = ({ className = "" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <polygon points="12,2 15,8 22,8 16.5,12 19,19 12,15 5,19 7.5,12 2,8 9,8" />
+  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden="true">
+    <polygon points="12,2 21,18 3,18" />
+    <polygon points="12,22 3,6 21,6" />
   </svg>
 );
 
