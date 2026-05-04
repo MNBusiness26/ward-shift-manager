@@ -6,9 +6,10 @@ import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, addMonths, subMonths, addWeeks, subWeeks, isToday, isSameMonth,
 } from "date-fns";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { ChevronLeft, ChevronRight, Users, Star, Phone, ArrowLeftRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, Star, Phone, ArrowLeftRight, FileDown } from "lucide-react";
+import { exportCalendarToPdf } from "@/lib/exportCalendarPdf";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,8 @@ export default function GlobalTeamCalendar() {
   const { t, locale } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [view, setView] = useState<"month" | "week">("month");
+  const [isExporting, setIsExporting] = useState(false);
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   const shiftLabels: Record<string, string> = {
     morning: t("shift.morning"), evening: t("shift.evening"), night: t("shift.night"),
@@ -84,6 +87,26 @@ export default function GlobalTeamCalendar() {
     weeks.push(allDays.slice(i, i + 7));
   }
 
+  const handleExportPdf = async () => {
+    if (!calendarRef.current) return;
+    setIsExporting(true);
+    try {
+      const titleStr = isWeek
+        ? `${formatLocale(calendarStart, "d MMM", locale)} – ${formatLocale(calendarEnd, "d MMM yyyy", locale)}`
+        : formatLocale(currentMonth, "MMMM yyyy", locale);
+      const fileBase = isWeek
+        ? `team-calendar-week-${format(calendarStart, "yyyy-MM-dd")}`
+        : `team-calendar-${format(currentMonth, "yyyy-MM")}`;
+      await exportCalendarToPdf({
+        element: calendarRef.current,
+        fileName: fileBase,
+        title: `${t("page.teamCalendar")} — ${titleStr}`,
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-4 flex flex-col min-h-[calc(100vh-6rem)]">
       <div className="flex items-center justify-between">
@@ -123,10 +146,19 @@ export default function GlobalTeamCalendar() {
           >
             <ChevronRight className="h-4 w-4 rtl:rotate-180" />
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={isExporting}
+          >
+            <FileDown className="h-4 w-4 md:me-2" />
+            <span className="hidden md:inline">{t("common.exportPdf") || "Export PDF"}</span>
+          </Button>
         </div>
       </div>
 
-      <Card className="flex-1 flex flex-col">
+      <Card ref={calendarRef} className="flex-1 flex flex-col">
         <CardHeader className="pb-2">
           <CardTitle className="text-base text-center">
             {isWeek
