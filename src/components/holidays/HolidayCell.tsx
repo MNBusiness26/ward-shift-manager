@@ -63,7 +63,7 @@ export function HolidayCellBackground({ holiday }: { holiday: PublicHoliday | un
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 -z-10 rounded-[inherit]"
+      className="pointer-events-none absolute inset-0 rounded-[inherit]"
       style={style}
     />
   );
