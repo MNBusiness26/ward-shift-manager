@@ -838,6 +838,8 @@ export default function Roster() {
                   const dateBlocked = isDateBlocked(dateStr);
                   return (
                     <th key={d.toISOString()} className={`relative z-10 min-w-[70px] md:min-w-[120px] py-4 px-1 md:py-5 md:px-2 text-center font-medium text-muted-foreground border-b border-r border-border/30 ${dateBlocked ? "bg-muted/50" : ""}`}>
+                      <HolidayCellBackground holiday={holidayMap.get(dateStr)} />
+                      <HolidayCornerIcon holiday={holidayMap.get(dateStr)} />
                       <div className="flex items-center justify-center gap-1">
                         {formatLocale(d, "EEE", locale)}
                         {dateBlocked && <Lock className="h-3 w-3" />}
