@@ -61,14 +61,25 @@ export function HolidayCellBackground({ holiday }: { holiday: PublicHoliday | un
           "repeating-linear-gradient(45deg, rgba(239,68,68,0.10) 0 6px, transparent 6px 14px)",
       }
     : { backgroundColor: "rgba(239, 68, 68, 0.08)" };
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 rounded-[inherit]"
-      style={style}
-    />
-  );
-}
+export const HolidayCellBackground = forwardRef<HTMLDivElement, { holiday: PublicHoliday | undefined }>(
+  function HolidayCellBackground({ holiday }, ref) {
+    if (!holiday) return null;
+    const style: React.CSSProperties = holiday.is_eve
+      ? {
+          backgroundImage:
+            "repeating-linear-gradient(45deg, rgba(239,68,68,0.10) 0 6px, transparent 6px 14px)",
+        }
+      : { backgroundColor: "rgba(239, 68, 68, 0.08)" };
+    return (
+      <div
+        ref={ref}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-[inherit]"
+        style={style}
+      />
+    );
+  },
+);
 
 /**
  * Top-corner icon (opposite the day number).
