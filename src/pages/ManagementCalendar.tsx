@@ -508,7 +508,7 @@ export default function ManagementCalendar() {
                         {dayShifts.length === 0 ? (
                           <span className="text-xs text-muted-foreground italic">{blocked ? "🔒" : "—"}</span>
                         ) : (
-                          <div className={`flex flex-col gap-1 ${overHeadcount ? "mt-4" : ""}`}>
+                          <div className={`calendar-staff-list flex flex-col gap-1 ${overHeadcount ? "mt-4" : ""}`}>
                             {dayShifts.map((s) => {
                               const profile = staff.find((p) => p.id === s.assigned_user_id);
                               const assistantRole = isAssistant(profile?.role ?? profile?.app_role);
@@ -518,7 +518,7 @@ export default function ManagementCalendar() {
                               <Badge
                                 key={s.id}
                                 variant={s.is_responsible_on_shift ? "default" : "secondary"}
-                                className={`text-[11px] px-1.5 py-0 leading-tight shadow-none ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
+                                className={`calendar-staff-badge flex w-full min-w-0 items-center gap-0.5 overflow-hidden whitespace-nowrap text-[11px] px-1.5 py-0 leading-tight shadow-none ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
                                   isExternal
                                     ? "bg-slate-50 border-slate-200 text-slate-400 opacity-80"
                                     : isStandby
@@ -526,10 +526,10 @@ export default function ManagementCalendar() {
                                     : s.is_draft ? "opacity-60 border-dashed" : "ring-1 ring-current/20"
                                 } ${assistantRole && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-gray-100/50 text-muted-foreground border-muted-foreground/20" : ""}`}
                               >
-                                {isExternal && <ArrowLeftRight className="mr-0.5 h-2.5 w-2.5 inline" />}
-                                {getFirstName(s)}
-                                {s.is_responsible_on_shift && <Star className="ml-0.5 h-2.5 w-2.5 inline fill-current" />}
-                                {isStandby && <Phone className="ml-0.5 h-2.5 w-2.5 inline" />}
+                                {isExternal && <ArrowLeftRight className="h-2.5 w-2.5 shrink-0" />}
+                                <span className="calendar-staff-name min-w-0 flex-1 truncate">{getFirstName(s)}</span>
+                                {s.is_responsible_on_shift && <Star className="h-2.5 w-2.5 shrink-0 fill-current" />}
+                                {isStandby && <Phone className="h-2.5 w-2.5 shrink-0" />}
                               </Badge>
                               );
                             })}
