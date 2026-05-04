@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight, Users, Star, Phone, ArrowLeftRight } from "l
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
 import { Badge } from "@/components/ui/badge";
+import { compareShiftAssignment } from "@/components/roster/staffSort";
 
 const isAssistant = (role?: string | null) => role === "assistant";
 
