@@ -76,8 +76,10 @@ export async function exportCalendarToPdf({
     }
     [data-pdf-export="true"] .overflow-hidden,
     [data-pdf-export="true"] .overflow-x-auto,
-    [data-pdf-export="true"] .overflow-y-auto {
+    [data-pdf-export="true"] .overflow-y-auto,
+    [data-pdf-export="true"] .truncate {
       overflow: visible !important;
+      text-overflow: clip !important;
     }
 
     /* Force fixed table layout with even column widths. */
@@ -112,42 +114,50 @@ export async function exportCalendarToPdf({
       padding: 2px 3px !important;
     }
 
-    /* Shift type label */
+    /* Shift type label - flex column so it grows with content */
     [data-pdf-export="true"] .calendar-shift-box {
+      display: flex !important;
+      flex-direction: column !important;
       padding: 4px 5px !important;
       margin-bottom: 3px !important;
       page-break-inside: avoid;
+      overflow: visible !important;
+      height: auto !important;
     }
 
     /* Staff list & badges */
     [data-pdf-export="true"] .calendar-staff-list {
       display: flex !important;
       flex-direction: column !important;
-      gap: 3px !important;
+      gap: 4px !important;
       min-width: 0 !important;
+      overflow: visible !important;
     }
     [data-pdf-export="true"] .calendar-staff-badge {
-      display: inline-flex !important;
+      display: flex !important;
       align-items: center !important;
       width: 100% !important;
       max-width: 100% !important;
       min-width: 0 !important;
-      min-height: 20px !important;
-      padding: 2px 6px !important;
+      height: auto !important;
+      min-height: 24px !important;
+      padding: 4px 6px !important;
       white-space: nowrap !important;
-      line-height: 16px !important;
+      line-height: 1.4 !important;
       font-size: 10px !important;
       border-radius: 4px !important;
       gap: 4px !important;
+      overflow: visible !important;
     }
     [data-pdf-export="true"] .calendar-staff-name {
       min-width: 0 !important;
       flex: 1 1 auto !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
       white-space: nowrap !important;
-      line-height: 16px !important;
+      line-height: 1.4 !important;
       font-size: 10px !important;
+      padding: 1px 0 !important;
     }
     [data-pdf-export="true"] .calendar-staff-badge svg {
       width: 10px !important;
@@ -173,7 +183,7 @@ export async function exportCalendarToPdf({
   let canvas: HTMLCanvasElement;
   try {
     canvas = await html2canvas(clone, {
-      scale: 2,
+      scale: 3,
       useCORS: true,
       backgroundColor: bgColor,
       width: SANDBOX_WIDTH,
