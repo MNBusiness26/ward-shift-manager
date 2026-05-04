@@ -83,6 +83,8 @@ export default function ManagementCalendar() {
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const [isExporting, setIsExporting] = useState(false);
+  const calendarRef = useRef<HTMLDivElement>(null);
   const shiftLabels: Record<string, string> = {
     morning: t("shift.morning"), evening: t("shift.evening"), night: t("shift.night"),
   };
