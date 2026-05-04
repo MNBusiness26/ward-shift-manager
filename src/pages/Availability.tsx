@@ -98,6 +98,18 @@ export default function Availability() {
     mutationFn: async () => {
       if (!selectedDate || !user) return;
       const startStr = format(selectedDate, "yyyy-MM-dd");
+      if (dialogMode === "preference") {
+        if (blockedShifts.length === 0) {
+          throw new Error(t("avail.requestShiftsHint"));
+        }
+        const { error } = await supabase.from("availability_requests").insert({
+          user_id: user.id, date: startStr, end_date: startStr,
+          reason: reason || null, request_type: "preference",
+          blocked_shifts: blockedShifts,
+        } as any);
+        if (error) throw error;
+        return;
+      }
       const isBlock = requestType === "block";
       const endStr = isBlock ? startStr : (endDate || startStr);
       const { error } = await supabase.from("availability_requests").insert({
