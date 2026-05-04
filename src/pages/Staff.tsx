@@ -163,7 +163,7 @@ export default function Staff() {
       target_fte_percent: member.target_fte_percent ?? 1,
       role: (isPending ? member.app_role : member.roles?.[0]) || "nurse",
       is_responsible: !!member.is_responsible,
-      is_assistant_manager: (member.roles ?? []).includes("assistant_manager"),
+      
       no_nights: !!(constraints as any).no_nights,
       no_weekends: !!(constraints as any).no_weekends,
       excluded_shifts: (constraints as any).excluded_shifts || [],
