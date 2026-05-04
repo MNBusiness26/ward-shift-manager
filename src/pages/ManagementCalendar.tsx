@@ -443,13 +443,18 @@ export default function ManagementCalendar() {
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const blocked = isDateBlocked(dateStr);
+                  const holiday = holidayMap.get(dateStr);
                   return (
                     <th key={d.toISOString()} className={`relative z-10 border-b p-1.5 text-center font-medium text-muted-foreground md:p-2 ${blocked ? "bg-muted/50" : ""}`}>
-                      <div className="flex items-center justify-center gap-1">
-                        {formatLocale(d, "EEE", locale)}
+                      <div
+                        className={`flex items-center justify-center gap-1.5 px-1 py-0.5 rounded-sm ${holiday && !holiday.is_eve ? "bg-[hsl(0_75%_88%)]" : ""}`}
+                        style={holiday?.is_eve ? { backgroundImage: "repeating-linear-gradient(45deg, hsl(0 75% 82%) 0 6px, transparent 6px 14px)" } : undefined}
+                      >
+                        <HolidayCornerIcon holiday={holiday} inline />
+                        <span className={holiday ? "text-destructive font-semibold" : ""}>{formatLocale(d, "EEE", locale)}</span>
                         {blocked && <Lock className="h-3 w-3 text-muted-foreground" />}
                       </div>
-                      <div className="text-[10px] md:text-xs">{formatLocale(d, "MMM d", locale)}</div>
+                      <div className={`text-[10px] md:text-xs ${holiday ? "text-destructive/80" : ""}`}>{formatLocale(d, "MMM d", locale)}</div>
                     </th>
                   );
                 })}
