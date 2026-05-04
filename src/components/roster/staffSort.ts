@@ -75,3 +75,22 @@ export const ASSISTANT_BG_CLASS = "bg-muted/60 text-muted-foreground border-mute
 export function isAssistant(role?: string | null): boolean {
   return role === "assistant";
 }
+
+/**
+ * Display name for shift badges / overview lists.
+ *
+ * DB convention: names are stored as "Lastname Firstname" (Hebrew import order),
+ * sometimes with a middle name in between (e.g. "מגל פייג לואיז").
+ * We render: <first name> <initial of last name>.
+ *   "אגברייה יסמין"      -> "יסמין א"
+ *   "מגל פייג לואיז"     -> "לואיז מ"
+ */
+export function formatDisplayName(fullName?: string | null): string {
+  if (!fullName) return "?";
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0];
+  const firstName = parts[parts.length - 1];
+  const lastInitial = Array.from(parts[0])[0] ?? "";
+  return lastInitial ? `${firstName} ${lastInitial}` : firstName;
+}
