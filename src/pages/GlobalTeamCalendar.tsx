@@ -222,12 +222,12 @@ export default function GlobalTeamCalendar() {
                               });
                               if (typeShifts.length === 0) return null;
                               return (
-                                <div key={type} className={`rounded border px-1 py-0.5 ${shiftColors[type]}`}>
+                                <div key={type} className={`calendar-shift-box rounded border px-1 py-0.5 ${shiftColors[type]}`}>
                                   <div className={`text-[9px] font-semibold ${shiftTextColors[type]} flex items-center gap-0.5 mb-1`}>
                                     <span className={`w-1.5 h-1.5 rounded-full ${shiftDotColors[type]}`} />
                                     {shiftLabels[type]}
                                   </div>
-                                  <div className="flex flex-col gap-1">
+                                  <div className="calendar-staff-list flex flex-col gap-1">
                                     {typeShifts.map((s) => {
                                       const profile = s.assigned_profile as any;
                                       const isStandby = (s as any).is_standby;
@@ -239,7 +239,7 @@ export default function GlobalTeamCalendar() {
                                         <Badge
                                           key={s.id}
                                           variant={s.is_responsible_on_shift ? "default" : "secondary"}
-                                          className={`flex w-full min-w-0 items-center gap-0.5 text-[10px] px-1.5 py-0 leading-tight shadow-none whitespace-nowrap overflow-hidden ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
+                                          className={`calendar-staff-badge flex w-full min-w-0 items-center gap-0.5 text-[10px] px-1.5 py-0 leading-tight shadow-none whitespace-nowrap overflow-hidden ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
                                             isExternal
                                               ? "bg-slate-50 border-slate-200 text-slate-400 opacity-80"
                                               : isStandby
@@ -248,7 +248,7 @@ export default function GlobalTeamCalendar() {
                                           } ${assistantRole && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-gray-100/50 text-muted-foreground border-muted-foreground/20" : ""}`}
                                         >
                                           {isExternal && <ArrowLeftRight className="h-2.5 w-2.5 shrink-0" />}
-                                          <span className="truncate min-w-0 flex-1">{firstName}</span>
+                                          <span className="calendar-staff-name truncate min-w-0 flex-1">{firstName}</span>
                                           {isResp && <Star className="h-2.5 w-2.5 fill-current shrink-0" />}
                                           {isStandby && <Phone className="h-2.5 w-2.5 shrink-0" />}
                                         </Badge>
