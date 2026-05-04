@@ -12,7 +12,7 @@ import { ChevronLeft, ChevronRight, Users, Star, Phone, ArrowLeftRight } from "l
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
 import { Badge } from "@/components/ui/badge";
-import { compareShiftAssignment } from "@/components/roster/staffSort";
+import { compareShiftAssignment, formatDisplayName } from "@/components/roster/staffSort";
 
 const isAssistant = (role?: string | null) => role === "assistant";
 
@@ -202,7 +202,7 @@ export default function GlobalTeamCalendar() {
                                       const isExternal = (s as any).is_external;
                                       const isResp = s.is_responsible_on_shift || profile?.is_responsible;
                                       const assistantRole = isAssistant(profile?.role);
-                                      const firstName = profile?.full_name?.split(" ")[0] || "?";
+                                      const firstName = formatDisplayName(profile?.full_name);
                                       return (
                                         <Badge
                                           key={s.id}

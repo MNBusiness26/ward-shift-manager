@@ -17,7 +17,7 @@ import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, Shield
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
 import { validateShiftFriction, isOverHeadcount, getHeadcountTarget } from "@/components/roster/frictionValidation";
-import { compareStaff, compareShiftAssignment, isAssistant } from "@/components/roster/staffSort";
+import { compareStaff, compareShiftAssignment, isAssistant, formatDisplayName } from "@/components/roster/staffSort";
 import { useStaffPool } from "@/hooks/useStaffPool";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
@@ -286,14 +286,8 @@ export default function ManagementCalendar() {
     setDialogOpen(true);
   };
 
-  const getFirstName = (shift: any): string => {
-    const fullName = shift.profiles?.full_name;
-    if (!fullName) return "?";
-    // Names are stored as "Lastname Firstname" (Hebrew convention from import).
-    // The first/given name is the LAST whitespace-separated token.
-    const parts = fullName.trim().split(/\s+/);
-    return parts[parts.length - 1];
-  };
+  const getFirstName = (shift: any): string =>
+    formatDisplayName(shift.profiles?.full_name);
 
   const handleCellClick = (dateStr: string, type: ShiftType) => {
     if (isDateBlocked(dateStr)) return;
