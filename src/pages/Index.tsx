@@ -47,10 +47,11 @@ export default function Index() {
   const greetingFormat = settings.find((s: any) => s.key === "greeting_format")?.value ?? "formal";
 
   const roleLabel = (() => {
-    if (roles.includes("manager")) return "Manager";
-    if (roles.includes("assistant_manager")) return "Assistant Manager";
-    if (roles.includes("assistant")) return "Assistant";
-    return "Nurse";
+    if (roles.includes("manager")) return getRoleLabel("manager", locale);
+    if (roles.includes("assistant_manager")) return getRoleLabel("assistant_manager", locale);
+    if (roles.includes("team_leader")) return getRoleLabel("team_leader", locale);
+    if (roles.includes("assistant")) return getRoleLabel("assistant", locale);
+    return getRoleLabel("nurse", locale);
   })();
 
   const shiftLabels: Record<string, string> = {
