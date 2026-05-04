@@ -922,6 +922,10 @@ export default function Roster() {
                     );
                     const blocked = isBlocked(member.id, dateStr);
                     const dateBlocked = isDateBlocked(dateStr);
+                    const preferredShifts = (!blocked && !dateBlocked) ? getPreferredShifts(member.id, dateStr) : [];
+                    // Hide preference placeholder for any shift type already assigned
+                    const assignedTypes = new Set(dayShifts.map((s) => s.type));
+                    const visiblePreferred = preferredShifts.filter((p) => !assignedTypes.has(p as any));
                     return (
                       <td
                         key={d.toISOString()}
@@ -972,6 +976,22 @@ export default function Roster() {
                           </div>
                           );
                         })}
+                        {visiblePreferred.map((shiftType) => (
+                          <div
+                            key={`pref-${shiftType}`}
+                            className="shift-preferred-placeholder mb-0.5 mt-0.5"
+                            title={t("avail.preferenceLabel")}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingShift(null);
+                              setForm({ ...defaultForm(dateStr), assigned_user_id: member.id, type: shiftType as any, start_time: shiftTimes[shiftType as ShiftType].start, end_time: shiftTimes[shiftType as ShiftType].end });
+                              setDialogOpen(true);
+                            }}
+                          >
+                            <span className="font-medium uppercase">{shiftType.charAt(0)}</span>
+                            <span className="ms-1">{t("avail.requested")}</span>
+                          </div>
+                        ))}
                       </td>
                     );
                   })}
