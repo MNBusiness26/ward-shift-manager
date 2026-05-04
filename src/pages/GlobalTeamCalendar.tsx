@@ -146,10 +146,19 @@ export default function GlobalTeamCalendar() {
           >
             <ChevronRight className="h-4 w-4 rtl:rotate-180" />
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={isExporting}
+          >
+            <FileDown className="h-4 w-4 md:me-2" />
+            <span className="hidden md:inline">{t("common.exportPdf") || "Export PDF"}</span>
+          </Button>
         </div>
       </div>
 
-      <Card className="flex-1 flex flex-col">
+      <Card ref={calendarRef} className="flex-1 flex flex-col">
         <CardHeader className="pb-2">
           <CardTitle className="text-base text-center">
             {isWeek
