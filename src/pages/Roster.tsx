@@ -836,15 +836,18 @@ export default function Roster() {
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
+                  const holiday = holidayMap.get(dateStr);
                   return (
                     <th key={d.toISOString()} className={`relative z-10 min-w-[70px] md:min-w-[120px] py-4 px-1 md:py-5 md:px-2 text-center font-medium text-muted-foreground border-b border-r border-border/30 ${dateBlocked ? "bg-muted/50" : ""}`}>
-                      <HolidayCellBackground holiday={holidayMap.get(dateStr)} />
-                      <HolidayCornerIcon holiday={holidayMap.get(dateStr)} />
-                      <div className="flex items-center justify-center gap-1">
-                        {formatLocale(d, "EEE", locale)}
+                      <div
+                        className={`flex items-center justify-center gap-1.5 mb-0.5 px-1 py-0.5 rounded-sm ${holiday && !holiday.is_eve ? "bg-[hsl(0_75%_88%)]" : ""}`}
+                        style={holiday?.is_eve ? { backgroundImage: "repeating-linear-gradient(45deg, hsl(0 75% 82%) 0 6px, transparent 6px 14px)" } : undefined}
+                      >
+                        <HolidayCornerIcon holiday={holiday} inline />
+                        <span className={holiday ? "text-destructive font-semibold" : ""}>{formatLocale(d, "EEE", locale)}</span>
                         {dateBlocked && <Lock className="h-3 w-3" />}
                       </div>
-                      <div className="text-[10px] md:text-xs mb-1">{formatLocale(d, "MMM d", locale)}</div>
+                      <div className={`text-[10px] md:text-xs mb-1 ${holiday ? "text-destructive/80" : ""}`}>{formatLocale(d, "MMM d", locale)}</div>
                       {/* Fulfillment summary per shift type */}
                       <div className="flex flex-col gap-0.5">
                         {(["morning", "evening", "night"] as const).map((st) => {
