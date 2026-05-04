@@ -6,9 +6,10 @@ import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, addMonths, subMonths, addWeeks, subWeeks, isToday, isSameMonth,
 } from "date-fns";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { ChevronLeft, ChevronRight, Users, Star, Phone, ArrowLeftRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, Star, Phone, ArrowLeftRight, FileDown } from "lucide-react";
+import { exportCalendarToPdf } from "@/lib/exportCalendarPdf";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
 import { Badge } from "@/components/ui/badge";
