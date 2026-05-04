@@ -19,7 +19,7 @@ import {
   addMonths, subMonths, isWithinInterval, parseISO, isToday,
 } from "date-fns";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, X, CalendarOff, Palmtree, Plane, Bandage, Baby } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, CalendarOff, Palmtree, Plane, Bandage, Baby, GraduationCap } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
 import { isLeaveType } from "@/lib/availabilityTypes";
@@ -39,9 +39,10 @@ const typeIcons: Record<string, React.ReactNode> = {
   sick_leave: <Bandage className="h-3 w-3 shrink-0" />,
   maternity_leave: <Baby className="h-3 w-3 shrink-0" />,
   yearly_leave: <Palmtree className="h-3 w-3 shrink-0" />,
+  study: <GraduationCap className="h-3 w-3 shrink-0" />,
 };
 
-type AvailType = "block" | "vacation" | "sick_leave" | "maternity_leave" | "yearly_leave";
+type AvailType = "block" | "vacation" | "sick_leave" | "maternity_leave" | "yearly_leave" | "study";
 
 const typeLabelKey: Record<string, string> = {
   block: "avail.blockDates",
@@ -50,6 +51,7 @@ const typeLabelKey: Record<string, string> = {
   sick_leave: "avail.sickLeaveLabel",
   maternity_leave: "avail.maternityLeaveLabel",
   yearly_leave: "avail.yearlyLeaveLabel",
+  study: "avail.studyLabel",
 };
 
 export default function Availability() {
@@ -316,6 +318,9 @@ export default function Availability() {
                     </SelectItem>
                     <SelectItem value="yearly_leave">
                       <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.yearlyLeaveLabel")}</span>
+                    </SelectItem>
+                    <SelectItem value="study">
+                      <span className="flex items-center gap-2"><GraduationCap className="h-3 w-3" /> {t("avail.studyLabel")}</span>
                     </SelectItem>
                   </SelectContent>
                 </Select>
