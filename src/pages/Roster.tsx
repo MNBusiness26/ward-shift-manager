@@ -100,6 +100,7 @@ export default function Roster() {
   const [viewStart, setViewStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
   const viewEnd = addDays(viewStart, 6);
   const days = eachDayOfInterval({ start: viewStart, end: viewEnd });
+  const holidayMap = useHolidayMap();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
