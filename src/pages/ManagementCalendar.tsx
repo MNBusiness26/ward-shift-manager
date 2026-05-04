@@ -17,7 +17,7 @@ import { ChevronLeft, ChevronRight, Plus, Users, Star, Trash2, Eye, Lock, Shield
 import { BulkAssignDialog } from "@/components/roster/BulkAssignDialog";
 import { FrictionDialog, type FrictionWarning } from "@/components/roster/FrictionDialog";
 import { validateShiftFriction, isOverHeadcount, getHeadcountTarget } from "@/components/roster/frictionValidation";
-import { compareStaff, isAssistant } from "@/components/roster/staffSort";
+import { compareStaff, compareShiftAssignment, isAssistant } from "@/components/roster/staffSort";
 import { useStaffPool } from "@/hooks/useStaffPool";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { toast } from "sonner";
@@ -459,20 +459,22 @@ export default function ManagementCalendar() {
                       .sort((a, b) => {
                         const pa = staff.find((p) => p.id === a.assigned_user_id);
                         const pb = staff.find((p) => p.id === b.assigned_user_id);
-                        return compareStaff(
-                          {
-                            full_name: (a as any).profiles?.full_name || pa?.full_name || "",
-                            is_responsible_on_shift: a.is_responsible_on_shift,
-                            is_responsible: pa?.is_responsible,
-                            role: pa?.role ?? pa?.app_role,
-                          },
-                          {
-                            full_name: (b as any).profiles?.full_name || pb?.full_name || "",
-                            is_responsible_on_shift: b.is_responsible_on_shift,
-                            is_responsible: pb?.is_responsible,
-                            role: pb?.role ?? pb?.app_role,
-                          },
-                        );
+                        return compareShiftAssignment(
+                           {
+                             full_name: (a as any).profiles?.full_name || pa?.full_name || "",
+                             is_responsible_on_shift: a.is_responsible_on_shift,
+                             is_responsible: pa?.is_responsible,
+                             role: pa?.role ?? pa?.app_role,
+                             is_standby: (a as any).is_standby,
+                           },
+                           {
+                             full_name: (b as any).profiles?.full_name || pb?.full_name || "",
+                             is_responsible_on_shift: b.is_responsible_on_shift,
+                             is_responsible: pb?.is_responsible,
+                             role: pb?.role ?? pb?.app_role,
+                             is_standby: (b as any).is_standby,
+                           },
+                         );
                       });
                     const overHeadcount = isOverHeadcount(shifts as any[], dateStr, type, headcountLimits, staffRoleMap);
                     return (
