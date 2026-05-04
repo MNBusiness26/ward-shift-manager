@@ -23,7 +23,7 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, X, CalendarOff, Palmtree, Plane, Bandage, Baby, GraduationCap, Star } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
-import { isLeaveType } from "@/lib/availabilityTypes";
+import { isLeaveType, isPreferenceType } from "@/lib/availabilityTypes";
 
 const SHIFT_TYPES = ["morning", "evening", "night"] as const;
 
