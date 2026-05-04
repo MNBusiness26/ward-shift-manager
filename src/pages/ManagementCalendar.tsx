@@ -383,6 +383,9 @@ export default function ManagementCalendar() {
         element: calendarRef.current,
         fileName: `weekly-overview-${format(weekStart, "yyyy-MM-dd")}`,
         title: `${t("nav.weeklyOverview") || "Weekly Overview"} — ${titleStr}`,
+        orientation: "landscape",
+        format: "a4",
+        direction: locale === "he" ? "rtl" : "ltr",
       });
     } finally {
       setIsExporting(false);
