@@ -198,10 +198,14 @@ export default function GlobalTeamCalendar() {
                         key={dateStr}
                         className={`relative p-1 border-s align-top min-h-[140px] h-[14vh] ${!inMonth ? "bg-muted/30" : ""} ${today ? "ring-2 ring-inset ring-primary/40" : ""}`}
                       >
-                        <HolidayCellBackground holiday={holiday} />
-                        <HolidayCornerIcon holiday={holiday} />
-                        <div className={`text-xs font-medium mb-1 ${!inMonth ? "text-muted-foreground/50" : today ? "text-primary font-bold" : "text-muted-foreground"}`}>
-                          {format(day, "d")}
+                        <div
+                          className={`flex items-center justify-between mb-1 px-1 rounded-sm overflow-hidden ${holiday && !holiday.is_eve ? "bg-[hsl(0_75%_88%)]" : ""}`}
+                          style={holiday?.is_eve ? { backgroundImage: "repeating-linear-gradient(45deg, hsl(0 75% 82%) 0 6px, transparent 6px 14px)" } : undefined}
+                        >
+                          <span className={`text-xs font-medium ${!inMonth ? "text-muted-foreground/50" : today ? "text-primary font-bold" : holiday ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                            {format(day, "d")}
+                          </span>
+                          <HolidayCornerIcon holiday={holiday} inline />
                         </div>
                         {inMonth && (
                           <div className="space-y-1">
