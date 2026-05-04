@@ -320,34 +320,78 @@ export default function Availability() {
           </DialogHeader>
           {selectedDate && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>{t("common.type")}</Label>
-                <Select value={requestType} onValueChange={(v: any) => { setRequestType(v); setBlockedShifts([]); }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="block">
-                      <span className="flex items-center gap-2"><CalendarOff className="h-3 w-3" /> {t("avail.blockDates")}</span>
-                    </SelectItem>
-                    <SelectItem value="vacation">
-                      <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.vacationLabel")}</span>
-                    </SelectItem>
-                    <SelectItem value="sick_leave">
-                      <span className="flex items-center gap-2"><Bandage className="h-3 w-3" /> {t("avail.sickLeaveLabel")}</span>
-                    </SelectItem>
-                    <SelectItem value="maternity_leave">
-                      <span className="flex items-center gap-2"><Baby className="h-3 w-3" /> {t("avail.maternityLeaveLabel")}</span>
-                    </SelectItem>
-                    <SelectItem value="yearly_leave">
-                      <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.yearlyLeaveLabel")}</span>
-                    </SelectItem>
-                    <SelectItem value="study">
-                      <span className="flex items-center gap-2"><GraduationCap className="h-3 w-3" /> {t("avail.studyLabel")}</span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Tabs value={dialogMode} onValueChange={(v) => { setDialogMode(v as any); setBlockedShifts([]); setReason(""); setEndDate(""); if (v === "block") setRequestType("block"); }}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="block">{t("avail.blockTab")}</TabsTrigger>
+                  <TabsTrigger value="preference">{t("avail.preferenceTab")}</TabsTrigger>
+                </TabsList>
+              </Tabs>
 
-              {requestType === "block" ? (
+              {dialogMode === "block" ? (
+                <>
+                  <div className="space-y-2">
+                    <Label>{t("common.type")}</Label>
+                    <Select value={requestType} onValueChange={(v: any) => { setRequestType(v); setBlockedShifts([]); }}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="block">
+                          <span className="flex items-center gap-2"><CalendarOff className="h-3 w-3" /> {t("avail.blockDates")}</span>
+                        </SelectItem>
+                        <SelectItem value="vacation">
+                          <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.vacationLabel")}</span>
+                        </SelectItem>
+                        <SelectItem value="sick_leave">
+                          <span className="flex items-center gap-2"><Bandage className="h-3 w-3" /> {t("avail.sickLeaveLabel")}</span>
+                        </SelectItem>
+                        <SelectItem value="maternity_leave">
+                          <span className="flex items-center gap-2"><Baby className="h-3 w-3" /> {t("avail.maternityLeaveLabel")}</span>
+                        </SelectItem>
+                        <SelectItem value="yearly_leave">
+                          <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.yearlyLeaveLabel")}</span>
+                        </SelectItem>
+                        <SelectItem value="study">
+                          <span className="flex items-center gap-2"><GraduationCap className="h-3 w-3" /> {t("avail.studyLabel")}</span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {requestType === "block" ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label>{t("common.date")}</Label>
+                        <Input type="date" value={format(selectedDate, "yyyy-MM-dd")} onChange={(e) => {
+                          const d = new Date(e.target.value + "T00:00:00");
+                          if (!isNaN(d.getTime())) setSelectedDate(d);
+                        }} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{t("avail.blockShifts")}</Label>
+                        <p className="text-xs text-muted-foreground">{t("avail.blockShiftsHint")}</p>
+                        <div className="flex gap-3">
+                          {SHIFT_TYPES.map((type) => (
+                            <label key={type} className="flex items-center gap-2 text-sm cursor-pointer">
+                              <Checkbox checked={blockedShifts.includes(type)} onCheckedChange={() => toggleShift(type)} />
+                              <span>{t(`shift.${type}`)}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>{t("avail.startDate")}</Label>
+                        <Input type="date" value={format(selectedDate, "yyyy-MM-dd")} readOnly className="bg-muted" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{t("avail.endDate")}</Label>
+                        <Input type="date" value={endDate || format(selectedDate, "yyyy-MM-dd")} min={format(selectedDate, "yyyy-MM-dd")} onChange={(e) => setEndDate(e.target.value)} />
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
                 <>
                   <div className="space-y-2">
                     <Label>{t("common.date")}</Label>
@@ -357,8 +401,7 @@ export default function Availability() {
                     }} />
                   </div>
                   <div className="space-y-2">
-                    <Label>{t("avail.blockShifts")}</Label>
-                    <p className="text-xs text-muted-foreground">{t("avail.blockShiftsHint")}</p>
+                    <Label>{t("avail.requestSpecificShifts")}</Label>
                     <div className="flex gap-3">
                       {SHIFT_TYPES.map((type) => (
                         <label key={type} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -369,17 +412,6 @@ export default function Availability() {
                     </div>
                   </div>
                 </>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>{t("avail.startDate")}</Label>
-                    <Input type="date" value={format(selectedDate, "yyyy-MM-dd")} readOnly className="bg-muted" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{t("avail.endDate")}</Label>
-                    <Input type="date" value={endDate || format(selectedDate, "yyyy-MM-dd")} min={format(selectedDate, "yyyy-MM-dd")} onChange={(e) => setEndDate(e.target.value)} />
-                  </div>
-                </div>
               )}
 
               <div className="space-y-2">
@@ -389,7 +421,11 @@ export default function Availability() {
 
               <div className="flex flex-col-reverse md:flex-row gap-2 md:justify-end">
                 <Button variant="outline" onClick={closeDialog} className="w-full md:w-auto">{t("common.cancel")}</Button>
-                <Button onClick={() => createRequest.mutate()} disabled={createRequest.isPending} className="w-full md:w-auto">
+                <Button
+                  onClick={() => createRequest.mutate()}
+                  disabled={createRequest.isPending || (dialogMode === "preference" && blockedShifts.length === 0)}
+                  className="w-full md:w-auto"
+                >
                   {t("avail.submitRequest")}
                 </Button>
               </div>
