@@ -8,59 +8,137 @@ interface ExportOptions {
   fileName: string;
   /** Optional title — currently ignored to avoid font/encoding issues with non-Latin scripts. */
   title?: string;
+  /** Page orientation. Defaults to landscape. */
+  orientation?: "landscape" | "portrait";
+  /** Page format. Defaults to A4. Use A3 for dense month views. */
+  format?: "a4" | "a3";
+  /** Force a text direction inside the cloned sandbox (rtl preserves icon alignment for Hebrew). */
+  direction?: "ltr" | "rtl";
 }
 
 /**
- * Capture a calendar DOM node and save it as a single-page landscape A4 PDF
- * that fits the entire view.
- *
- * To prevent staff badges from overlapping or being clipped inside narrow
- * cells, we temporarily widen the element to a desktop-class width before
- * capturing, then restore the original styles.
+ * Render the calendar into a hidden, fixed-width "sandbox" clone with print-tuned
+ * CSS, then rasterize to a single-page PDF. Cloning avoids fighting with the
+ * live responsive layout (vh heights, flex-1, narrow columns) that causes the
+ * cramped/overlapping output we saw before.
  */
-export async function exportCalendarToPdf({ element, fileName }: ExportOptions) {
-  const bgColor =
-    getComputedStyle(document.body).backgroundColor || "#ffffff";
+export async function exportCalendarToPdf({
+  element,
+  fileName,
+  orientation = "landscape",
+  format = "a4",
+  direction,
+}: ExportOptions) {
+  const bgColor = getComputedStyle(document.body).backgroundColor || "#ffffff";
 
-  // Capture in the same aspect ratio as the landscape PDF page. This keeps the
-  // calendar from becoming an ultra-wide strip with large empty margins above
-  // and below, while still giving each day column enough width for names.
-  const CAPTURE_WIDTH = 1600;
-  const CAPTURE_HEIGHT = 1080;
-  const prevWidth = element.style.width;
-  const prevHeight = element.style.height;
-  const prevMaxWidth = element.style.maxWidth;
-  const prevMinWidth = element.style.minWidth;
-  const prevMaxHeight = element.style.maxHeight;
-  const prevMinHeight = element.style.minHeight;
-  const prevDatasetValue = element.getAttribute("data-pdf-export");
+  // A3 landscape gets a wider sandbox so dense month grids breathe.
+  const SANDBOX_WIDTH = format === "a3" && orientation === "landscape" ? 1600 : 1200;
+
+  // Detect direction from the live element if not forced.
+  const liveDir =
+    direction ||
+    (getComputedStyle(element).direction === "rtl" ? "rtl" : "ltr");
+
+  // Build the hidden sandbox container.
+  const sandbox = document.createElement("div");
+  sandbox.setAttribute("data-pdf-sandbox", "true");
+  sandbox.style.position = "fixed";
+  sandbox.style.top = "0";
+  sandbox.style.left = "-10000px";
+  sandbox.style.width = `${SANDBOX_WIDTH}px`;
+  sandbox.style.background = bgColor;
+  sandbox.style.zIndex = "-1";
+  sandbox.style.pointerEvents = "none";
+  sandbox.dir = liveDir;
+
+  // Clone the calendar element deeply.
+  const clone = element.cloneNode(true) as HTMLElement;
+  clone.setAttribute("data-pdf-export", "true");
+  clone.style.width = `${SANDBOX_WIDTH}px`;
+  clone.style.maxWidth = `${SANDBOX_WIDTH}px`;
+  clone.style.minWidth = `${SANDBOX_WIDTH}px`;
+  clone.style.height = "auto";
+  clone.style.minHeight = "0";
+  clone.style.maxHeight = "none";
+  clone.style.overflow = "visible";
+
+  sandbox.appendChild(clone);
+
+  // Print-tuned style sheet scoped to the sandbox.
   const style = document.createElement("style");
   style.id = "calendar-pdf-export-styles";
   style.textContent = `
-    [data-pdf-export="true"] { direction: inherit; }
-    [data-pdf-export="true"] { height: ${CAPTURE_HEIGHT}px !important; min-height: ${CAPTURE_HEIGHT}px !important; }
-    [data-pdf-export="true"] .overflow-hidden { overflow: hidden !important; }
-    [data-pdf-export="true"] table { height: 100% !important; min-height: 100% !important; }
-    [data-pdf-export="true"] tbody { height: 100% !important; }
-    [data-pdf-export="true"] tr { height: auto !important; }
-    [data-pdf-export="true"] td { overflow: hidden !important; }
-    [data-pdf-export="true"] .calendar-shift-box { overflow: hidden !important; padding: 4px 5px !important; }
-    [data-pdf-export="true"] .calendar-staff-list { gap: 4px !important; min-width: 0 !important; }
-    [data-pdf-export="true"] .calendar-staff-badge {
+    [data-pdf-sandbox="true"] { direction: ${liveDir}; }
+    [data-pdf-export="true"], [data-pdf-export="true"] * {
+      box-sizing: border-box !important;
+      animation: none !important;
+      transition: none !important;
+    }
+    [data-pdf-export="true"] .overflow-hidden,
+    [data-pdf-export="true"] .overflow-x-auto,
+    [data-pdf-export="true"] .overflow-y-auto {
+      overflow: visible !important;
+    }
+
+    /* Force fixed table layout with even column widths. */
+    [data-pdf-export="true"] table {
+      width: 100% !important;
+      table-layout: fixed !important;
+      border-collapse: collapse !important;
+      height: auto !important;
+      min-height: 0 !important;
+    }
+    [data-pdf-export="true"] thead th {
+      font-size: 12px !important;
+      padding: 6px 4px !important;
+      page-break-inside: avoid;
+    }
+
+    /* Cell sizing: explicit min height, no vh, no flex collapse. */
+    [data-pdf-export="true"] tbody tr { height: auto !important; }
+    [data-pdf-export="true"] tbody td {
+      height: auto !important;
+      min-height: 180px !important;
+      vertical-align: top !important;
+      padding: 4px !important;
+      page-break-inside: avoid;
+    }
+    /* Dense cells (>5 staff) trim padding to keep contents inside the cell. */
+    [data-pdf-export="true"] tbody td.pdf-dense {
+      min-height: 200px !important;
+      padding: 2px !important;
+    }
+    [data-pdf-export="true"] tbody td.pdf-dense .calendar-shift-box {
+      padding: 2px 3px !important;
+    }
+
+    /* Shift type label */
+    [data-pdf-export="true"] .calendar-shift-box {
+      padding: 4px 5px !important;
+      margin-bottom: 3px !important;
+      page-break-inside: avoid;
+    }
+
+    /* Staff list & badges */
+    [data-pdf-export="true"] .calendar-staff-list {
       display: flex !important;
+      flex-direction: column !important;
+      gap: 3px !important;
+      min-width: 0 !important;
+    }
+    [data-pdf-export="true"] .calendar-staff-badge {
+      display: inline-flex !important;
       align-items: center !important;
       width: 100% !important;
       max-width: 100% !important;
       min-width: 0 !important;
-      height: 18px !important;
-      min-height: 18px !important;
-      max-height: 18px !important;
-      padding: 1px 5px !important;
-      overflow: hidden !important;
+      min-height: 20px !important;
+      padding: 2px 6px !important;
       white-space: nowrap !important;
       line-height: 16px !important;
       font-size: 10px !important;
       border-radius: 4px !important;
+      gap: 4px !important;
     }
     [data-pdf-export="true"] .calendar-staff-name {
       min-width: 0 !important;
@@ -69,6 +147,7 @@ export async function exportCalendarToPdf({ element, fileName }: ExportOptions) 
       text-overflow: ellipsis !important;
       white-space: nowrap !important;
       line-height: 16px !important;
+      font-size: 10px !important;
     }
     [data-pdf-export="true"] .calendar-staff-badge svg {
       width: 10px !important;
@@ -76,56 +155,42 @@ export async function exportCalendarToPdf({ element, fileName }: ExportOptions) 
       flex: 0 0 auto !important;
     }
   `;
-
   document.head.appendChild(style);
-  element.setAttribute("data-pdf-export", "true");
-  element.style.width = `${CAPTURE_WIDTH}px`;
-  element.style.height = `${CAPTURE_HEIGHT}px`;
-  element.style.maxWidth = `${CAPTURE_WIDTH}px`;
-  element.style.minWidth = `${CAPTURE_WIDTH}px`;
-  element.style.maxHeight = `${CAPTURE_HEIGHT}px`;
-  element.style.minHeight = `${CAPTURE_HEIGHT}px`;
+  document.body.appendChild(sandbox);
 
-  // Allow layout to settle
+  // Tag dense cells (>5 staff badges) so CSS can tighten them.
+  clone.querySelectorAll("tbody td").forEach((td) => {
+    const count = td.querySelectorAll(".calendar-staff-badge").length;
+    if (count > 5) td.classList.add("pdf-dense");
+  });
+
+  // Allow layout to settle.
   await new Promise((r) => requestAnimationFrame(() => r(null)));
+  await new Promise((r) => setTimeout(r, 50));
+
+  const sandboxHeight = Math.max(clone.scrollHeight, clone.offsetHeight, 600);
 
   let canvas: HTMLCanvasElement;
   try {
-    canvas = await html2canvas(element, {
+    canvas = await html2canvas(clone, {
       scale: 2,
       useCORS: true,
       backgroundColor: bgColor,
-      width: CAPTURE_WIDTH,
-      height: CAPTURE_HEIGHT,
-      windowWidth: CAPTURE_WIDTH,
-      windowHeight: CAPTURE_HEIGHT,
+      width: SANDBOX_WIDTH,
+      height: sandboxHeight,
+      windowWidth: SANDBOX_WIDTH,
+      windowHeight: sandboxHeight,
       logging: false,
     });
   } finally {
-    element.style.width = prevWidth;
-    element.style.height = prevHeight;
-    element.style.maxWidth = prevMaxWidth;
-    element.style.minWidth = prevMinWidth;
-    element.style.maxHeight = prevMaxHeight;
-    element.style.minHeight = prevMinHeight;
-    if (prevDatasetValue === null) {
-      element.removeAttribute("data-pdf-export");
-    } else {
-      element.setAttribute("data-pdf-export", prevDatasetValue);
-    }
+    sandbox.remove();
     style.remove();
   }
 
-  const pdf = new jsPDF({
-    orientation: "landscape",
-    unit: "mm",
-    format: "a4",
-  });
-
-  const pageW = pdf.internal.pageSize.getWidth();   // 297mm
-  const pageH = pdf.internal.pageSize.getHeight();  // 210mm
-  const margin = 6;
-
+  const pdf = new jsPDF({ orientation, unit: "mm", format });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const margin = 10;
   const availableW = pageW - margin * 2;
   const availableH = pageH - margin * 2;
 

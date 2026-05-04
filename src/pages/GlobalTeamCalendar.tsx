@@ -104,6 +104,9 @@ export default function GlobalTeamCalendar() {
         element: calendarRef.current,
         fileName: fileBase,
         title: `${t("page.teamCalendar")} — ${titleStr}`,
+        orientation: "landscape",
+        format: isWeek ? "a4" : "a3",
+        direction: locale === "he" ? "rtl" : "ltr",
       });
     } finally {
       setIsExporting(false);
