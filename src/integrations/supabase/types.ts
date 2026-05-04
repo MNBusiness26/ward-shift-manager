@@ -160,6 +160,54 @@ export type Database = {
         }
         Relationships: []
       }
+      public_holidays: {
+        Row: {
+          category: Database["public"]["Enums"]["holiday_category"]
+          created_at: string
+          created_by: string | null
+          date: string
+          hebcal_uid: string | null
+          id: string
+          is_active: boolean
+          is_eve: boolean
+          name_en: string
+          name_he: string
+          region: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["holiday_category"]
+          created_at?: string
+          created_by?: string | null
+          date: string
+          hebcal_uid?: string | null
+          id?: string
+          is_active?: boolean
+          is_eve?: boolean
+          name_en?: string
+          name_he?: string
+          region?: string
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["holiday_category"]
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          hebcal_uid?: string | null
+          id?: string
+          is_active?: boolean
+          is_eve?: boolean
+          name_en?: string
+          name_he?: string
+          region?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       roster_versions: {
         Row: {
           created_at: string
@@ -443,6 +491,7 @@ export type Database = {
         | "sick_leave"
         | "maternity_leave"
         | "yearly_leave"
+      holiday_category: "jewish" | "muslim" | "christian" | "national" | "ward"
       request_status: "pending" | "approved" | "declined"
       shift_type: "morning" | "evening" | "night"
       swap_status: "pending" | "peer_accepted" | "manager_approved" | "denied"
@@ -582,6 +631,7 @@ export const Constants = {
         "maternity_leave",
         "yearly_leave",
       ],
+      holiday_category: ["jewish", "muslim", "christian", "national", "ward"],
       request_status: ["pending", "approved", "declined"],
       shift_type: ["morning", "evening", "night"],
       swap_status: ["pending", "peer_accepted", "manager_approved", "denied"],
