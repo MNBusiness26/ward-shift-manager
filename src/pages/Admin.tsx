@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/i18n/useTranslation";
+import { LocalizationPanel } from "@/components/admin/LocalizationPanel";
 
 const ADMIN_EMAIL = "michael.nejman@gmail.com";
 
@@ -74,8 +75,19 @@ export default function Admin() {
     }
   }, [settings]);
 
-  if (!user || profile?.email !== ADMIN_EMAIL) {
-    return <Navigate to="/" replace />;
+  const isPrimaryAdmin = profile?.email === ADMIN_EMAIL;
+  if (!user) return <Navigate to="/" replace />;
+  // Non-primary-admin manager/assistant_manager: show only the Localization panel.
+  if (!isPrimaryAdmin) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Shield className="h-6 w-6" />
+          {t("admin.title")}
+        </h1>
+        <LocalizationPanel />
+      </div>
+    );
   }
 
   const saveSetting = useMutation({
