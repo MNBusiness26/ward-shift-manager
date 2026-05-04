@@ -154,7 +154,7 @@ export default function GlobalTeamCalendar() {
                 <tr key={wi} className="border-t">
                   {week.map((day) => {
                     const dateStr = format(day, "yyyy-MM-dd");
-                    const inMonth = isSameMonth(day, currentMonth);
+                    const inMonth = isWeek || isSameMonth(day, currentMonth);
                     const today = isToday(day);
                     return (
                       <td
