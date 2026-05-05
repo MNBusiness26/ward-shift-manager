@@ -45,14 +45,11 @@ function bucketHours(shifts: PayrollShift[]): ShiftHourBuckets {
   const b: ShiftHourBuckets = { morning: 0, evening: 0, night: 0, onCall: 0, regular: 0 };
   for (const s of shifts) {
     const h = shiftPaidHours(s);
-    if (s.is_standby) {
-      b.onCall += h;
-      continue;
-    }
     if (s.type === "morning") b.morning += h;
     else if (s.type === "evening") b.evening += h;
     else if (s.type === "night") b.night += h;
-    b.regular += h;
+    if (s.is_standby) b.onCall += h;
+    else b.regular += h;
   }
   return b;
 }
