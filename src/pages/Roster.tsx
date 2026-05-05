@@ -960,7 +960,7 @@ export default function Roster() {
                                 : (s as any).is_standby
                                 ? "bg-blue-50/60 border-l-4 border-blue-400 border-t-0 border-r-0 border-b-0 text-foreground"
                                 : s.is_draft
-                                  ? `${shiftBgDraft[s.type]} opacity-70 border border-dashed ${s.type === "morning" ? "border-s-shift-morning" : s.type === "evening" ? "border-s-shift-evening" : "border-s-shift-night"} border-s-2`
+                                  ? `${shiftBgDraft[s.type]} opacity-70 border border-dotted ${s.type === "morning" ? "border-s-shift-morning" : s.type === "evening" ? "border-s-shift-evening" : "border-s-shift-night"} border-s-2`
                                   : `${shiftBgPublished[s.type]} border-s-2 ${s.type === "morning" ? "border-s-shift-morning" : s.type === "evening" ? "border-s-shift-evening" : "border-s-shift-night"}`
                             }`}
                           >
