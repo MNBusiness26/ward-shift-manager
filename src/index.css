@@ -43,6 +43,9 @@
     --shift-evening: 13 82% 62%;
     --shift-night: 231 48% 48%;
 
+    /* Amethyst (#9F66CC) — used for holidays */
+    --amethyst: 274 53% 60%;
+
     /* Deep navy sidebar with electric blue accent */
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
