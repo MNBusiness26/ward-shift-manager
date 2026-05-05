@@ -64,9 +64,9 @@ export const HolidayCellBackground = forwardRef<HTMLDivElement, { holiday: Publi
     const style: React.CSSProperties = holiday.is_eve
       ? {
           backgroundImage:
-            "repeating-linear-gradient(45deg, rgba(239,68,68,0.10) 0 6px, transparent 6px 14px)",
+            "repeating-linear-gradient(45deg, rgba(159,102,204,0.14) 0 6px, transparent 6px 14px)",
         }
-      : { backgroundColor: "rgba(239, 68, 68, 0.08)" };
+      : { backgroundColor: "rgba(159, 102, 204, 0.08)" };
     return (
       <div
         ref={ref}
