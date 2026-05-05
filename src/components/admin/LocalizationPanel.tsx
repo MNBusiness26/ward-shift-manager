@@ -261,48 +261,59 @@ export function LocalizationPanel() {
         </div>
 
         {/* Holiday list */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">
-            Upcoming Holidays
-            <span className="text-xs font-normal text-muted-foreground ms-2">({upcoming.length})</span>
-          </Label>
-          <div className="rounded-lg border max-h-[400px] overflow-auto">
-            <div className="grid grid-cols-[100px_1fr_1fr_auto_auto_auto] gap-2 border-b bg-muted/50 p-2 text-xs font-medium text-muted-foreground sticky top-0">
-              <span>Date</span>
-              <span>English</span>
-              <span>עברית</span>
-              <span>Category</span>
-              <span>Active</span>
-              <span></span>
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full justify-between gap-2">
+              <span>
+                Existing Holidays
+                <span className="text-xs font-normal text-muted-foreground ms-2">({holidays.length})</span>
+              </span>
+              <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3 space-y-2">
+            <Label className="text-sm font-medium">
+              Upcoming Holidays
+              <span className="text-xs font-normal text-muted-foreground ms-2">({upcoming.length})</span>
+            </Label>
+            <div className="rounded-lg border max-h-[400px] overflow-auto">
+              <div className="grid grid-cols-[100px_1fr_1fr_auto_auto_auto] gap-2 border-b bg-muted/50 p-2 text-xs font-medium text-muted-foreground sticky top-0">
+                <span>Date</span>
+                <span>English</span>
+                <span>עברית</span>
+                <span>Category</span>
+                <span>Active</span>
+                <span></span>
+              </div>
+              {[...upcoming, ...past].map((h) => (
+                <div key={h.id} className={`grid grid-cols-[100px_1fr_1fr_auto_auto_auto] items-center gap-2 border-b last:border-0 p-2 text-sm ${!h.is_active ? "opacity-50" : ""}`}>
+                  <span className="text-xs font-mono">{h.date}</span>
+                  <span className="truncate">{h.name_en}{h.is_eve && <Badge variant="outline" className="ms-1 text-[9px]">eve</Badge>}</span>
+                  <span className="truncate" dir="rtl">{h.name_he}</span>
+                  <Badge variant="secondary" className="text-[10px]">{h.category}</Badge>
+                  <Switch
+                    checked={h.is_active}
+                    onCheckedChange={(c) => toggleActive.mutate({ id: h.id, is_active: c })}
+                  />
+                  {h.source === "manual" ? (
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeHoliday.mutate(h.id)}>
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  ) : (
+                    <span title={h.is_active ? "Synced — toggle to block" : "Blocked"} className="text-muted-foreground">
+                      {h.is_active ? <Eye className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}
+                    </span>
+                  )}
+                </div>
+              ))}
+              {holidays.length === 0 && (
+                <div className="p-6 text-center text-xs text-muted-foreground">
+                  No holidays yet. Click <strong>Manual Sync</strong> above to fetch from Hebcal.
+                </div>
+              )}
             </div>
-            {[...upcoming, ...past].map((h) => (
-              <div key={h.id} className={`grid grid-cols-[100px_1fr_1fr_auto_auto_auto] items-center gap-2 border-b last:border-0 p-2 text-sm ${!h.is_active ? "opacity-50" : ""}`}>
-                <span className="text-xs font-mono">{h.date}</span>
-                <span className="truncate">{h.name_en}{h.is_eve && <Badge variant="outline" className="ms-1 text-[9px]">eve</Badge>}</span>
-                <span className="truncate" dir="rtl">{h.name_he}</span>
-                <Badge variant="secondary" className="text-[10px]">{h.category}</Badge>
-                <Switch
-                  checked={h.is_active}
-                  onCheckedChange={(c) => toggleActive.mutate({ id: h.id, is_active: c })}
-                />
-                {h.source === "manual" ? (
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeHoliday.mutate(h.id)}>
-                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                  </Button>
-                ) : (
-                  <span title={h.is_active ? "Synced — toggle to block" : "Blocked"} className="text-muted-foreground">
-                    {h.is_active ? <Eye className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}
-                  </span>
-                )}
-              </div>
-            ))}
-            {holidays.length === 0 && (
-              <div className="p-6 text-center text-xs text-muted-foreground">
-                No holidays yet. Click <strong>Manual Sync</strong> above to fetch from Hebcal.
-              </div>
-            )}
-          </div>
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   );
