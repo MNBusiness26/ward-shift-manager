@@ -1,11 +1,10 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import {
   shiftPaidHours,
-  shiftDurationHours,
   type PayrollShift,
   type StaffPayrollTotals,
 } from "./payroll";
@@ -25,10 +24,9 @@ function fmtHours(n: number) {
   return (Math.round(n * 100) / 100).toFixed(2);
 }
 
-// Build rows for one staff: each worked shift + each leave day-range
 interface RowEntry {
   date: string;
-  type: string; // 'shift' | leave type
+  type: string;
   shiftType?: string;
   scheduled?: string;
   actual?: string;
@@ -65,38 +63,103 @@ function buildStaffRows(staff: StaffPayrollTotals): RowEntry[] {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// EXCEL
+// EXCEL helpers
 // ─────────────────────────────────────────────────────────────────────
 
-export function exportWardPayrollExcel(staffList: StaffPayrollTotals[], monthLabel: string) {
-  const wb = XLSX.utils.book_new();
+const THIN: Partial<ExcelJS.Borders> = {
+  top: { style: "thin" },
+  left: { style: "thin" },
+  bottom: { style: "thin" },
+  right: { style: "thin" },
+};
+
+function applyTableBorders(
+  ws: ExcelJS.Worksheet,
+  headerRow: number,
+  lastDataRow: number,
+  colCount: number,
+  totalRows: number[] = [],
+) {
+  // Header row: thin borders, bold, medium bottom
+  for (let c = 1; c <= colCount; c++) {
+    const cell = ws.getCell(headerRow, c);
+    cell.font = { ...(cell.font || {}), bold: true };
+    cell.border = { ...THIN, bottom: { style: "medium" } };
+  }
+  // Data rows: thin borders
+  for (let r = headerRow + 1; r <= lastDataRow; r++) {
+    for (let c = 1; c <= colCount; c++) {
+      ws.getCell(r, c).border = { ...THIN };
+    }
+  }
+  // Total/summary rows: full thin border + medium top
+  for (const tr of totalRows) {
+    const row = ws.getRow(tr);
+    const used = Math.max(2, row.actualCellCount || 2);
+    for (let c = 1; c <= used; c++) {
+      ws.getCell(tr, c).border = { ...THIN, top: { style: "medium" } };
+      ws.getCell(tr, c).font = { ...(ws.getCell(tr, c).font || {}), bold: c === 1 };
+    }
+  }
+}
+
+async function downloadWorkbook(wb: ExcelJS.Workbook, filename: string) {
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// EXCEL exports
+// ─────────────────────────────────────────────────────────────────────
+
+export async function exportWardPayrollExcel(staffList: StaffPayrollTotals[], monthLabel: string) {
+  const wb = new ExcelJS.Workbook();
 
   // Summary sheet
-  const summary = [
-    ["דו״ח שכר מחלקה", monthLabel],
-    [],
-    ["שם", "שעות רגילות", "שעות כוננות", "סה״כ שעות", "משמרות אחראית", "ימי חופשה/מחלה"],
-    ...staffList.map((s) => [
+  const ws = wb.addWorksheet("סיכום", { views: [{ rightToLeft: true }] });
+  ws.columns = [
+    { width: 28 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 18 }, { width: 16 },
+  ];
+  ws.addRow(["דו״ח שכר מחלקה", monthLabel]);
+  ws.getRow(1).font = { bold: true, size: 14 };
+  ws.addRow([]);
+  ws.addRow(["שם", "שעות רגילות", "שעות כוננות", "סה״כ שעות", "משמרות אחראית", "ימי חופשה/מחלה"]);
+  const summaryHeader = 3;
+  for (const s of staffList) {
+    ws.addRow([
       s.full_name,
       Number(fmtHours(s.regularHours)),
       Number(fmtHours(s.onCallHours)),
       Number(fmtHours(s.regularHours + s.onCallHours)),
       s.responsibleShifts,
       s.leave.length,
-    ]),
-  ];
-  const ws = XLSX.utils.aoa_to_sheet(summary);
-  ws["!cols"] = [{ wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 18 }, { wch: 16 }];
-  XLSX.utils.book_append_sheet(wb, ws, "סיכום");
+    ]);
+  }
+  applyTableBorders(ws, summaryHeader, summaryHeader + staffList.length, 6);
 
-  // Per-staff sheet
+  // Per-staff sheets
   for (const s of staffList) {
     const rows = buildStaffRows(s);
-    const sheetData = [
-      [s.full_name, monthLabel],
-      [],
-      ["תאריך", "סוג", "מתוכנן", "בפועל", "שעות", "סטטוס", "הערה"],
-      ...rows.map((r) => [
+    const sws = wb.addWorksheet(
+      (s.full_name.replace(/[\\/?*[\]:]/g, "").slice(0, 28) || "Staff"),
+      { views: [{ rightToLeft: true }] },
+    );
+    sws.columns = [
+      { width: 22 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 8 }, { width: 12 }, { width: 24 },
+    ];
+    sws.addRow([s.full_name, monthLabel]);
+    sws.getRow(1).font = { bold: true, size: 14 };
+    sws.addRow([]);
+    sws.addRow(["תאריך", "סוג", "מתוכנן", "בפועל", "שעות", "סטטוס", "הערה"]);
+    const headerRow = 3;
+    for (const r of rows) {
+      sws.addRow([
         r.date,
         r.type === "shift" ? SHIFT_LABEL_HE[r.shiftType || ""] || r.shiftType : LEAVE_LABEL_HE[r.type] || r.type,
         r.scheduled || "—",
@@ -104,30 +167,36 @@ export function exportWardPayrollExcel(staffList: StaffPayrollTotals[], monthLab
         Number(fmtHours(r.hours)),
         r.status,
         r.note || "",
-      ]),
-      [],
-      ["סה״כ רגילות", fmtHours(s.regularHours)],
-      ["סה״כ כוננות", fmtHours(s.onCallHours)],
-      ["משמרות אחראית", s.responsibleShifts],
-    ];
-    const sws = XLSX.utils.aoa_to_sheet(sheetData);
-    sws["!cols"] = [{ wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 8 }, { wch: 12 }, { wch: 24 }];
-    const safeName = s.full_name.replace(/[\\/?*[\]:]/g, "").slice(0, 28) || "Staff";
-    XLSX.utils.book_append_sheet(wb, sws, safeName);
+      ]);
+    }
+    const lastDataRow = headerRow + rows.length;
+    sws.addRow([]); // spacer
+    const totalStart = lastDataRow + 2;
+    sws.addRow(["סה״כ רגילות", Number(fmtHours(s.regularHours))]);
+    sws.addRow(["סה״כ כוננות", Number(fmtHours(s.onCallHours))]);
+    sws.addRow(["משמרות אחראית", s.responsibleShifts]);
+    applyTableBorders(sws, headerRow, lastDataRow, 7, [totalStart, totalStart + 1, totalStart + 2]);
   }
 
-  XLSX.writeFile(wb, `Ward-Payroll-${monthLabel.replace(/\s+/g, "-")}.xlsx`);
+  await downloadWorkbook(wb, `Ward-Payroll-${monthLabel.replace(/\s+/g, "-")}.xlsx`);
 }
 
-export function exportIndividualExcel(staff: StaffPayrollTotals, monthLabel: string) {
-  const wb = XLSX.utils.book_new();
+export async function exportIndividualExcel(staff: StaffPayrollTotals, monthLabel: string) {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Payroll", { views: [{ rightToLeft: true }] });
+  ws.columns = [
+    { width: 22 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 8 }, { width: 14 }, { width: 28 },
+  ];
+  ws.addRow(["שם", staff.full_name]);
+  ws.addRow(["חודש", monthLabel]);
+  ws.getRow(1).font = { bold: true };
+  ws.getRow(2).font = { bold: true };
+  ws.addRow([]);
+  ws.addRow(["תאריך", "סוג", "מתוכנן", "בפועל", "שעות", "סטטוס", "הערה"]);
+  const headerRow = 4;
   const rows = buildStaffRows(staff);
-  const data = [
-    ["שם", staff.full_name],
-    ["חודש", monthLabel],
-    [],
-    ["תאריך", "סוג", "מתוכנן", "בפועל", "שעות", "סטטוס", "הערה"],
-    ...rows.map((r) => [
+  for (const r of rows) {
+    ws.addRow([
       r.date,
       r.type === "shift" ? SHIFT_LABEL_HE[r.shiftType || ""] || r.shiftType : LEAVE_LABEL_HE[r.type] || r.type,
       r.scheduled || "—",
@@ -135,17 +204,18 @@ export function exportIndividualExcel(staff: StaffPayrollTotals, monthLabel: str
       Number(fmtHours(r.hours)),
       r.status,
       r.note || "",
-    ]),
-    [],
-    ["סה״כ שעות רגילות", fmtHours(staff.regularHours)],
-    ["סה״כ שעות כוננות", fmtHours(staff.onCallHours)],
-    ["סה״כ משמרות אחראית", staff.responsibleShifts],
-  ];
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  ws["!cols"] = [{ wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 8 }, { wch: 14 }, { wch: 28 }];
-  XLSX.utils.book_append_sheet(wb, ws, "Payroll");
+    ]);
+  }
+  const lastDataRow = headerRow + rows.length;
+  ws.addRow([]); // spacer
+  const totalStart = lastDataRow + 2;
+  ws.addRow(["סה״כ שעות רגילות", Number(fmtHours(staff.regularHours))]);
+  ws.addRow(["סה״כ שעות כוננות", Number(fmtHours(staff.onCallHours))]);
+  ws.addRow(["סה״כ משמרות אחראית", staff.responsibleShifts]);
+  applyTableBorders(ws, headerRow, lastDataRow, 7, [totalStart, totalStart + 1, totalStart + 2]);
+
   const safe = staff.full_name.replace(/[\\/?*[\]:]/g, "").slice(0, 40) || "staff";
-  XLSX.writeFile(wb, `Payroll-${safe}-${monthLabel.replace(/\s+/g, "-")}.xlsx`);
+  await downloadWorkbook(wb, `Payroll-${safe}-${monthLabel.replace(/\s+/g, "-")}.xlsx`);
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -163,8 +233,7 @@ export function exportMyAttendancePDF(opts: {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
 
-  // Brand header bar
-  doc.setFillColor(52, 90, 199); // primary #345AC7
+  doc.setFillColor(52, 90, 199);
   doc.rect(0, 0, W, 70, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(20);
@@ -172,7 +241,6 @@ export function exportMyAttendancePDF(opts: {
   doc.setFontSize(11);
   doc.text(`${fullName}  •  ${monthLabel}`, 40, 58);
 
-  // Summary cards
   const totals = shifts.reduce(
     (acc, s) => {
       const h = shiftPaidHours(s);
@@ -207,7 +275,6 @@ export function exportMyAttendancePDF(opts: {
     doc.text(c.value, x + 12, cardY + 46);
   });
 
-  // Build merged rows: shifts + leave
   type Row = [string, string, string, string, string, string];
   const rows: Row[] = [];
 
@@ -229,15 +296,15 @@ export function exportMyAttendancePDF(opts: {
 
   autoTable(doc, {
     startY: cardY + 80,
+    theme: "grid",
     head: [["Date", "Type", "Scheduled", "Actual", "Hours", "Status"]],
     body: rows.length ? rows : [["—", "—", "—", "—", "0", "No records"]],
-    headStyles: { fillColor: [52, 90, 199], textColor: 255, fontStyle: "bold" },
-    bodyStyles: { fontSize: 9 },
+    headStyles: { fillColor: [52, 90, 199], textColor: 255, fontStyle: "bold", lineWidth: 1, lineColor: [255, 255, 255] },
+    bodyStyles: { fontSize: 9, lineWidth: 0.5, lineColor: [200, 200, 210] },
     alternateRowStyles: { fillColor: [248, 249, 253] },
     margin: { left: 40, right: 40 },
   });
 
-  // Footer
   const ph = doc.internal.pageSize.getHeight();
   doc.setFontSize(8);
   doc.setTextColor(140, 140, 140);
