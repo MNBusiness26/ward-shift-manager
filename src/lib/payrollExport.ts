@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import {
   shiftPaidHours,
+  shiftDurationHours,
   type PayrollShift,
   type StaffPayrollTotals,
 } from "./payroll";
@@ -20,87 +21,102 @@ const LEAVE_LABEL_HE: Record<string, string> = {
   leave: "חופשה",
 };
 
+// Brand palette
+const NAVY = "FF0F172A";
+const WHITE = "FFFFFFFF";
+const SLATE = "FF94A3B8";
+const COLOR_MORNING = "FFEBB00D";
+const COLOR_EVENING = "FFEE6F4F";
+const COLOR_NIGHT = "FF4051B5";
+const FONT_NAME = "Heebo";
+
 function fmtHours(n: number) {
-  return (Math.round(n * 100) / 100).toFixed(2);
+  return Math.round(n * 100) / 100;
 }
 
-interface RowEntry {
-  date: string;
-  type: string;
-  shiftType?: string;
-  scheduled?: string;
-  actual?: string;
-  hours: number;
-  status: string;
-  note?: string;
+interface ShiftHourBuckets {
+  morning: number;
+  evening: number;
+  night: number;
+  onCall: number;
+  regular: number; // morning+evening+night (non-standby)
 }
 
-function buildStaffRows(staff: StaffPayrollTotals): RowEntry[] {
-  const rows: RowEntry[] = [];
-  for (const s of staff.shifts) {
-    rows.push({
-      date: s.date,
-      type: "shift",
-      shiftType: s.type,
-      scheduled: `${s.start_time?.slice(0, 5)}–${s.end_time?.slice(0, 5)}`,
-      actual: s.actual_start_time && s.actual_end_time ? `${s.actual_start_time}–${s.actual_end_time}` : "—",
-      hours: shiftPaidHours(s),
-      status: s.is_verified ? "מאומת" : (s.is_standby ? "כוננות" : "לא מאומת"),
-      note: s.is_responsible_on_shift ? "אחראית" : undefined,
-    });
+function bucketHours(shifts: PayrollShift[]): ShiftHourBuckets {
+  const b: ShiftHourBuckets = { morning: 0, evening: 0, night: 0, onCall: 0, regular: 0 };
+  for (const s of shifts) {
+    const h = shiftPaidHours(s);
+    if (s.is_standby) {
+      b.onCall += h;
+      continue;
+    }
+    if (s.type === "morning") b.morning += h;
+    else if (s.type === "evening") b.evening += h;
+    else if (s.type === "night") b.night += h;
+    b.regular += h;
   }
-  for (const l of staff.leave) {
-    rows.push({
-      date: l.end_date && l.end_date !== l.date ? `${l.date} → ${l.end_date}` : l.date,
-      type: l.type,
-      hours: 0,
-      status: LEAVE_LABEL_HE[l.type] || l.type,
-      note: l.reason || undefined,
-    });
-  }
-  rows.sort((a, b) => a.date.localeCompare(b.date));
-  return rows;
+  return b;
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// EXCEL helpers
-// ─────────────────────────────────────────────────────────────────────
-
-const THIN: Partial<ExcelJS.Borders> = {
-  top: { style: "thin" },
-  left: { style: "thin" },
-  bottom: { style: "thin" },
-  right: { style: "thin" },
+const THIN_SLATE: Partial<ExcelJS.Borders> = {
+  top: { style: "thin", color: { argb: SLATE } },
+  left: { style: "thin", color: { argb: SLATE } },
+  bottom: { style: "thin", color: { argb: SLATE } },
+  right: { style: "thin", color: { argb: SLATE } },
 };
 
-function applyTableBorders(
-  ws: ExcelJS.Worksheet,
-  headerRow: number,
-  lastDataRow: number,
-  colCount: number,
-  totalRows: number[] = [],
-) {
-  // Header row: thin borders, bold, medium bottom
+const MEDIUM_TOP: Partial<ExcelJS.Borders> = {
+  top: { style: "medium", color: { argb: NAVY } },
+  left: { style: "thin", color: { argb: SLATE } },
+  bottom: { style: "thin", color: { argb: SLATE } },
+  right: { style: "thin", color: { argb: SLATE } },
+};
+
+function applyHeaderStyle(ws: ExcelJS.Worksheet, rowNum: number, colCount: number) {
+  const row = ws.getRow(rowNum);
+  row.height = 28;
   for (let c = 1; c <= colCount; c++) {
-    const cell = ws.getCell(headerRow, c);
-    cell.font = { ...(cell.font || {}), bold: true };
-    cell.border = { ...THIN, bottom: { style: "medium" } };
+    const cell = ws.getCell(rowNum, c);
+    cell.font = { name: FONT_NAME, size: 14, bold: true, color: { argb: WHITE } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: NAVY } };
+    cell.alignment = { vertical: "middle", horizontal: "right", wrapText: true };
+    cell.border = THIN_SLATE;
   }
-  // Data rows: thin borders
-  for (let r = headerRow + 1; r <= lastDataRow; r++) {
+}
+
+function styleDataCells(
+  ws: ExcelJS.Worksheet,
+  startRow: number,
+  endRow: number,
+  colCount: number,
+) {
+  for (let r = startRow; r <= endRow; r++) {
+    const row = ws.getRow(r);
+    row.height = 25;
     for (let c = 1; c <= colCount; c++) {
-      ws.getCell(r, c).border = { ...THIN };
+      const cell = ws.getCell(r, c);
+      cell.font = { name: FONT_NAME, size: 11, ...(cell.font || {}) };
+      cell.alignment = { vertical: "middle", horizontal: "right", ...(cell.alignment || {}) };
+      // Only border cells that actually have content
+      const v = cell.value;
+      const hasContent = v !== null && v !== undefined && v !== "";
+      if (hasContent) cell.border = THIN_SLATE;
     }
   }
-  // Total/summary rows: full thin border + medium top
-  for (const tr of totalRows) {
-    const row = ws.getRow(tr);
-    const used = Math.max(2, row.actualCellCount || 2);
-    for (let c = 1; c <= used; c++) {
-      ws.getCell(tr, c).border = { ...THIN, top: { style: "medium" } };
-      ws.getCell(tr, c).font = { ...(ws.getCell(tr, c).font || {}), bold: c === 1 };
-    }
-  }
+}
+
+function autoFitColumns(ws: ExcelJS.Worksheet, minWidth = 10, maxWidth = 40) {
+  ws.columns.forEach((col) => {
+    let max = minWidth;
+    col.eachCell?.({ includeEmpty: false }, (cell) => {
+      const v = cell.value;
+      const s = v == null ? "" : String(v);
+      // Hebrew chars are wider; bias the calc slightly
+      const len = Array.from(s).reduce((acc, ch) => acc + (ch.charCodeAt(0) > 127 ? 1.6 : 1), 0);
+      if (len > max) max = len;
+    });
+    col.width = Math.min(maxWidth, Math.max(minWidth, max + 2));
+  });
 }
 
 async function downloadWorkbook(wb: ExcelJS.Workbook, filename: string) {
@@ -115,104 +131,264 @@ async function downloadWorkbook(wb: ExcelJS.Workbook, filename: string) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// EXCEL exports
+// Ward Payroll — single "סיכום" sheet
 // ─────────────────────────────────────────────────────────────────────
 
 export async function exportWardPayrollExcel(staffList: StaffPayrollTotals[], monthLabel: string) {
   const wb = new ExcelJS.Workbook();
-
-  // Summary sheet
   const ws = wb.addWorksheet("סיכום", { views: [{ rightToLeft: true }] });
-  ws.columns = [
-    { width: 28 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 18 }, { width: 16 },
-  ];
-  ws.addRow(["דו״ח שכר מחלקה", monthLabel]);
-  ws.getRow(1).font = { bold: true, size: 14 };
+
+  // Title row (row 1) — keep navy header style for the first columns
+  ws.addRow([`דו״ח שכר מחלקה — ${monthLabel}`]);
+  ws.mergeCells(1, 1, 1, 9);
+  const title = ws.getCell(1, 1);
+  title.font = { name: FONT_NAME, size: 16, bold: true, color: { argb: WHITE } };
+  title.fill = { type: "pattern", pattern: "solid", fgColor: { argb: NAVY } };
+  title.alignment = { vertical: "middle", horizontal: "right" };
+  ws.getRow(1).height = 32;
+
+  // Spacer
   ws.addRow([]);
-  ws.addRow(["שם", "שעות רגילות", "שעות כוננות", "סה״כ שעות", "משמרות אחראית", "ימי חופשה/מחלה"]);
-  const summaryHeader = 3;
+
+  // Column headers (row 3)
+  const headers = [
+    "שם",
+    "שעות רגילות",
+    "שעות בוקר",
+    "שעות ערב",
+    "שעות לילה",
+    "שעות כוננות",
+    "סה״כ שעות",
+    "משמרות אחראית",
+    "ימי חופשה/מחלה",
+  ];
+  ws.addRow(headers);
+  applyHeaderStyle(ws, 3, headers.length);
+
+  // Data rows
+  let totalRegular = 0, totalMorning = 0, totalEvening = 0, totalNight = 0, totalOnCall = 0, totalAll = 0, totalResp = 0, totalLeave = 0;
+
   for (const s of staffList) {
+    const b = bucketHours(s.shifts);
+    const total = b.regular + b.onCall;
+    totalRegular += b.regular; totalMorning += b.morning; totalEvening += b.evening;
+    totalNight += b.night; totalOnCall += b.onCall; totalAll += total;
+    totalResp += s.responsibleShifts; totalLeave += s.leave.length;
+
     ws.addRow([
       s.full_name,
-      Number(fmtHours(s.regularHours)),
-      Number(fmtHours(s.onCallHours)),
-      Number(fmtHours(s.regularHours + s.onCallHours)),
+      fmtHours(b.regular),
+      fmtHours(b.morning),
+      fmtHours(b.evening),
+      fmtHours(b.night),
+      fmtHours(b.onCall),
+      fmtHours(total),
       s.responsibleShifts,
       s.leave.length,
     ]);
   }
-  applyTableBorders(ws, summaryHeader, summaryHeader + staffList.length, 6);
 
-  // Per-staff sheets
-  for (const s of staffList) {
-    const rows = buildStaffRows(s);
-    const sws = wb.addWorksheet(
-      (s.full_name.replace(/[\\/?*[\]:]/g, "").slice(0, 28) || "Staff"),
-      { views: [{ rightToLeft: true }] },
-    );
-    sws.columns = [
-      { width: 22 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 8 }, { width: 12 }, { width: 24 },
-    ];
-    sws.addRow([s.full_name, monthLabel]);
-    sws.getRow(1).font = { bold: true, size: 14 };
-    sws.addRow([]);
-    sws.addRow(["תאריך", "סוג", "מתוכנן", "בפועל", "שעות", "סטטוס", "הערה"]);
-    const headerRow = 3;
-    for (const r of rows) {
-      sws.addRow([
-        r.date,
-        r.type === "shift" ? SHIFT_LABEL_HE[r.shiftType || ""] || r.shiftType : LEAVE_LABEL_HE[r.type] || r.type,
-        r.scheduled || "—",
-        r.actual || "—",
-        Number(fmtHours(r.hours)),
-        r.status,
-        r.note || "",
-      ]);
-    }
-    const lastDataRow = headerRow + rows.length;
-    sws.addRow([]); // spacer
-    const totalStart = lastDataRow + 2;
-    sws.addRow(["סה״כ רגילות", Number(fmtHours(s.regularHours))]);
-    sws.addRow(["סה״כ כוננות", Number(fmtHours(s.onCallHours))]);
-    sws.addRow(["משמרות אחראית", s.responsibleShifts]);
-    applyTableBorders(sws, headerRow, lastDataRow, 7, [totalStart, totalStart + 1, totalStart + 2]);
+  const dataStart = 4;
+  const dataEnd = 3 + staffList.length;
+  styleDataCells(ws, dataStart, dataEnd, headers.length);
+
+  // Spacer (no borders)
+  ws.addRow([]);
+
+  // Totals row with medium top border
+  const totalRowIdx = dataEnd + 2;
+  ws.addRow([
+    "סה״כ",
+    fmtHours(totalRegular),
+    fmtHours(totalMorning),
+    fmtHours(totalEvening),
+    fmtHours(totalNight),
+    fmtHours(totalOnCall),
+    fmtHours(totalAll),
+    totalResp,
+    totalLeave,
+  ]);
+  const totalRow = ws.getRow(totalRowIdx);
+  totalRow.height = 28;
+  for (let c = 1; c <= headers.length; c++) {
+    const cell = ws.getCell(totalRowIdx, c);
+    cell.font = { name: FONT_NAME, size: 12, bold: true };
+    cell.alignment = { vertical: "middle", horizontal: "right" };
+    cell.border = MEDIUM_TOP;
   }
+
+  autoFitColumns(ws, 12, 32);
 
   await downloadWorkbook(wb, `Ward-Payroll-${monthLabel.replace(/\s+/g, "-")}.xlsx`);
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// Individual Payroll
+// ─────────────────────────────────────────────────────────────────────
+
+interface IndivRow {
+  date: string;
+  typeKey: string; // morning/evening/night/leave-key
+  typeLabel: string;
+  scheduled: string;
+  actual: string;
+  hours: number;
+  status: string;
+  note: string;
+  isShift: boolean;
+}
+
+function buildIndividualRows(staff: StaffPayrollTotals): IndivRow[] {
+  const rows: IndivRow[] = [];
+  for (const s of staff.shifts) {
+    rows.push({
+      date: s.date,
+      typeKey: s.type,
+      typeLabel: SHIFT_LABEL_HE[s.type] || s.type,
+      scheduled: `${s.start_time?.slice(0, 5)}–${s.end_time?.slice(0, 5)}`,
+      actual: s.actual_start_time && s.actual_end_time ? `${s.actual_start_time}–${s.actual_end_time}` : "—",
+      hours: shiftPaidHours(s),
+      status: s.is_verified ? "מאומת" : (s.is_standby ? "כוננות" : "לא מאומת"),
+      note: s.is_responsible_on_shift ? "אחראית" : "",
+      isShift: true,
+    });
+  }
+  for (const l of staff.leave) {
+    rows.push({
+      date: l.end_date && l.end_date !== l.date ? `${l.date} → ${l.end_date}` : l.date,
+      typeKey: l.type,
+      typeLabel: LEAVE_LABEL_HE[l.type] || l.type,
+      scheduled: "—",
+      actual: "—",
+      hours: 0,
+      status: LEAVE_LABEL_HE[l.type] || l.type,
+      note: l.reason || "",
+      isShift: false,
+    });
+  }
+  rows.sort((a, b) => a.date.localeCompare(b.date));
+  return rows;
+}
+
+const TYPE_FILL: Record<string, string> = {
+  morning: COLOR_MORNING,
+  evening: COLOR_EVENING,
+  night: COLOR_NIGHT,
+};
+
 export async function exportIndividualExcel(staff: StaffPayrollTotals, monthLabel: string) {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Payroll", { views: [{ rightToLeft: true }] });
-  ws.columns = [
-    { width: 22 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 8 }, { width: 14 }, { width: 28 },
-  ];
-  ws.addRow(["שם", staff.full_name]);
-  ws.addRow(["חודש", monthLabel]);
-  ws.getRow(1).font = { bold: true };
-  ws.getRow(2).font = { bold: true };
-  ws.addRow([]);
-  ws.addRow(["תאריך", "סוג", "מתוכנן", "בפועל", "שעות", "סטטוס", "הערה"]);
-  const headerRow = 4;
-  const rows = buildStaffRows(staff);
-  for (const r of rows) {
+
+  // Title block
+  ws.addRow([`${staff.full_name} — ${monthLabel}`]);
+  ws.mergeCells(1, 1, 1, 7);
+  const title = ws.getCell(1, 1);
+  title.font = { name: FONT_NAME, size: 16, bold: true, color: { argb: WHITE } };
+  title.fill = { type: "pattern", pattern: "solid", fgColor: { argb: NAVY } };
+  title.alignment = { vertical: "middle", horizontal: "right" };
+  ws.getRow(1).height = 32;
+
+  ws.addRow([]); // spacer
+
+  // Column headers
+  const headers = ["תאריך", "סוג", "מתוכנן", "בפועל", "שעות", "סטטוס", "הערה"];
+  ws.addRow(headers);
+  applyHeaderStyle(ws, 3, headers.length);
+
+  // Data
+  const rows = buildIndividualRows(staff);
+  rows.forEach((r) => {
     ws.addRow([
       r.date,
-      r.type === "shift" ? SHIFT_LABEL_HE[r.shiftType || ""] || r.shiftType : LEAVE_LABEL_HE[r.type] || r.type,
-      r.scheduled || "—",
-      r.actual || "—",
-      Number(fmtHours(r.hours)),
+      r.typeLabel,
+      r.scheduled,
+      r.actual,
+      fmtHours(r.hours),
       r.status,
-      r.note || "",
+      r.note,
     ]);
+  });
+
+  const dataStart = 4;
+  const dataEnd = 3 + rows.length;
+  styleDataCells(ws, dataStart, dataEnd, headers.length);
+
+  // Color the "סוג" column for shift rows
+  rows.forEach((r, i) => {
+    const rowIdx = dataStart + i;
+    if (!r.isShift) return;
+    const fill = TYPE_FILL[r.typeKey];
+    if (!fill) return;
+    const cell = ws.getCell(rowIdx, 2);
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: fill } };
+    cell.font = { name: FONT_NAME, size: 11, bold: true, color: { argb: WHITE } };
+    cell.alignment = { vertical: "middle", horizontal: "center" };
+  });
+
+  // Spacer (no borders)
+  ws.addRow([]);
+
+  // Advanced Summary section
+  const b = bucketHours(staff.shifts);
+  let r = dataEnd + 2;
+
+  // Section header
+  ws.getCell(r, 1).value = "סיכום שעות";
+  ws.mergeCells(r, 1, r, 7);
+  const summaryTitle = ws.getCell(r, 1);
+  summaryTitle.font = { name: FONT_NAME, size: 14, bold: true, color: { argb: WHITE } };
+  summaryTitle.fill = { type: "pattern", pattern: "solid", fgColor: { argb: NAVY } };
+  summaryTitle.alignment = { vertical: "middle", horizontal: "right" };
+  ws.getRow(r).height = 26;
+  r += 1;
+
+  const breakdown: Array<[string, number, string?]> = [
+    ["סה״כ שעות בוקר", b.morning, COLOR_MORNING],
+    ["סה״כ שעות ערב", b.evening, COLOR_EVENING],
+    ["סה״כ שעות לילה", b.night, COLOR_NIGHT],
+  ];
+
+  for (const [label, value, color] of breakdown) {
+    ws.getCell(r, 1).value = label;
+    ws.getCell(r, 2).value = fmtHours(value);
+    const labelCell = ws.getCell(r, 1);
+    const valueCell = ws.getCell(r, 2);
+    labelCell.font = { name: FONT_NAME, size: 12, bold: true };
+    labelCell.alignment = { vertical: "middle", horizontal: "right" };
+    labelCell.border = THIN_SLATE;
+    valueCell.font = { name: FONT_NAME, size: 12, bold: true, color: { argb: WHITE } };
+    valueCell.alignment = { vertical: "middle", horizontal: "center" };
+    valueCell.border = THIN_SLATE;
+    if (color) valueCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: color } };
+    ws.getRow(r).height = 24;
+    r += 1;
   }
-  const lastDataRow = headerRow + rows.length;
-  ws.addRow([]); // spacer
-  const totalStart = lastDataRow + 2;
-  ws.addRow(["סה״כ שעות רגילות", Number(fmtHours(staff.regularHours))]);
-  ws.addRow(["סה״כ שעות כוננות", Number(fmtHours(staff.onCallHours))]);
-  ws.addRow(["סה״כ משמרות אחראית", staff.responsibleShifts]);
-  applyTableBorders(ws, headerRow, lastDataRow, 7, [totalStart, totalStart + 1, totalStart + 2]);
+
+  // Totals with medium top border
+  const totals: Array<[string, number]> = [
+    ["סה״כ שעות רגילות", b.regular],
+    ["סה״כ שעות כוננות", b.onCall],
+    ["סה״כ משמרות אחראית", staff.responsibleShifts],
+  ];
+  totals.forEach(([label, value], idx) => {
+    ws.getCell(r, 1).value = label;
+    ws.getCell(r, 2).value = fmtHours(value);
+    const labelCell = ws.getCell(r, 1);
+    const valueCell = ws.getCell(r, 2);
+    labelCell.font = { name: FONT_NAME, size: 12, bold: true };
+    labelCell.alignment = { vertical: "middle", horizontal: "right" };
+    valueCell.font = { name: FONT_NAME, size: 12, bold: true };
+    valueCell.alignment = { vertical: "middle", horizontal: "right" };
+    // Medium top border on the very first totals row to separate from breakdown
+    const border = idx === 0 ? MEDIUM_TOP : THIN_SLATE;
+    labelCell.border = border;
+    valueCell.border = border;
+    ws.getRow(r).height = 25;
+    r += 1;
+  });
+
+  autoFitColumns(ws, 12, 32);
 
   const safe = staff.full_name.replace(/[\\/?*[\]:]/g, "").slice(0, 40) || "staff";
   await downloadWorkbook(wb, `Payroll-${safe}-${monthLabel.replace(/\s+/g, "-")}.xlsx`);
@@ -233,7 +409,7 @@ export function exportMyAttendancePDF(opts: {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
 
-  doc.setFillColor(52, 90, 199);
+  doc.setFillColor(15, 23, 42); // navy
   doc.rect(0, 0, W, 70, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(20);
@@ -256,8 +432,8 @@ export function exportMyAttendancePDF(opts: {
   doc.setTextColor(20, 20, 20);
   const cardY = 95;
   const cards = [
-    { label: "Regular Hours", value: fmtHours(totals.regular) },
-    { label: "On-Call Hours", value: fmtHours(totals.onCall) },
+    { label: "Regular Hours", value: String(fmtHours(totals.regular)) },
+    { label: "On-Call Hours", value: String(fmtHours(totals.onCall)) },
     { label: "Verified Shifts", value: String(totals.verified) },
     { label: "Responsible", value: String(totals.responsible) },
   ];
@@ -284,7 +460,7 @@ export function exportMyAttendancePDF(opts: {
       SHIFT_LABEL_HE[s.type] || s.type,
       `${s.start_time?.slice(0, 5)}–${s.end_time?.slice(0, 5)}`,
       s.actual_start_time && s.actual_end_time ? `${s.actual_start_time}–${s.actual_end_time}` : "—",
-      fmtHours(shiftPaidHours(s)),
+      String(fmtHours(shiftPaidHours(s))),
       s.is_verified ? "Verified ✓" : s.is_standby ? "On-Call" : "Pending",
     ]);
   }
@@ -299,8 +475,8 @@ export function exportMyAttendancePDF(opts: {
     theme: "grid",
     head: [["Date", "Type", "Scheduled", "Actual", "Hours", "Status"]],
     body: rows.length ? rows : [["—", "—", "—", "—", "0", "No records"]],
-    headStyles: { fillColor: [52, 90, 199], textColor: 255, fontStyle: "bold", lineWidth: 1, lineColor: [255, 255, 255] },
-    bodyStyles: { fontSize: 9, lineWidth: 0.5, lineColor: [200, 200, 210] },
+    headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: "bold", lineWidth: 1, lineColor: [255, 255, 255] },
+    bodyStyles: { fontSize: 9, lineWidth: 0.5, lineColor: [148, 163, 184] },
     alternateRowStyles: { fillColor: [248, 249, 253] },
     margin: { left: 40, right: 40 },
   });
