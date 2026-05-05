@@ -78,7 +78,7 @@ export default function StaffStats() {
 
   // Proxy request dialog state
   const [proxyOpen, setProxyOpen] = useState(false);
-  const [proxyType, setProxyType] = useState<"block" | "vacation" | "sick_leave" | "maternity_leave" | "yearly_leave">("block");
+  const [proxyType, setProxyType] = useState<"block" | "vacation" | "sick_leave" | "maternity_leave" | "yearly_leave" | "study">("block");
   const [proxyDate, setProxyDate] = useState("");
   const [proxyEndDate, setProxyEndDate] = useState("");
   const [proxyReason, setProxyReason] = useState("");
