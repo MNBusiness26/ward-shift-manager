@@ -665,9 +665,12 @@ export default function Roster() {
 
   const getStaffForDropdown = () => {
     if (form.is_standby) {
+      // On-Call: allow everyone except Care Workers (assistant role)
       return staff.filter((s) => {
         const roles = allUserRoles.filter((r) => r.user_id === s.id).map((r) => r.role);
-        return roles.includes("manager") || roles.includes("assistant_manager" as any) || s.is_responsible;
+        const profileRole = (s as any).role ?? (s as any).app_role;
+        const isAssistant = roles.includes("assistant" as any) || profileRole === "assistant";
+        return !isAssistant;
       });
     }
     return staff;
