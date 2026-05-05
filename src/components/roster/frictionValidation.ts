@@ -194,6 +194,7 @@ export function validateShiftFriction({
   weekShiftsForUser,
   staffProfiles,
   allShifts,
+  config,
 }: {
   assignedUserId: string | null;
   shiftType: string;
@@ -205,42 +206,61 @@ export function validateShiftFriction({
   weekShiftsForUser: number;
   staffProfiles: StaffProfile[];
   allShifts?: RestShift[];
+  config?: FrictionConfig;
 }): FrictionWarning[] {
   if (!assignedUserId) return [];
 
+  const cfg = config ?? DEFAULT_FRICTION_CONFIG;
   const warnings: FrictionWarning[] = [];
   const profile = staffProfiles.find((p) => p.id === assignedUserId);
   if (!profile) return [];
 
-  // FTE check: 1.0 FTE = 5 shifts/week
-  const fteLimit = Math.round((profile.target_fte_percent ?? 1) * 5);
-  const newTotal = weekShiftsForUser + 1;
-  if (newTotal > fteLimit) {
-    warnings.push({
-      type: "fte",
-      message: `${profile.full_name} has reached their FTE limit for this week (${weekShiftsForUser}/${fteLimit} shifts, ${Math.round((profile.target_fte_percent ?? 1) * 100)}% FTE).`,
-    });
+  // FTE check
+  if (cfg.checks.fte_weekly.enabled) {
+    const perWeek = cfg.fte_shifts_per_week ?? 5;
+    const fteLimit = Math.round((profile.target_fte_percent ?? 1) * perWeek);
+    const newTotal = weekShiftsForUser + 1;
+    if (newTotal > fteLimit) {
+      warnings.push({
+        type: "fte",
+        severity: cfg.checks.fte_weekly.severity,
+        message: `${profile.full_name} has reached their FTE limit for this week (${weekShiftsForUser}/${fteLimit} shifts, ${Math.round((profile.target_fte_percent ?? 1) * 100)}% FTE).`,
+      });
+    }
   }
 
-  // Exclusion checks (new model + legacy)
-  warnings.push(...validateExclusions(profile, shiftType, shiftDate));
+  // Exclusion checks (split into shift-type vs weekday)
+  if (cfg.checks.excluded_shifts.enabled || cfg.checks.excluded_days.enabled) {
+    const all = validateExclusions(profile, shiftType, shiftDate);
+    for (const w of all) {
+      // crude split: messages mention "shift excluded" vs day name
+      const isDay = /Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Weekend/i.test(w.message);
+      const allowed = isDay ? cfg.checks.excluded_days.enabled : cfg.checks.excluded_shifts.enabled;
+      if (!allowed) continue;
+      const sev = isDay ? cfg.checks.excluded_days.severity : cfg.checks.excluded_shifts.severity;
+      warnings.push({ ...w, severity: sev });
+    }
+  }
 
-  // Back-to-back rest check (skip if on-call)
-  if (allShifts && shiftStartTime && shiftEndTime && !isStandby) {
-    warnings.push(
-      ...validateRestPeriod(
-        {
-          assignedUserId,
-          date: shiftDate,
-          start: shiftStartTime,
-          end: shiftEndTime,
-          isStandby,
-          excludeShiftId: editingShiftId ?? null,
-        },
-        allShifts,
-        profile.full_name,
-      ),
+  // Back-to-back rest check
+  if (cfg.checks.rest_period.enabled && allShifts && shiftStartTime && shiftEndTime && !isStandby) {
+    const minHours = cfg.checks.rest_period.min_hours ?? MIN_REST_HOURS;
+    const restWarnings = validateRestPeriod(
+      {
+        assignedUserId,
+        date: shiftDate,
+        start: shiftStartTime,
+        end: shiftEndTime,
+        isStandby,
+        excludeShiftId: editingShiftId ?? null,
+      },
+      allShifts,
+      profile.full_name,
+      minHours,
     );
+    for (const w of restWarnings) {
+      warnings.push({ ...w, severity: cfg.checks.rest_period.severity });
+    }
   }
 
   return warnings;
