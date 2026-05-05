@@ -33,9 +33,9 @@ import { HolidayCellBackground, HolidayCornerIcon } from "@/components/holidays/
 type ShiftType = Database["public"]["Enums"]["shift_type"];
 
 const shiftBgDraft: Record<string, string> = {
-  morning: "bg-shift-morning/10 border-shift-morning/25 text-shift-morning border-dashed",
-  evening: "bg-shift-evening/10 border-shift-evening/25 text-shift-evening border-dashed",
-  night: "bg-shift-night/10 border-shift-night/25 text-shift-night border-dashed",
+  morning: "bg-shift-morning/10 border-shift-morning/25 text-shift-morning border-dotted",
+  evening: "bg-shift-evening/10 border-shift-evening/25 text-shift-evening border-dotted",
+  night: "bg-shift-night/10 border-shift-night/25 text-shift-night border-dotted",
 };
 
 const shiftBgPublished: Record<string, string> = {
