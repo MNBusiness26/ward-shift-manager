@@ -22,7 +22,7 @@ import {
   Sun, Sunset, Moon, TrendingUp, ArrowLeftRight, CalendarOff,
   Calendar, Users, Star, ChevronLeft, ChevronRight, UserPlus,
   Lock, CheckCircle, AlertTriangle, Check, X, ClipboardCheck, Palmtree, Plane,
-  Pencil, Trash2, Bandage, Baby,
+  Pencil, Trash2, Bandage, Baby, GraduationCap,
 } from "lucide-react";
 import {
   format, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
@@ -78,7 +78,7 @@ export default function StaffStats() {
 
   // Proxy request dialog state
   const [proxyOpen, setProxyOpen] = useState(false);
-  const [proxyType, setProxyType] = useState<"block" | "vacation" | "sick_leave" | "maternity_leave" | "yearly_leave">("block");
+  const [proxyType, setProxyType] = useState<"block" | "vacation" | "sick_leave" | "maternity_leave" | "yearly_leave" | "study">("block");
   const [proxyDate, setProxyDate] = useState("");
   const [proxyEndDate, setProxyEndDate] = useState("");
   const [proxyReason, setProxyReason] = useState("");
@@ -844,6 +844,9 @@ export default function StaffStats() {
                   <SelectItem value="yearly_leave">
                     <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.yearlyLeaveLabel")}</span>
                   </SelectItem>
+                  <SelectItem value="study">
+                    <span className="flex items-center gap-2"><GraduationCap className="h-3 w-3" /> {t("avail.studyLabel")}</span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -937,6 +940,7 @@ export default function StaffStats() {
                   <SelectItem value="sick_leave">🩹 {t("avail.sickLeaveLabel")}</SelectItem>
                   <SelectItem value="maternity_leave">🍼 {t("avail.maternityLeaveLabel")}</SelectItem>
                   <SelectItem value="yearly_leave">🌴 {t("avail.yearlyLeaveLabel")}</SelectItem>
+                  <SelectItem value="study">📚 {t("avail.studyLabel")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
