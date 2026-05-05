@@ -535,7 +535,7 @@ export default function ManagementCalendar() {
                                     ? "bg-slate-50 border-slate-200 text-slate-400 opacity-80"
                                     : isStandby
                                     ? "bg-blue-50/60 border-l-4 border-blue-400 border-t-0 border-r-0 border-b-0 rounded-sm text-foreground"
-                                    : s.is_draft ? "opacity-60 border-dashed" : "ring-1 ring-current/20"
+                                    : s.is_draft ? "bg-draft-stripes opacity-100" : "ring-1 ring-current/20"
                                 } ${assistantRole && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-gray-100/50 text-muted-foreground border-muted-foreground/20" : ""}`}
                               >
                                 {isExternal && <ArrowLeftRight className="h-2.5 w-2.5 shrink-0" />}
