@@ -97,7 +97,7 @@ export const HolidayCornerIcon = forwardRef<
 
   const positioning = inline
     ? "inline-flex items-center justify-center"
-    : "pointer-events-auto absolute top-1 end-1 ltr:right-1 ltr:left-auto rtl:left-1 rtl:right-auto z-10 inline-flex items-center justify-center rounded-sm text-[#9F66CC]/80 hover:text-[#9F66CC]";
+    : "pointer-events-auto absolute top-1 end-1 ltr:right-1 ltr:left-auto rtl:left-1 rtl:right-auto z-10 inline-flex items-center justify-center rounded-sm text-purple-600/70 hover:text-purple-600";
 
   return (
     <TooltipProvider delayDuration={150}>
