@@ -22,6 +22,8 @@ import { FrictionDialog, type FrictionWarning } from "@/components/roster/Fricti
 import { VersionCompareDialog, type VersionDiff } from "@/components/roster/VersionCompareDialog";
 import { validateShiftFriction, isOverHeadcount, getHeadcountTarget } from "@/components/roster/frictionValidation";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import { useFrictionConfig } from "@/hooks/useFrictionConfig";
+import { logFrictionWarnings } from "@/lib/frictionLog";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
@@ -131,6 +133,7 @@ export default function Roster() {
 
   // Full-week enforcement from admin settings
   const { enforceFullWeek, headcountLimits } = useAppSettings();
+  const frictionConfig = useFrictionConfig();
   const isFullWeek = getDay(viewStart) === 0; // Sunday start
   const [clearWeekConfirmOpen, setClearWeekConfirmOpen] = useState(false);
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);

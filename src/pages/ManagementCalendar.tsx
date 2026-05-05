@@ -21,6 +21,9 @@ import { validateShiftFriction, isOverHeadcount, getHeadcountTarget } from "@/co
 import { compareStaff, compareShiftAssignment, isAssistant, formatDisplayName } from "@/components/roster/staffSort";
 import { useStaffPool } from "@/hooks/useStaffPool";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import { useFrictionConfig } from "@/hooks/useFrictionConfig";
+import { logFrictionWarnings } from "@/lib/frictionLog";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { useHolidayMap } from "@/hooks/useHolidays";
@@ -81,6 +84,8 @@ const defaultForm = (date?: string, type?: ShiftType): ShiftFormData => ({
 export default function ManagementCalendar() {
   const { t, locale } = useTranslation();
   const { headcountLimits } = useAppSettings();
+  const frictionConfig = useFrictionConfig();
+  const { user } = useAuth();
   const holidayMap = useHolidayMap();
   const queryClient = useQueryClient();
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
