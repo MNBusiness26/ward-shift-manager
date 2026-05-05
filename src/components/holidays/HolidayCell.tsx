@@ -64,9 +64,9 @@ export const HolidayCellBackground = forwardRef<HTMLDivElement, { holiday: Publi
     const style: React.CSSProperties = holiday.is_eve
       ? {
           backgroundImage:
-            "repeating-linear-gradient(45deg, rgba(159,102,204,0.14) 0 6px, transparent 6px 14px)",
+            "repeating-linear-gradient(45deg, hsla(274, 53%, 60%, 0.18) 0 6px, transparent 6px 14px)",
         }
-      : { backgroundColor: "rgba(159, 102, 204, 0.08)" };
+      : { backgroundColor: "hsla(274, 53%, 60%, 0.1)" };
     return (
       <div
         ref={ref}
@@ -97,7 +97,7 @@ export const HolidayCornerIcon = forwardRef<
 
   const positioning = inline
     ? "inline-flex items-center justify-center"
-    : "pointer-events-auto absolute top-1 end-1 ltr:right-1 ltr:left-auto rtl:left-1 rtl:right-auto z-10 inline-flex items-center justify-center rounded-sm text-[#9F66CC]/80 hover:text-[#9F66CC]";
+    : "pointer-events-auto absolute top-1 end-1 ltr:right-1 ltr:left-auto rtl:left-1 rtl:right-auto z-10 inline-flex items-center justify-center rounded-sm text-purple-600/70 hover:text-purple-600";
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -111,6 +111,9 @@ export const HolidayCornerIcon = forwardRef<
           <div className="font-medium">{primary}</div>
           {secondary && secondary !== primary && (
             <div className="text-muted-foreground">{secondary}</div>
+          )}
+          {holiday.category === "national" && (
+            <div className="text-[10px] opacity-70 mt-0.5">National (Israel)</div>
           )}
           {holiday.is_eve && <div className="text-[10px] opacity-70 mt-0.5">Erev / ערב</div>}
         </TooltipContent>

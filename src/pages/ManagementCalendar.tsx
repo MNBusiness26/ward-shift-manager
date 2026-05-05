@@ -448,16 +448,16 @@ export default function ManagementCalendar() {
                   const blocked = isDateBlocked(dateStr);
                   const holiday = holidayMap.get(dateStr);
                   return (
-                    <th key={d.toISOString()} className={`relative z-10 border-b p-1.5 text-center font-medium text-muted-foreground md:p-2 ${blocked ? "bg-muted/50" : ""}`}>
+                    <th key={d.toISOString()} className={`relative z-10 border-b p-1.5 text-center font-medium text-muted-foreground md:p-2 ${blocked ? "bg-muted/50" : ""} ${holiday ? "bg-[hsl(274_53%_98%)]" : ""}`}>
                       <div
-                        className={`flex items-center justify-center gap-1.5 px-1 py-0.5 rounded-sm ${holiday && !holiday.is_eve ? "bg-[hsl(0_75%_88%)]" : ""}`}
-                        style={holiday?.is_eve ? { backgroundImage: "repeating-linear-gradient(45deg, hsl(0 75% 82%) 0 6px, transparent 6px 14px)" } : undefined}
+                        className={`flex items-center justify-center gap-1.5 px-1 py-0.5 rounded-sm ${holiday && !holiday.is_eve ? "bg-[hsla(274,53%,60%,0.15)]" : ""}`}
+                        style={holiday?.is_eve ? { backgroundImage: "repeating-linear-gradient(45deg, hsla(274,53%,60%,0.22) 0 6px, transparent 6px 14px)" } : undefined}
                       >
                         <HolidayCornerIcon holiday={holiday} inline />
-                        <span className={holiday ? "text-destructive font-semibold" : ""}>{formatLocale(d, "EEE", locale)}</span>
+                        <span className={holiday ? "text-purple-700 font-semibold" : ""}>{formatLocale(d, "EEE", locale)}</span>
                         {blocked && <Lock className="h-3 w-3 text-muted-foreground" />}
                       </div>
-                      <div className={`text-[10px] md:text-xs ${holiday ? "text-destructive/80" : ""}`}>{formatLocale(d, "MMM d", locale)}</div>
+                      <div className={`text-[10px] md:text-xs ${holiday ? "text-purple-700/80" : ""}`}>{formatLocale(d, "MMM d", locale)}</div>
                     </th>
                   );
                 })}
@@ -480,6 +480,7 @@ export default function ManagementCalendar() {
                   {days.map((d) => {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const blocked = isDateBlocked(dateStr);
+                    const holiday = holidayMap.get(dateStr);
                     const dayShifts = shifts
                       .filter((s) => s.date === dateStr && s.type === type && s.assigned_user_id)
                       .slice()
@@ -507,7 +508,7 @@ export default function ManagementCalendar() {
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`relative z-0 border-l p-2 align-top h-full ${blocked ? "cursor-not-allowed bg-muted/50" : `${shiftColors[type]} cursor-pointer hover:opacity-80`} ${overHeadcount ? "bg-red-50/50 border border-red-200" : ""}`}
+                        className={`relative z-0 border-l p-2 align-top h-full ${blocked ? "cursor-not-allowed bg-muted/50" : `${shiftColors[type]} cursor-pointer hover:opacity-80`} ${overHeadcount ? "bg-red-50/50 border border-red-200" : ""} ${holiday && !blocked && !overHeadcount ? "bg-[hsl(274_53%_98%)]" : ""}`}
                         onClick={() => !blocked && handleCellClick(dateStr, type)}
                       >
                         {overHeadcount && (
@@ -534,7 +535,7 @@ export default function ManagementCalendar() {
                                     ? "bg-slate-50 border-slate-200 text-slate-400 opacity-80"
                                     : isStandby
                                     ? "bg-blue-50/60 border-l-4 border-blue-400 border-t-0 border-r-0 border-b-0 rounded-sm text-foreground"
-                                    : s.is_draft ? "opacity-60 border-dashed" : "ring-1 ring-current/20"
+                                    : s.is_draft ? "bg-draft-stripes opacity-100" : "ring-1 ring-current/20"
                                 } ${assistantRole && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-gray-100/50 text-muted-foreground border-muted-foreground/20" : ""}`}
                               >
                                 {isExternal && <ArrowLeftRight className="h-2.5 w-2.5 shrink-0" />}
