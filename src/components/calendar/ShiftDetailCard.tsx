@@ -117,14 +117,21 @@ export function ShiftDetailCard({ shift, myRole, colleagues }: ShiftDetailCardPr
           <p className="text-xs text-muted-foreground ps-5">No other staff on this shift.</p>
         ) : (
           <div className="space-y-1 ps-5">
-            {colleagues.map((c) => (
-              <div key={c.id} className="flex items-center gap-2 text-sm">
-                <span>{c.profiles?.full_name || "Unknown"}</span>
-                {c.is_responsible_on_shift && (
-                  <Star className="h-3 w-3 fill-primary text-primary" />
-                )}
-              </div>
-            ))}
+            {colleagues.map((c) => {
+              const isLead = !!c.is_responsible_on_shift;
+              const isAssistantRole = c.profiles?.role === "assistant";
+              return (
+                <div
+                  key={c.id}
+                  className={`flex items-center gap-2 text-sm opacity-100 ${
+                    isLead ? "font-medium" : isAssistantRole ? "font-normal" : "font-normal"
+                  }`}
+                >
+                  <span>{c.profiles?.full_name || "Unknown"}</span>
+                  {isLead && <Star className="h-3 w-3 fill-primary text-primary" />}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
