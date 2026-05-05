@@ -144,34 +144,33 @@ export function validateRestPeriod(
   candidate: { assignedUserId: string; date: string; start: string; end: string; isStandby?: boolean; excludeShiftId?: string | null },
   allShifts: RestShift[],
   staffName: string,
+  minHours: number = MIN_REST_HOURS,
 ): FrictionWarning[] {
   if (candidate.isStandby) return [];
   const { start: candStart, end: candEnd } = shiftBounds(candidate.date, candidate.start, candidate.end);
   const dayMs = 24 * 60 * 60 * 1000;
 
-  // Look at any shift for this user within +/- 24h of the candidate window
   const neighbors = allShifts.filter((s) => {
     if (!s.assigned_user_id || s.assigned_user_id !== candidate.assignedUserId) return false;
     if (candidate.excludeShiftId && s.id === candidate.excludeShiftId) return false;
-    if (s.is_standby) return false; // on-call exempt
+    if (s.is_standby) return false;
     const diff = Math.abs(new Date(s.date + "T00:00").getTime() - new Date(candidate.date + "T00:00").getTime());
     return diff <= dayMs * 2;
   });
 
   for (const n of neighbors) {
     const { start: nStart, end: nEnd } = shiftBounds(n.date, n.start_time, n.end_time);
-    // earlier vs later
     const [earlierEnd, laterStart] =
       nStart.getTime() < candStart.getTime() ? [nEnd, candStart] : [candEnd, nStart];
     const restMs = laterStart.getTime() - earlierEnd.getTime();
-    if (restMs < 0) continue; // overlap is a different concern; skip here
+    if (restMs < 0) continue;
     const restHours = restMs / (60 * 60 * 1000);
-    if (restHours < MIN_REST_HOURS) {
+    if (restHours < minHours) {
       return [
         {
           type: "rest",
           severity: "red",
-          message: `${staffName} has insufficient rest between shifts (less than ${MIN_REST_HOURS} hours).`,
+          message: `${staffName} has insufficient rest between shifts (less than ${minHours} hours).`,
         },
       ];
     }
