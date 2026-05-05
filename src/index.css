@@ -39,19 +39,19 @@
 
     --radius: 0.5rem;
 
-    --shift-morning: 45 93% 47%;
-    --shift-evening: 262 83% 58%;
-    --shift-night: 221 83% 33%;
+    --shift-morning: 44 89% 48%;
+    --shift-evening: 13 82% 62%;
+    --shift-night: 231 48% 48%;
 
-    /* Light blue sidebar */
-    --sidebar-background: 199 92% 74%;
-    --sidebar-foreground: 222 84% 5%;
-    --sidebar-primary: 199 89% 48%;
+    /* Deep navy sidebar with electric blue accent */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 199 80% 68%;
-    --sidebar-accent-foreground: 222 84% 5%;
-    --sidebar-border: 199 92% 74%;
-    --sidebar-ring: 199 89% 48%;
+    --sidebar-accent: 222 47% 18%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 47% 18%;
+    --sidebar-ring: 217 91% 60%;
   }
 
   .dark {
