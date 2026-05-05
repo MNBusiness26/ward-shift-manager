@@ -877,7 +877,7 @@ export default function Roster() {
                   const dateBlocked = isDateBlocked(dateStr);
                   const holiday = holidayMap.get(dateStr);
                   return (
-                    <th key={d.toISOString()} className={`relative z-10 min-w-[70px] md:min-w-[120px] py-4 px-1 md:py-5 md:px-2 text-center font-medium text-muted-foreground border-b border-r border-border/30 ${dateBlocked ? "bg-muted/50" : ""}`}>
+                    <th key={d.toISOString()} className={`sticky top-0 z-30 min-w-[70px] md:min-w-[120px] py-4 px-1 md:py-5 md:px-2 text-center font-medium text-muted-foreground border-b border-r border-border/60 ${dateBlocked ? "bg-muted/50" : "bg-card"}`}>
                       <div
                         className={`flex items-center justify-center gap-1.5 mb-0.5 px-1 py-0.5 rounded-sm ${holiday && !holiday.is_eve ? "bg-[hsla(274,53%,60%,0.15)]" : ""}`}
                         style={holiday?.is_eve ? { backgroundImage: "repeating-linear-gradient(45deg, hsla(274,53%,60%,0.22) 0 6px, transparent 6px 14px)" } : undefined}
