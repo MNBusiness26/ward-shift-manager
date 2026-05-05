@@ -862,8 +862,8 @@ export default function Roster() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="p-0" style={{ overflowX: "clip", overflowY: "visible" }}>
-          <div className="relative isolate" style={{ overflowX: "auto", overflowY: "visible" }}>
+        <CardContent className="overflow-hidden p-0">
+          <div className="relative isolate overflow-auto max-h-[calc(100vh-220px)]">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-y-0 left-0 z-10 w-[100px] bg-card shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px]"
