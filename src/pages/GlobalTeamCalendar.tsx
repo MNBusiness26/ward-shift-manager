@@ -42,7 +42,7 @@ const shiftDotColors: Record<string, string> = {
 export default function GlobalTeamCalendar() {
   const { t, locale } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [view, setView] = useState<"month" | "week">("month");
+  const [view, setView] = useState<"month" | "week">("week");
   const [isExporting, setIsExporting] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
   const holidayMap = useHolidayMap();
