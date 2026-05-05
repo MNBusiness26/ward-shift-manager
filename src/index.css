@@ -112,14 +112,17 @@
   box-shadow: -2px 0 8px -4px hsl(var(--foreground) / 0.18);
 }
 
-/* Extra vertical padding for Hebrew (Heebo) font */
+/* Extra vertical padding & line-height for Hebrew (Heebo) font to prevent descender clipping */
 [dir="rtl"] td,
 [dir="rtl"] th,
 [dir="rtl"] input,
 [dir="rtl"] select,
-[dir="rtl"] textarea {
-  padding-top: calc(var(--cell-padding-y, 0.375rem) * 1.15);
-  padding-bottom: calc(var(--cell-padding-y, 0.375rem) * 1.15);
+[dir="rtl"] textarea,
+[dir="rtl"] .badge,
+[dir="rtl"] [class*="badge"] {
+  padding-top: max(0.25rem, calc(var(--cell-padding-y, 0.375rem) * 1.15));
+  padding-bottom: max(0.25rem, calc(var(--cell-padding-y, 0.375rem) * 1.15));
+  line-height: 1.5;
 }
 
 /* Ghosted hatch pattern for roster exclusions */
