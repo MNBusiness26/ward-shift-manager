@@ -33,6 +33,7 @@ interface ShiftDetailCardProps {
     comments: string | null;
     is_verified?: boolean;
     is_standby?: boolean;
+    is_external?: boolean;
     actual_start_time?: string | null;
     actual_end_time?: string | null;
   };
