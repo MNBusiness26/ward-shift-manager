@@ -368,6 +368,7 @@ export async function exportIndividualExcel(staff: StaffPayrollTotals, monthLabe
   const totals: Array<[string, number]> = [
     ["סה״כ שעות רגילות", b.regular],
     ["סה״כ שעות כוננות", b.onCall],
+    ["סה״כ שעות (כולל כוננות)", b.regular + b.onCall],
     ["סה״כ משמרות אחראית", staff.responsibleShifts],
   ];
   totals.forEach(([label, value], idx) => {
