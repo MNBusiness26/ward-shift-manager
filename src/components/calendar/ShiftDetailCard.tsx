@@ -70,11 +70,11 @@ export function ShiftDetailCard({ shift, myRole, colleagues }: ShiftDetailCardPr
     <div
       className={`relative rounded-lg p-4 space-y-3 ${
         shift.is_external
-          ? "bg-slate-50 border-2 border-slate-300"
+          ? `border-2 border-slate-300 ${shift.is_draft ? "bg-draft-stripes border-dashed" : "bg-slate-50"}`
           : shift.is_standby
-          ? "bg-standby border-2 border-blue-400"
-          : `${colors.bg} ${colors.border}`
-      } ${shift.is_draft ? "bg-draft-stripes border-dashed" : ""}`}
+          ? `border-2 border-blue-400 ${shift.is_draft ? "bg-draft-stripes border-dashed" : "bg-standby"}`
+          : `${colors.border} ${shift.is_draft ? "bg-draft-stripes border-dashed" : colors.bg}`
+      }`}
     >
       {shift.is_responsible_on_shift && (
         <Star className="absolute top-3 end-3 h-4 w-4 fill-primary text-primary" />
