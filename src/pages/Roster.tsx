@@ -1026,7 +1026,7 @@ export default function Roster() {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const unassigned = shifts.filter((s) => !s.assigned_user_id && s.date === dateStr);
                     return (
-                      <td key={d.toISOString()} className="p-1 text-center border-b border-r border-border/20">
+                      <td key={d.toISOString()} className="p-1 text-center border-b border-r border-border/50">
                         {unassigned.map((s) => (
                           <div
                             key={s.id}
