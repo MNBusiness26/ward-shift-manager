@@ -716,7 +716,6 @@ export default function ManagementCalendar() {
                   })}
                 </SelectContent>
               </Select>
-              {form.is_standby && <p className="text-xs text-muted-foreground">{t("roster.onCallHint")}</p>}
             </div>
 
             <div className="space-y-2">
