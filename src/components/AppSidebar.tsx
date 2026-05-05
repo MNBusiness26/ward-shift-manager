@@ -111,7 +111,7 @@ export function AppSidebar() {
                         activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
                         onClick={handleLinkClick}
                       >
-                        {active && <span className="absolute inset-y-1 start-0 w-[3px] rounded-full bg-sidebar-primary" />}
+                        {active && <span className="absolute inset-y-1 start-0 w-[3px] bg-sidebar-primary" />}
                         <item.icon className={`me-2 h-5 w-5 md:h-4 md:w-4 transition-colors ${
                           active ? "text-sidebar-primary" : "text-sidebar-foreground/70"
                         }`} />
@@ -145,7 +145,7 @@ export function AppSidebar() {
                           activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
                           onClick={handleLinkClick}
                         >
-                          {active && <span className="absolute inset-y-1 start-0 w-[3px] rounded-full bg-sidebar-primary" />}
+                          {active && <span className="absolute inset-y-1 start-0 w-[3px] bg-sidebar-primary" />}
                           <item.icon className={`me-2 h-5 w-5 md:h-4 md:w-4 transition-colors ${
                             active ? "text-sidebar-primary" : "text-sidebar-foreground/70"
                           }`} />
@@ -168,7 +168,7 @@ export function AppSidebar() {
                         activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
                         onClick={handleLinkClick}
                       >
-                        {isActive("/admin") && <span className="absolute inset-y-1 start-0 w-[3px] rounded-full bg-sidebar-primary" />}
+                        {isActive("/admin") && <span className="absolute inset-y-1 start-0 w-[3px] bg-sidebar-primary" />}
                         <Shield className={`me-2 h-5 w-5 md:h-4 md:w-4 transition-colors ${
                           isActive("/admin") ? "text-sidebar-primary" : "text-sidebar-foreground/70"
                         }`} />
