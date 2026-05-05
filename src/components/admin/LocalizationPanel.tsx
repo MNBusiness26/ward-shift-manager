@@ -17,7 +17,7 @@ const CATEGORIES: { key: HolidayCategory; label: string }[] = [
   { key: "jewish", label: "Jewish (יהודי)" },
   { key: "muslim", label: "Muslim (מוסלמי)" },
   { key: "christian", label: "Christian (נוצרי)" },
-  { key: "national", label: "National (לאומי)" },
+  { key: "national", label: "National (Israel)" },
   { key: "ward", label: "Ward (מחלקה)" },
 ];
 

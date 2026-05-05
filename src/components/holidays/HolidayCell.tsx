@@ -64,9 +64,9 @@ export const HolidayCellBackground = forwardRef<HTMLDivElement, { holiday: Publi
     const style: React.CSSProperties = holiday.is_eve
       ? {
           backgroundImage:
-            "repeating-linear-gradient(45deg, rgba(239,68,68,0.10) 0 6px, transparent 6px 14px)",
+            "repeating-linear-gradient(45deg, rgba(159,102,204,0.14) 0 6px, transparent 6px 14px)",
         }
-      : { backgroundColor: "rgba(239, 68, 68, 0.08)" };
+      : { backgroundColor: "rgba(159, 102, 204, 0.08)" };
     return (
       <div
         ref={ref}
@@ -97,7 +97,7 @@ export const HolidayCornerIcon = forwardRef<
 
   const positioning = inline
     ? "inline-flex items-center justify-center"
-    : "pointer-events-auto absolute top-1 end-1 ltr:right-1 ltr:left-auto rtl:left-1 rtl:right-auto z-10 inline-flex items-center justify-center rounded-sm text-destructive/70 hover:text-destructive";
+    : "pointer-events-auto absolute top-1 end-1 ltr:right-1 ltr:left-auto rtl:left-1 rtl:right-auto z-10 inline-flex items-center justify-center rounded-sm text-[#9F66CC]/80 hover:text-[#9F66CC]";
 
   return (
     <TooltipProvider delayDuration={150}>

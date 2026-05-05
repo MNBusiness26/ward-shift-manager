@@ -65,8 +65,18 @@ export function ShiftDetailCard({ shift, myRole, colleagues }: ShiftDetailCardPr
     onError: (e: any) => toast.error(e.message),
   });
 
+  const draftStripeStyle: React.CSSProperties | undefined = shift.is_draft
+    ? {
+        backgroundImage:
+          "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px)",
+      }
+    : undefined;
+
   return (
-    <div className={`relative rounded-lg p-4 space-y-3 ${colors.bg} ${colors.border} ${shift.is_draft ? "border-dashed" : ""}`}>
+    <div
+      className={`relative rounded-lg p-4 space-y-3 ${colors.bg} ${colors.border}`}
+      style={draftStripeStyle}
+    >
       {shift.is_responsible_on_shift && (
         <Star className="absolute top-3 end-3 h-4 w-4 fill-primary text-primary" />
       )}
@@ -107,14 +117,21 @@ export function ShiftDetailCard({ shift, myRole, colleagues }: ShiftDetailCardPr
           <p className="text-xs text-muted-foreground ps-5">No other staff on this shift.</p>
         ) : (
           <div className="space-y-1 ps-5">
-            {colleagues.map((c) => (
-              <div key={c.id} className="flex items-center gap-2 text-sm">
-                <span>{c.profiles?.full_name || "Unknown"}</span>
-                {c.is_responsible_on_shift && (
-                  <Star className="h-3 w-3 fill-primary text-primary" />
-                )}
-              </div>
-            ))}
+            {colleagues.map((c) => {
+              const isLead = !!c.is_responsible_on_shift;
+              const isAssistantRole = c.profiles?.role === "assistant";
+              return (
+                <div
+                  key={c.id}
+                  className={`flex items-center gap-2 text-sm opacity-100 ${
+                    isLead ? "font-medium" : isAssistantRole ? "font-normal" : "font-normal"
+                  }`}
+                >
+                  <span>{c.profiles?.full_name || "Unknown"}</span>
+                  {isLead && <Star className="h-3 w-3 fill-primary text-primary" />}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
