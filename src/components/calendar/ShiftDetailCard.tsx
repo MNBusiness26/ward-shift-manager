@@ -67,7 +67,7 @@ export function ShiftDetailCard({ shift, myRole, colleagues }: ShiftDetailCardPr
 
   return (
     <div
-      className={`relative rounded-lg p-4 space-y-3 ${colors.bg} ${colors.border} ${shift.is_draft ? "bg-draft-stripes" : ""}`}
+      className={`relative rounded-lg p-4 space-y-3 ${shift.is_standby ? "bg-standby" : colors.bg} ${colors.border} ${shift.is_draft ? "bg-draft-stripes" : ""}`}
     >
       {shift.is_responsible_on_shift && (
         <Star className="absolute top-3 end-3 h-4 w-4 fill-primary text-primary" />
