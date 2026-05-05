@@ -1167,7 +1167,6 @@ export default function Roster() {
                   })}
                 </SelectContent>
               </Select>
-              {form.is_standby && <p className="text-xs text-muted-foreground">{t("roster.onCallHint")}</p>}
             </div>
 
             <div className="flex items-center justify-between">
