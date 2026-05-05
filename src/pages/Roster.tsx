@@ -709,10 +709,24 @@ export default function Roster() {
       weekShiftsForUser,
       staffProfiles: staff as any[],
       allShifts: (neighborShifts as any[]) ?? [],
+      config: frictionConfig,
     });
     if (warnings.length > 0) {
-      setFrictionWarnings(warnings);
-      setFrictionOpen(true);
+      // Always log silent warnings for auditing
+      logFrictionWarnings(warnings, {
+        userId: form.assigned_user_id,
+        createdBy: user!.id,
+        date: form.date,
+        shiftType: form.type,
+        shiftId: editingShift ?? null,
+        wasShown: frictionConfig.enabled,
+      });
+      if (frictionConfig.enabled) {
+        setFrictionWarnings(warnings);
+        setFrictionOpen(true);
+      } else {
+        saveShift.mutate();
+      }
     } else {
       saveShift.mutate();
     }
