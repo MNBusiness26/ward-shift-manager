@@ -480,6 +480,7 @@ export default function ManagementCalendar() {
                   {days.map((d) => {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const blocked = isDateBlocked(dateStr);
+                    const holiday = holidayMap.get(dateStr);
                     const dayShifts = shifts
                       .filter((s) => s.date === dateStr && s.type === type && s.assigned_user_id)
                       .slice()
@@ -507,7 +508,7 @@ export default function ManagementCalendar() {
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`relative z-0 border-l p-2 align-top h-full ${blocked ? "cursor-not-allowed bg-muted/50" : `${shiftColors[type]} cursor-pointer hover:opacity-80`} ${overHeadcount ? "bg-red-50/50 border border-red-200" : ""}`}
+                        className={`relative z-0 border-l p-2 align-top h-full ${blocked ? "cursor-not-allowed bg-muted/50" : `${shiftColors[type]} cursor-pointer hover:opacity-80`} ${overHeadcount ? "bg-red-50/50 border border-red-200" : ""} ${holiday && !blocked && !overHeadcount ? "bg-[hsl(274_53%_98%)]" : ""}`}
                         onClick={() => !blocked && handleCellClick(dateStr, type)}
                       >
                         {overHeadcount && (
