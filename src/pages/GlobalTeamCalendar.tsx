@@ -190,7 +190,7 @@ export default function GlobalTeamCalendar() {
             </thead>
             <tbody>
               {weeks.map((week, wi) => (
-                <FragmentWithKey key={wi}>
+                <Fragment key={wi}>
                   {/* Date header row for this week */}
                   <tr key={`dates-${wi}`} className="border-t">
                     {week.map((day) => {
