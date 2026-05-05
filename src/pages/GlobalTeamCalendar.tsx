@@ -291,7 +291,7 @@ export default function GlobalTeamCalendar() {
                       })}
                     </tr>
                   ))}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
