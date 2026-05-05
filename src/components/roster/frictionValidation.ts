@@ -1,5 +1,6 @@
 import { getDay } from "date-fns";
 import type { FrictionWarning } from "./FrictionDialog";
+import { DEFAULT_FRICTION_CONFIG, type FrictionConfig } from "@/hooks/useFrictionConfig";
 
 interface StaffProfile {
   id: string;
