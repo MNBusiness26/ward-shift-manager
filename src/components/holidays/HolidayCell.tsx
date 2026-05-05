@@ -112,6 +112,9 @@ export const HolidayCornerIcon = forwardRef<
           {secondary && secondary !== primary && (
             <div className="text-muted-foreground">{secondary}</div>
           )}
+          {holiday.category === "national" && (
+            <div className="text-[10px] opacity-70 mt-0.5">National (Israel)</div>
+          )}
           {holiday.is_eve && <div className="text-[10px] opacity-70 mt-0.5">Erev / ערב</div>}
         </TooltipContent>
       </Tooltip>
