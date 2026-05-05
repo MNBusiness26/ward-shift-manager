@@ -950,7 +950,7 @@ export default function Roster() {
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`relative z-0 py-3 px-1 text-center transition-colors border-b border-r border-border/20 ${dateBlocked || blocked ? "bg-muted/30 roster-ghosted cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-accent/30"}`}
+                        className={`relative z-0 py-3 px-1 text-center transition-colors border-b border-r border-border/50 ${dateBlocked || blocked ? "bg-muted/30 roster-ghosted cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-accent/30"}`}
                         onClick={() => {
                           if (dateBlocked || blocked) return;
                           if (dayShifts.length === 0) {
