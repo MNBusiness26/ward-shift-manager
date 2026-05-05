@@ -976,11 +976,11 @@ export default function Roster() {
                             onClick={(e) => { e.stopPropagation(); openEdit(s); }}
                             className={`relative mb-0.5 rounded-sm px-1 py-0.5 text-xs shadow-none ${dateBlocked ? "cursor-not-allowed" : "cursor-pointer hover:ring-1 hover:ring-primary/50"} transition-all ${
                               isExternal
-                                ? "bg-slate-50 border border-slate-200 text-slate-400 opacity-80"
+                                ? `border text-slate-500 ${s.is_draft ? "bg-draft-stripes border-dashed border-slate-400" : "bg-slate-50 border-slate-300"}`
                                 : (s as any).is_standby
-                                ? "bg-blue-50/60 border-l-4 border-blue-400 border-t-0 border-r-0 border-b-0 text-foreground"
+                                ? `text-foreground ${s.is_draft ? "bg-draft-stripes border border-dashed border-blue-400" : "bg-blue-50/60 border-l-4 border-blue-400"}`
                                 : s.is_draft
-                                  ? `${shiftBgDraft[s.type]} opacity-70 border border-dotted ${s.type === "morning" ? "border-s-shift-morning" : s.type === "evening" ? "border-s-shift-evening" : "border-s-shift-night"} border-s-2`
+                                  ? `bg-draft-stripes opacity-90 border border-dashed ${s.type === "morning" ? "border-s-shift-morning" : s.type === "evening" ? "border-s-shift-evening" : "border-s-shift-night"} border-s-2`
                                   : `${shiftBgPublished[s.type]} border-s-2 ${s.type === "morning" ? "border-s-shift-morning" : s.type === "evening" ? "border-s-shift-evening" : "border-s-shift-night"}`
                             }`}
                           >
