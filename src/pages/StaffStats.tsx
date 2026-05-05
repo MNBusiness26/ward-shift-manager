@@ -844,6 +844,9 @@ export default function StaffStats() {
                   <SelectItem value="yearly_leave">
                     <span className="flex items-center gap-2"><Palmtree className="h-3 w-3" /> {t("avail.yearlyLeaveLabel")}</span>
                   </SelectItem>
+                  <SelectItem value="study">
+                    <span className="flex items-center gap-2"><GraduationCap className="h-3 w-3" /> {t("avail.studyLabel")}</span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
