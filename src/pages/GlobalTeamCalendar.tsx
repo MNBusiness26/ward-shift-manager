@@ -6,7 +6,7 @@ import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, addMonths, subMonths, addWeeks, subWeeks, isToday, isSameMonth,
 } from "date-fns";
-import { useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ChevronLeft, ChevronRight, Users, Star, Phone, ArrowLeftRight, FileDown } from "lucide-react";
 import { exportCalendarToPdf } from "@/lib/exportCalendarPdf";
@@ -42,7 +42,7 @@ const shiftDotColors: Record<string, string> = {
 export default function GlobalTeamCalendar() {
   const { t, locale } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [view, setView] = useState<"month" | "week">("month");
+  const [view, setView] = useState<"month" | "week">("week");
   const [isExporting, setIsExporting] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
   const holidayMap = useHolidayMap();
@@ -190,93 +190,108 @@ export default function GlobalTeamCalendar() {
             </thead>
             <tbody>
               {weeks.map((week, wi) => (
-                <tr key={wi} className="border-t">
-                  {week.map((day) => {
-                    const dateStr = format(day, "yyyy-MM-dd");
-                    const inMonth = isWeek || isSameMonth(day, currentMonth);
-                    const today = isToday(day);
-                    const holiday = holidayMap.get(dateStr);
-                    return (
-                      <td
-                        key={dateStr}
-                        className={`relative p-1 border-s align-top min-h-[140px] h-[14vh] ${!inMonth ? "bg-muted/30" : ""} ${today ? "ring-2 ring-inset ring-primary/40" : ""}`}
-                      >
-                        <div
-                          className={`flex items-center justify-between mb-1 px-1 rounded-sm overflow-hidden ${holiday && !holiday.is_eve ? "bg-[hsl(0_75%_88%)]" : ""}`}
-                          style={holiday?.is_eve ? { backgroundImage: "repeating-linear-gradient(45deg, hsl(0 75% 82%) 0 6px, transparent 6px 14px)" } : undefined}
+                <Fragment key={wi}>
+                  {/* Date header row for this week */}
+                  <tr key={`dates-${wi}`} className="border-t">
+                    {week.map((day) => {
+                      const dateStr = format(day, "yyyy-MM-dd");
+                      const inMonth = isWeek || isSameMonth(day, currentMonth);
+                      const today = isToday(day);
+                      const holiday = holidayMap.get(dateStr);
+                      return (
+                        <td
+                          key={`d-${dateStr}`}
+                          className={`border-s p-1 align-top ${!inMonth ? "bg-muted/30" : ""} ${today ? "ring-2 ring-inset ring-primary/40" : ""}`}
                         >
-                          <span className={`text-xs font-medium ${!inMonth ? "text-muted-foreground/50" : today ? "text-primary font-bold" : holiday ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
-                            {format(day, "d")}
-                          </span>
-                          <HolidayCornerIcon holiday={holiday} inline />
-                        </div>
-                        {inMonth && (
-                          <div className="space-y-1">
-                            {shiftTypes.map((type) => {
-                              const typeShifts = getShifts(dateStr, type).slice().sort((a, b) => {
-                                const pa = (a as any).assigned_profile;
-                                const pb = (b as any).assigned_profile;
-                                return compareShiftAssignment(
-                                  {
-                                    full_name: pa?.full_name || "",
-                                    is_responsible_on_shift: (a as any).is_responsible_on_shift,
-                                    is_responsible: pa?.is_responsible,
-                                    role: pa?.role,
-                                    is_standby: (a as any).is_standby,
-                                  },
-                                  {
-                                    full_name: pb?.full_name || "",
-                                    is_responsible_on_shift: (b as any).is_responsible_on_shift,
-                                    is_responsible: pb?.is_responsible,
-                                    role: pb?.role,
-                                    is_standby: (b as any).is_standby,
-                                  },
-                                );
-                              });
-                              if (typeShifts.length === 0) return null;
-                              return (
-                                <div key={type} className={`calendar-shift-box rounded border px-1 py-0.5 ${shiftColors[type]}`}>
-                                  <div className={`text-[9px] font-semibold ${shiftTextColors[type]} flex items-center gap-0.5 mb-1`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${shiftDotColors[type]}`} />
-                                    {shiftLabels[type]}
-                                  </div>
-                                  <div className="calendar-staff-list flex flex-col gap-1">
-                                    {typeShifts.map((s) => {
-                                      const profile = s.assigned_profile as any;
-                                      const isStandby = (s as any).is_standby;
-                                      const isExternal = (s as any).is_external;
-                                      const isResp = s.is_responsible_on_shift || profile?.is_responsible;
-                                      const assistantRole = isAssistant(profile?.role);
-                                      const firstName = formatDisplayName(profile?.full_name);
-                                      return (
-                                        <Badge
-                                          key={s.id}
-                                          variant={s.is_responsible_on_shift ? "default" : "secondary"}
-                                          className={`calendar-staff-badge flex w-full min-w-0 items-center gap-0.5 text-[10px] px-1.5 py-0 leading-tight shadow-none whitespace-nowrap overflow-hidden ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
-                                            isExternal
-                                              ? "bg-slate-50 border-slate-200 text-slate-400 opacity-80"
-                                              : isStandby
-                                              ? "bg-blue-50/60 border-l-4 border-blue-400 border-t-0 border-r-0 border-b-0 rounded-sm text-foreground"
-                                              : (s as any).is_draft ? "opacity-60 border-dashed" : "ring-1 ring-current/20"
-                                          } ${assistantRole && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-gray-100/50 text-muted-foreground border-muted-foreground/20" : ""}`}
-                                        >
-                                          {isExternal && <ArrowLeftRight className="h-2.5 w-2.5 shrink-0" />}
-                                          <span className="calendar-staff-name truncate min-w-0 flex-1">{firstName}</span>
-                                          {isResp && <Star className="h-2.5 w-2.5 fill-current shrink-0" />}
-                                          {isStandby && <Phone className="h-2.5 w-2.5 shrink-0" />}
-                                        </Badge>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              );
-                            })}
+                          <div
+                            className={`flex items-center justify-between px-1 rounded-sm overflow-hidden ${holiday && !holiday.is_eve ? "bg-[hsla(274,53%,60%,0.15)]" : ""}`}
+                            style={holiday?.is_eve ? { backgroundImage: "repeating-linear-gradient(45deg, hsla(274,53%,60%,0.22) 0 6px, transparent 6px 14px)" } : undefined}
+                          >
+                            <span className={`text-xs font-medium ${!inMonth ? "text-muted-foreground/50" : today ? "text-primary font-bold" : holiday ? "text-purple-700 font-semibold" : "text-muted-foreground"}`}>
+                              {format(day, "d")}
+                            </span>
+                            <HolidayCornerIcon holiday={holiday} inline />
                           </div>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  {/* One row per shift type, so morning/evening/night align across all days */}
+                  {shiftTypes.map((type) => (
+                    <tr key={`${wi}-${type}`} className="align-top">
+                      {week.map((day) => {
+                        const dateStr = format(day, "yyyy-MM-dd");
+                        const inMonth = isWeek || isSameMonth(day, currentMonth);
+                        const today = isToday(day);
+                        const typeShifts = inMonth
+                          ? getShifts(dateStr, type).slice().sort((a, b) => {
+                              const pa = (a as any).assigned_profile;
+                              const pb = (b as any).assigned_profile;
+                              return compareShiftAssignment(
+                                {
+                                  full_name: pa?.full_name || "",
+                                  is_responsible_on_shift: (a as any).is_responsible_on_shift,
+                                  is_responsible: pa?.is_responsible,
+                                  role: pa?.role,
+                                  is_standby: (a as any).is_standby,
+                                },
+                                {
+                                  full_name: pb?.full_name || "",
+                                  is_responsible_on_shift: (b as any).is_responsible_on_shift,
+                                  is_responsible: pb?.is_responsible,
+                                  role: pb?.role,
+                                  is_standby: (b as any).is_standby,
+                                },
+                              );
+                            })
+                          : [];
+                        return (
+                          <td
+                            key={`${dateStr}-${type}`}
+                            className={`border-s p-1 align-top ${!inMonth ? "bg-muted/30" : ""} ${today ? "ring-1 ring-inset ring-primary/30" : ""}`}
+                          >
+                            {inMonth && (
+                              <div className={`calendar-shift-box rounded border px-1 py-0.5 h-full ${shiftColors[type]}`}>
+                                <div className={`text-[9px] font-semibold ${shiftTextColors[type]} flex items-center gap-0.5 mb-1`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${shiftDotColors[type]}`} />
+                                  {shiftLabels[type]}
+                                </div>
+                                <div className="calendar-staff-list flex flex-col gap-1">
+                                  {typeShifts.map((s) => {
+                                    const profile = (s as any).assigned_profile;
+                                    const isStandby = (s as any).is_standby;
+                                    const isExternal = (s as any).is_external;
+                                    const isResp = s.is_responsible_on_shift || profile?.is_responsible;
+                                    const assistantRole = isAssistant(profile?.role);
+                                    const firstName = formatDisplayName(profile?.full_name);
+                                    return (
+                                      <Badge
+                                        key={s.id}
+                                        variant={s.is_responsible_on_shift ? "default" : "secondary"}
+                                        className={`calendar-staff-badge flex w-full min-w-0 items-center gap-0.5 text-[10px] px-1.5 py-0 leading-tight shadow-none whitespace-nowrap overflow-hidden ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
+                                          isExternal
+                                            ? "bg-slate-50 border-slate-200 text-slate-400 opacity-80"
+                                            : isStandby
+                                            ? "bg-blue-50/60 border-l-4 border-blue-400 border-t-0 border-r-0 border-b-0 rounded-sm text-foreground"
+                                            : (s as any).is_draft ? "bg-draft-stripes opacity-100" : "ring-1 ring-current/20"
+                                        } ${assistantRole && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-gray-100/50 text-muted-foreground border-muted-foreground/20" : ""}`}
+                                      >
+                                        {isExternal && <ArrowLeftRight className="h-2.5 w-2.5 shrink-0" />}
+                                        <span className="calendar-staff-name truncate min-w-0 flex-1">{firstName}</span>
+                                        {isResp && <Star className="h-2.5 w-2.5 fill-current shrink-0" />}
+                                        {isStandby && <Phone className="h-2.5 w-2.5 shrink-0" />}
+                                      </Badge>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </Fragment>
               ))}
             </tbody>
           </table>
