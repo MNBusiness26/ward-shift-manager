@@ -940,6 +940,7 @@ export default function StaffStats() {
                   <SelectItem value="sick_leave">🩹 {t("avail.sickLeaveLabel")}</SelectItem>
                   <SelectItem value="maternity_leave">🍼 {t("avail.maternityLeaveLabel")}</SelectItem>
                   <SelectItem value="yearly_leave">🌴 {t("avail.yearlyLeaveLabel")}</SelectItem>
+                  <SelectItem value="study">📚 {t("avail.studyLabel")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
