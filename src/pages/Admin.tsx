@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { LocalizationPanel } from "@/components/admin/LocalizationPanel";
+import { FrictionSettingsPanel } from "@/components/admin/FrictionSettingsPanel";
 import { getRoleLabel, ROLE_OPTIONS } from "@/lib/roles";
 import { compareStaff } from "@/components/roster/staffSort";
 
@@ -409,6 +410,8 @@ export default function Admin() {
           </Button>
         </CardContent>
       </Card>
+
+      <FrictionSettingsPanel />
 
       <LocalizationPanel />
     </div>

@@ -112,6 +112,51 @@ export type Database = {
         }
         Relationships: []
       }
+      friction_log: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          id: string
+          message: string
+          severity: string
+          shift_id: string | null
+          shift_type: string | null
+          user_id: string | null
+          warning_type: string
+          was_overridden: boolean
+          was_shown: boolean
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date: string
+          id?: string
+          message: string
+          severity?: string
+          shift_id?: string | null
+          shift_type?: string | null
+          user_id?: string | null
+          warning_type: string
+          was_overridden?: boolean
+          was_shown?: boolean
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          message?: string
+          severity?: string
+          shift_id?: string | null
+          shift_type?: string | null
+          user_id?: string | null
+          warning_type?: string
+          was_overridden?: boolean
+          was_shown?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           calendar_token: string | null

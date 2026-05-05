@@ -15,7 +15,7 @@ import { AlertTriangle } from "lucide-react";
 export interface FrictionWarning {
   type: "fte" | "role_rule" | "rest";
   message: string;
-  severity?: "amber" | "red";
+  severity?: "yellow" | "amber" | "red";
 }
 
 interface FrictionDialogProps {

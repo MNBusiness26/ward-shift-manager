@@ -1,37 +1,122 @@
+## Friction Settings — Admin Panel
 
+Add a new **Friction & Validation** section to `/admin` that controls every conflict/FTE check we listed. When the master toggle is **ON**, behavior is unchanged (warnings shown via `FrictionDialog`). When **OFF**, validations still run silently in the background and are logged for analytics, but the dialog never blocks the save.
 
-# WardWise Scheduler — Implementation Plan
+---
 
-## Phase 1: Foundation & Auth
-- **Database Schema**: Create all tables (profiles, shifts, availability_requests, swap_requests) with proper relationships, enums for roles/shift types/statuses, and RLS policies
-- **User Roles Table**: Separate `user_roles` table with `app_role` enum (nurse, assistant, manager) and `has_role()` security definer function
-- **Authentication**: Google OAuth + Email/Password via Supabase Auth. New signups default to `is_active = false` (pending state). Auth gate blocks inactive users from accessing the app
-- **Profile Setup**: Auto-create profile on signup via DB trigger. Store `full_name`, `target_fte_percent`, `constraints` (JSON), `is_active`
-- **Design System**: Cerulean Blue (#345AC7) primary, Vivid Red (#ED1B24) alerts, Mercury Gray (#E8E8E8) borders, Mine Shaft (#232323) text. Professional medical theme with clean typography
+### 1. Storage — single `app_settings` row
 
-## Phase 2: Nurse Experience (Mobile-First)
-- **Dashboard**: Upcoming 7-day shift view with toggle to agenda (stacked list). Shows shift type (M/E/N) with color coding, teammates, responsible nurse, and manager on duty
-- **Personal Calendar**: Monthly/weekly views. Click any shift to see details modal (manager, teammates, responsible nurse). Color-coded by shift type
-- **Availability Management**: Monthly calendar to block dates. Submit blocking requests with reason. Status badges (pending/approved/declined). Approved blocks visually marked on personal calendar
-- **Swap Requests**: From any assigned shift, initiate swap — choose "Direct Request" (pick a colleague) or "Pool Offer" (visible to all eligible). Conflict checking prevents accepting swaps on already-assigned slots
-- **Personal Stats Area**: Shift counts (total, by type M/E/N), completed vs. booked, contract fulfillment gauge using formula: `(Assigned / (5 × FTE%)) × 100`
+Reuse the existing `app_settings` table (no schema change). One new key:
 
-## Phase 3: Manager Experience (Desktop-Optimized)
-- **Master Roster**: Full ward schedule grid view — all employees × all dates. Drag-and-drop or click-to-assign shifts. Designate "Responsible Nurse" per shift. Visual flags for shifts missing a responsible nurse
-- **Draft Mode**: Create and save work-in-progress schedules (`is_draft = true`). Publish button pushes drafts live to nurses' calendars
-- **Request Management Dashboard**: Unified queue for swap requests (after peer acceptance) and availability blocking requests. Approve/deny with one click. Auto-updates roster on approval
-- **Shift Planning Tools**: Create shifts weeks in advance. Guardrails: prevent assignment on approved blocked days (with override option), configurable minimum rest periods between shifts, respect individual constraints (no nights, no weekends)
-- **Analytics & Reporting**: Hours worked per employee (weekly/monthly), shift distribution charts, fulfillment percentages per nurse with visual indicators
+```
+key: "friction_config"
+value: {
+  enabled: true,                 // master switch — when false, save proceeds silently
+  log_when_disabled: true,       // still record violations in friction_log
+  checks: {
+    fte_weekly:    { enabled: true,  severity: "yellow" },
+    excluded_shifts:{ enabled: true, severity: "yellow" },
+    excluded_days: { enabled: true,  severity: "yellow" },
+    rest_period:   { enabled: true,  severity: "red", min_hours: 8 },
+    headcount:     { enabled: true,  severity: "yellow" }
+  },
+  fte_shifts_per_week: 5         // formula constant (currently hard-coded)
+}
+```
 
-## Phase 4: Business Logic & Guardrails
-- **Swap Flow Engine**: Full lifecycle — Initiation → Peer Accept/Claim → Manager Queue → Finalization with roster auto-update
-- **Scheduling Validation**: Rest period rules, blocked day enforcement, individual constraint checks, responsible nurse requirement per shift
-- **Nurse Pool**: Shared board for pool swap offers. Eligible nurses can claim. Eligibility filtered by conflicts and constraints
-- **Manager Activation Flow**: Manager dashboard to view pending signups and activate/deactivate profiles
+Headcount targets stay in their existing `headcount_limits` setting (already configurable).
 
-## Technical Architecture
-- **Supabase Auth** with Google + Email/Password
-- **Lovable Cloud** for backend (edge functions for complex validation)
-- **RLS Policies**: Nurses see all approved shifts, edit only own availability. Managers have full roster control. Draft shifts visible only to managers
-- **Responsive Layout**: Mobile-first nurse views, desktop-optimized manager views with sidebar navigation
+### 2. New table — `friction_log` (background tracking)
 
+Lightweight insert-only table so we can review what *would* have warned even when warnings are disabled.
+
+```
+friction_log:
+  id            uuid pk
+  shift_id      uuid (nullable — pre-save violations may not have an id yet)
+  user_id       uuid (assigned staff)
+  created_by    uuid (manager who saved)
+  date          date
+  shift_type    text
+  warning_type  text   ("fte" | "rest" | "role_rule" | "headcount")
+  severity      text   ("yellow" | "red")
+  message       text
+  was_shown     boolean  // true if the dialog was actually displayed
+  was_overridden boolean // true if user clicked "save anyway"
+  created_at    timestamptz default now()
+```
+
+RLS: managers can read all, anyone authenticated can insert their own (created_by = auth.uid()).
+
+### 3. Validation flow changes
+
+`validateShiftFriction()` already returns a list of warnings. We wrap the call sites (`Roster.tsx`, `ManagementCalendar.tsx`) in a small helper:
+
+```text
+runFrictionGate(warnings):
+  log all warnings to friction_log (was_shown = config.enabled)
+  if !config.enabled: return { proceed: true }
+  if warnings.length: open FrictionDialog → user choice
+  else: return { proceed: true }
+```
+
+Each individual check inside `validateShiftFriction` reads its `checks.<name>.enabled` flag and short-circuits if disabled. `MIN_REST_HOURS` becomes `config.checks.rest_period.min_hours`. `fteLimit` uses `config.fte_shifts_per_week`.
+
+`PublishConfirmDialog` (the publish-time FTE recheck) and the headcount highlighting in the Management Calendar grid also respect the same toggles — when disabled, they don't surface warnings but still update `friction_log`.
+
+### 4. Admin UI — new card on `/admin`
+
+```
+┌─ Friction & Validation ─────────────────────────────┐
+│ [✓] Enable friction warnings (master)               │
+│ [✓] Track violations silently when disabled         │
+│                                                     │
+│ Per-check controls:                                 │
+│  • FTE weekly limit          [on/off] severity ▾    │
+│  • Excluded shift types      [on/off] severity ▾    │
+│  • Excluded weekdays         [on/off] severity ▾    │
+│  • Back-to-back rest         [on/off] severity ▾    │
+│      Minimum rest hours: [ 8 ]                      │
+│  • Headcount over-staffing   [on/off] severity ▾    │
+│      (capacity numbers in existing Headcount card)  │
+│                                                     │
+│ Formula:                                            │
+│   Shifts per week at 100% FTE: [ 5 ]                │
+│                                                     │
+│ [Save Friction Settings]                            │
+└─────────────────────────────────────────────────────┘
+```
+
+A second small card links to a **Friction Log** view (last 100 entries, filterable by date/user/type) so managers can audit silent violations.
+
+### 5. Hook
+
+New `useFrictionConfig()` hook (parallel to `useAppSettings`) that returns the parsed config with safe defaults so any missing keys behave like "all on".
+
+---
+
+### Files to add / modify
+
+**New**
+- `supabase` migration: create `friction_log` table + RLS + index on `(date, user_id)`
+- `src/hooks/useFrictionConfig.ts`
+- `src/lib/frictionLog.ts` — `logFrictionWarnings(...)`
+- `src/components/admin/FrictionSettingsPanel.tsx`
+- `src/components/admin/FrictionLogPanel.tsx` (optional, can be phase 2)
+
+**Modified**
+- `src/components/roster/frictionValidation.ts` — accept config, gate each check
+- `src/pages/Roster.tsx` — wrap save in `runFrictionGate`, log results
+- `src/pages/ManagementCalendar.tsx` — same wrap + gate headcount highlight
+- `src/components/roster/PublishConfirmDialog.tsx` — read config for FTE recheck
+- `src/pages/Admin.tsx` — mount `FrictionSettingsPanel`
+
+---
+
+### Phasing suggestion
+
+1. **Phase 1 (small):** master on/off toggle + per-check enable flags + `friction_log` insert. No severity / min-hours editor yet.
+2. **Phase 2:** per-check severity selector, configurable rest hours, FTE-per-week constant.
+3. **Phase 3:** Friction Log viewer in Admin with filters.
+
+Want me to proceed with Phase 1, or all three at once?
