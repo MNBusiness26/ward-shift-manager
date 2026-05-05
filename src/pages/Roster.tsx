@@ -866,10 +866,10 @@ export default function Roster() {
                         style={holiday?.is_eve ? { backgroundImage: "repeating-linear-gradient(45deg, hsla(274,53%,60%,0.22) 0 6px, transparent 6px 14px)" } : undefined}
                       >
                         <HolidayCornerIcon holiday={holiday} inline />
-                        <span className={holiday ? "text-destructive font-semibold" : ""}>{formatLocale(d, "EEE", locale)}</span>
+                        <span className={holiday ? "text-purple-700 font-semibold" : ""}>{formatLocale(d, "EEE", locale)}</span>
                         {dateBlocked && <Lock className="h-3 w-3" />}
                       </div>
-                      <div className={`text-[10px] md:text-xs mb-1 ${holiday ? "text-destructive/80" : ""}`}>{formatLocale(d, "MMM d", locale)}</div>
+                      <div className={`text-[10px] md:text-xs mb-1 ${holiday ? "text-purple-700/80" : ""}`}>{formatLocale(d, "MMM d", locale)}</div>
                       {/* Fulfillment summary per shift type */}
                       <div className="flex flex-col gap-0.5">
                         {(["morning", "evening", "night"] as const).map((st) => {
