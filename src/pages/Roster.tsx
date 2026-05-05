@@ -871,13 +871,13 @@ export default function Roster() {
             <table className="w-max min-w-full border-separate border-spacing-0 text-xs md:text-sm">
             <thead>
               <tr>
-                <th className="sticky left-0 z-30 w-[100px] min-w-[100px] border-r border-b border-border/30 bg-card py-4 px-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:py-5 md:px-2">{t("roster.staff")}</th>
+                <th className="sticky left-0 top-0 z-40 w-[100px] min-w-[100px] border-r border-b border-border/60 bg-card py-4 px-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:py-5 md:px-2">{t("roster.staff")}</th>
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
                   const holiday = holidayMap.get(dateStr);
                   return (
-                    <th key={d.toISOString()} className={`relative z-10 min-w-[70px] md:min-w-[120px] py-4 px-1 md:py-5 md:px-2 text-center font-medium text-muted-foreground border-b border-r border-border/30 ${dateBlocked ? "bg-muted/50" : ""}`}>
+                    <th key={d.toISOString()} className={`sticky top-0 z-30 min-w-[70px] md:min-w-[120px] py-4 px-1 md:py-5 md:px-2 text-center font-medium text-muted-foreground border-b border-r border-border/60 ${dateBlocked ? "bg-muted/50" : "bg-card"}`}>
                       <div
                         className={`flex items-center justify-center gap-1.5 mb-0.5 px-1 py-0.5 rounded-sm ${holiday && !holiday.is_eve ? "bg-[hsla(274,53%,60%,0.15)]" : ""}`}
                         style={holiday?.is_eve ? { backgroundImage: "repeating-linear-gradient(45deg, hsla(274,53%,60%,0.22) 0 6px, transparent 6px 14px)" } : undefined}
@@ -950,7 +950,7 @@ export default function Roster() {
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`relative z-0 py-3 px-1 text-center transition-colors border-b border-r border-border/20 ${dateBlocked || blocked ? "bg-muted/30 roster-ghosted cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-accent/30"}`}
+                        className={`relative z-0 py-3 px-1 text-center transition-colors border-b border-r border-border/50 ${dateBlocked || blocked ? "bg-muted/30 roster-ghosted cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-accent/30"}`}
                         onClick={() => {
                           if (dateBlocked || blocked) return;
                           if (dayShifts.length === 0) {
@@ -1026,7 +1026,7 @@ export default function Roster() {
                     const dateStr = format(d, "yyyy-MM-dd");
                     const unassigned = shifts.filter((s) => !s.assigned_user_id && s.date === dateStr);
                     return (
-                      <td key={d.toISOString()} className="p-1 text-center border-b border-r border-border/20">
+                      <td key={d.toISOString()} className="p-1 text-center border-b border-r border-border/50">
                         {unassigned.map((s) => (
                           <div
                             key={s.id}
