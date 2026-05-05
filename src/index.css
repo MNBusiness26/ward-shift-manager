@@ -150,6 +150,14 @@
   );
 }
 
+/* On-Call (standby) light-blue background */
+.bg-standby {
+  background-color: hsl(214 100% 95%);
+}
+.dark .bg-standby {
+  background-color: hsl(214 50% 20%);
+}
+
 /* Preferred shift placeholder (soft request, not assigned) */
 .shift-preferred-placeholder {
   background-color: hsl(214 100% 97% / 0.5) !important;
