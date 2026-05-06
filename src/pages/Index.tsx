@@ -39,7 +39,8 @@ type TimelineItem =
   | { kind: "availability"; date: string; sortTime: string; data: any; pending: boolean };
 
 export default function Index() {
-  const { user, profile, roles } = useAuth();
+  const { user, profile, roles, confirmIfImpersonating } = useAuth();
+  const viewUserId = profile?.id ?? user?.id;
   const { settings } = useAppSettings();
   const { t, locale } = useTranslation();
   const queryClient = useQueryClient();
