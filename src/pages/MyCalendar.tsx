@@ -73,19 +73,19 @@ export default function MyCalendar() {
   const monthStartStr = format(startOfMonth(currentMonth), "yyyy-MM-dd");
   const monthEndStr = format(endOfMonth(currentMonth), "yyyy-MM-dd");
   const { data: myLeaves = [] } = useQuery({
-    queryKey: ["my-leaves", user?.id, monthStartStr, monthEndStr],
+    queryKey: ["my-leaves", profile?.id, monthStartStr, monthEndStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("availability_requests")
         .select("request_type, date, end_date, reason")
-        .eq("user_id", user!.id)
+        .eq("user_id", profile!.id)
         .eq("status", "approved")
         .lte("date", monthEndStr)
         .or(`end_date.gte.${monthStartStr},and(end_date.is.null,date.gte.${monthStartStr})`);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user,
+    enabled: !!profile,
   });
 
   const myRole = myRoles[0] || "nurse";
@@ -98,13 +98,13 @@ export default function MyCalendar() {
   const getColleaguesForShift = (day: Date, shiftType: string) => {
     const dateStr = format(day, "yyyy-MM-dd");
     return allShifts.filter(
-      (s) => s.date === dateStr && s.type === shiftType && s.assigned_user_id !== user?.id
+      (s) => s.date === dateStr && s.type === shiftType && s.assigned_user_id !== profile?.id
     );
   };
 
   const getColleaguesByShift = (shiftType: string) =>
     dayAllShifts.filter(
-      (s) => s.type === shiftType && s.assigned_user_id !== user?.id
+      (s) => s.type === shiftType && s.assigned_user_id !== profile?.id
     );
 
   const myDayShifts = selectedDay ? getShiftsForDay(selectedDay) : [];
@@ -134,7 +134,7 @@ export default function MyCalendar() {
         endDate = format(d, "yyyyMMdd");
       }
       const colleagues = allShifts
-        .filter((a) => a.date === s.date && a.type === s.type && a.assigned_user_id !== user?.id)
+        .filter((a) => a.date === s.date && a.type === s.type && a.assigned_user_id !== profile?.id)
         .map((a) => (a.profiles as any)?.full_name || "Unknown");
       const teamList = colleagues.length > 0 ? `\\nTeam: ${colleagues.join(", ")}` : "";
       const desc = `${shiftLabels[s.type] || s.type} Shift${s.is_responsible_on_shift ? " (Responsible)" : ""}${teamList}`;
