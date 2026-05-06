@@ -755,8 +755,8 @@ export default function Roster() {
   };
 
   return (
-    <div className="h-[calc(100vh-3rem)] md:h-screen overflow-auto flex flex-col p-4 md:p-6 space-y-4 -m-4 md:-m-6">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+    <div className="h-[calc(100vh-3rem)] md:h-screen overflow-auto flex flex-col px-2 pb-2 md:px-6 md:pb-6 space-y-4 -m-4 md:-m-6">
+      <div className="flex items-center justify-between flex-wrap gap-2 pt-2 md:pt-6">
         <h1 className="text-xl md:text-2xl font-bold">{t("roster.shiftManager")}</h1>
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
           <TooltipProvider>
