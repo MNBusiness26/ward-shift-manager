@@ -431,7 +431,7 @@ export default function Index() {
                       size="sm"
                       className="min-h-11 px-3"
                       disabled={acceptSwap.isPending}
-                      onClick={() => acceptSwap.mutate(s.id)}
+                      onClick={() => { if (confirmIfImpersonating("Accept swap")) acceptSwap.mutate(s.id); }}
                     >
                       <ArrowLeftRight className="h-3.5 w-3.5 me-1" />
                       {t("swap.accept") || "Accept"}
