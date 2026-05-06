@@ -119,7 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const effectiveProfile = impersonatedProfile ?? profile;
   const effectiveRoles = impersonatedProfile ? impersonatedRoles : roles;
 
-  const hasProfile = effectiveProfile !== null;
+  // Activation gate must always reflect the REAL admin session, not the
+  // impersonated profile (which may be inactive/unclaimed staff).
+  const hasProfile = profile !== null;
+  const isActive = profile?.is_active ?? false;
   const isManager = effectiveRoles.includes("manager");
   const isAssistantManager = effectiveRoles.includes("assistant_manager");
 
@@ -132,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         realProfile: profile,
         roles: effectiveRoles,
         isLoading,
-        isActive: effectiveProfile?.is_active ?? false,
+        isActive,
         isManager,
         isAssistantManager,
         hasProfile,
