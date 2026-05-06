@@ -100,7 +100,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .from("user_roles")
       .select("role")
       .eq("user_id", p.id)
-      .then(({ data }) => setImpersonatedRoles(data?.map((r) => r.role) ?? []));
+      .then(({ data }) => {
+        const dbRoles = (data?.map((r) => r.role) ?? []) as AppRole[];
+        if (dbRoles.length > 0) {
+          setImpersonatedRoles(dbRoles);
+          return;
+        }
+        // Placeholder profile (auto-created by shift assignment, not signed up
+        // yet) has no user_roles row because of FK to auth.users. Fall back to
+        // profiles.role so QA preview matches what handle_new_user will set
+        // when they actually sign up.
+        const fallback = p.role as AppRole | null;
+        const valid: AppRole[] = ["manager", "assistant_manager", "team_leader", "nurse", "assistant"];
+        setImpersonatedRoles(fallback && valid.includes(fallback) ? [fallback] : []);
+      });
   }, []);
 
   const confirmIfImpersonating = useCallback((action = "this action") => {
