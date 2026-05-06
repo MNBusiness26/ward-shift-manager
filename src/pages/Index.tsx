@@ -229,10 +229,10 @@ export default function Index() {
   // Summary partitions
   const myPendingAvail = (myAvailability as any[]).filter((a) => a.status === "pending");
   const swapsToAction = swaps.filter((s: any) =>
-    (s.is_pool_request && s.requesting_user_id !== user?.id && s.status === "pending") ||
-    (s.covering_user_id === user?.id && s.status === "pending")
+    (s.is_pool_request && s.requesting_user_id !== viewUserId && s.status === "pending") ||
+    (s.covering_user_id === viewUserId && s.status === "pending")
   );
-  const swapsSent = swaps.filter((s: any) => s.requesting_user_id === user?.id);
+  const swapsSent = swaps.filter((s: any) => s.requesting_user_id === viewUserId);
 
   return (
     <div className="space-y-6">
