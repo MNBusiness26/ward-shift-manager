@@ -97,7 +97,7 @@ interface CopiedWeek {
 
 export default function Roster() {
   const { t, locale } = useTranslation();
-  const { user } = useAuth();
+  const { user, confirmIfImpersonating } = useAuth();
   const queryClient = useQueryClient();
   const [viewStart, setViewStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
   const viewEnd = addDays(viewStart, 6);
