@@ -7,14 +7,15 @@ import type { Database } from "@/integrations/supabase/types";
 export type Shift = Database["public"]["Tables"]["shifts"]["Row"];
 
 export function useMyShifts(rangeStart: Date, rangeEnd: Date) {
-  const { user } = useAuth();
+  const { profile } = useAuth();
+  const userId = profile?.id;
   return useQuery({
-    queryKey: ["my-shifts", user?.id, format(rangeStart, "yyyy-MM-dd"), format(rangeEnd, "yyyy-MM-dd")],
+    queryKey: ["my-shifts", userId, format(rangeStart, "yyyy-MM-dd"), format(rangeEnd, "yyyy-MM-dd")],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
         .select("*")
-        .eq("assigned_user_id", user!.id)
+        .eq("assigned_user_id", userId!)
         .gte("date", format(rangeStart, "yyyy-MM-dd"))
         .lte("date", format(rangeEnd, "yyyy-MM-dd"))
         .order("date")
@@ -22,23 +23,24 @@ export function useMyShifts(rangeStart: Date, rangeEnd: Date) {
       if (error) throw error;
       return data as Shift[];
     },
-    enabled: !!user,
+    enabled: !!userId,
   });
 }
 
 export function useMyRole() {
-  const { user } = useAuth();
+  const { profile } = useAuth();
+  const userId = profile?.id;
   return useQuery({
-    queryKey: ["my-roles", user?.id],
+    queryKey: ["my-roles", userId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user!.id);
+        .eq("user_id", userId!);
       if (error) throw error;
       return data.map((r) => r.role);
     },
-    enabled: !!user,
+    enabled: !!userId,
   });
 }
 
