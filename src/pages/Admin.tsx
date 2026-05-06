@@ -89,6 +89,8 @@ export default function Admin() {
       if (v.evening != null) setEveningLimit(v.evening);
       if (v.night != null) setNightLimit(v.night);
     }
+    const pauSetting = settings.find((s: any) => s.key === "public_app_url");
+    if (pauSetting && typeof pauSetting.value === "string") setPublicAppUrl(pauSetting.value);
   }, [settings]);
 
   const isPrimaryAdmin = profile?.email === ADMIN_EMAIL;
