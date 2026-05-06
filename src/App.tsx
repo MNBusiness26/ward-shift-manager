@@ -64,8 +64,6 @@ function ProtectedRoute({ children, requireManager }: { children: React.ReactNod
 }
 
 function ManagerHomeRedirect() {
-  const { isManager, isAssistantManager } = useAuth();
-  if (isManager || isAssistantManager) return <Navigate to="/management-calendar" replace />;
   return <Index />;
 }
 
