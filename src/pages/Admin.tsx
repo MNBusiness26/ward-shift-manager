@@ -485,6 +485,18 @@ export default function Admin() {
 
       {/* Localization of Calendar */}
       <LocalizationPanel />
+
+      <EditDirectoryDialog
+        entry={editEntry}
+        open={!!editEntry}
+        onOpenChange={(o) => { if (!o) setEditEntry(null); }}
+      />
+      <InviteLinkDialog
+        open={!!inviteUrl}
+        onOpenChange={(o) => { if (!o) setInviteUrl(null); }}
+        inviteUrl={inviteUrl}
+        recipientName={inviteRecipient}
+      />
     </div>
   );
 }
