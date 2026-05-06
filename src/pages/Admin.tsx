@@ -20,6 +20,7 @@ import { getRoleLabel, ROLE_OPTIONS } from "@/lib/roles";
 import { compareStaff } from "@/components/roster/staffSort";
 import { EditDirectoryDialog } from "@/components/admin/EditDirectoryDialog";
 import { InviteLinkDialog } from "@/components/admin/InviteLinkDialog";
+import { PendingSignupsPanel } from "@/components/admin/PendingSignupsPanel";
 
 const ADMIN_EMAIL = "michael.nejman@gmail.com";
 
@@ -267,6 +268,9 @@ export default function Admin() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Pending Sign-ins */}
+      <PendingSignupsPanel />
 
       {/* Public App URL */}
       <Card className="shadow-md">
