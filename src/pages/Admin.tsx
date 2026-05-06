@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Shield, Save, UserPlus, Trash2, Check, X, Globe, ChevronDown } from "lucide-react";
+import { Shield, Save, UserPlus, Trash2, Check, X, Globe, ChevronDown, Pencil, Mail, Link as LinkIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,8 @@ import { LocalizationPanel } from "@/components/admin/LocalizationPanel";
 import { FrictionSettingsPanel } from "@/components/admin/FrictionSettingsPanel";
 import { getRoleLabel, ROLE_OPTIONS } from "@/lib/roles";
 import { compareStaff } from "@/components/roster/staffSort";
+import { EditDirectoryDialog } from "@/components/admin/EditDirectoryDialog";
+import { InviteLinkDialog } from "@/components/admin/InviteLinkDialog";
 
 const ADMIN_EMAIL = "michael.nejman@gmail.com";
 
@@ -38,6 +40,11 @@ export default function Admin() {
   const [newEmail, setNewEmail] = useState("");
   const [newRole, setNewRole] = useState<string>("nurse");
   const [newFte, setNewFte] = useState("100");
+
+  // Edit + Invite dialog state
+  const [editEntry, setEditEntry] = useState<any | null>(null);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [inviteRecipient, setInviteRecipient] = useState<string>("");
 
   const { data: settings = [] } = useQuery({
     queryKey: ["app-settings"],
@@ -167,6 +174,26 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff-directory"] });
       toast.success("Role updated");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const sendInvite = useMutation({
+    mutationFn: async (entry: any) => {
+      let token = entry.invite_token;
+      if (!token) token = crypto.randomUUID().replace(/-/g, "");
+      const { error } = await supabase
+        .from("staff_directory")
+        .update({ invite_token: token, invited_at: new Date().toISOString() })
+        .eq("id", entry.id);
+      if (error) throw error;
+      return { url: `${window.location.origin}/auth?invite=${token}`, name: entry.full_name };
+    },
+    onSuccess: ({ url, name }) => {
+      queryClient.invalidateQueries({ queryKey: ["staff-directory"] });
+      setInviteUrl(url);
+      setInviteRecipient(name);
+      toast.success("Invitation link generated");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -408,10 +435,41 @@ export default function Admin() {
                       )}
                       <span className="text-xs text-muted-foreground">{Math.round(entry.target_fte_percent * 100)}%</span>
                       <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 text-primary hover:text-primary hover:bg-primary/10"
+                          onClick={() => setEditEntry(entry)}
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        {!entry.is_claimed && (
+                          <Button
+                            variant={entry.invited_at ? "outline" : "default"}
+                            size="sm"
+                            className="h-9 min-h-[44px] sm:min-h-0 gap-1.5 text-xs"
+                            onClick={() => { if (confirmIfImpersonating("Send invitation")) sendInvite.mutate(entry); }}
+                            disabled={sendInvite.isPending}
+                            title={entry.invited_at ? `Last sent ${new Date(entry.invited_at).toLocaleString()}` : "Send invitation"}
+                          >
+                            <Mail className="h-3.5 w-3.5" />
+                            {entry.invited_at ? (
+                              <span className="hidden sm:inline">Resend</span>
+                            ) : (
+                              <span className="hidden sm:inline">Invite</span>
+                            )}
+                          </Button>
+                        )}
+                        {entry.invited_at && !entry.is_claimed && (
+                          <span className="hidden md:inline text-[10px] text-muted-foreground whitespace-nowrap">
+                            {new Date(entry.invited_at).toLocaleDateString()}
+                          </span>
+                        )}
                         {entry.is_claimed ? (
                           <Check className="h-4 w-4 text-success" />
                         ) : (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (confirmIfImpersonating("Remove staff entry")) removeEntry.mutate(entry.id); }}>
+                          <Button variant="ghost" size="icon" className="h-9 w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0" onClick={() => { if (confirmIfImpersonating("Remove staff entry")) removeEntry.mutate(entry.id); }}>
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </Button>
                         )}
@@ -427,6 +485,18 @@ export default function Admin() {
 
       {/* Localization of Calendar */}
       <LocalizationPanel />
+
+      <EditDirectoryDialog
+        entry={editEntry}
+        open={!!editEntry}
+        onOpenChange={(o) => { if (!o) setEditEntry(null); }}
+      />
+      <InviteLinkDialog
+        open={!!inviteUrl}
+        onOpenChange={(o) => { if (!o) setInviteUrl(null); }}
+        inviteUrl={inviteUrl}
+        recipientName={inviteRecipient}
+      />
     </div>
   );
 }

@@ -368,6 +368,8 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          invite_token: string | null
+          invited_at: string | null
           is_claimed: boolean
           target_fte_percent: number
         }
@@ -380,6 +382,8 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          invite_token?: string | null
+          invited_at?: string | null
           is_claimed?: boolean
           target_fte_percent?: number
         }
@@ -392,6 +396,8 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          invite_token?: string | null
+          invited_at?: string | null
           is_claimed?: boolean
           target_fte_percent?: number
         }
