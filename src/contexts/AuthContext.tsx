@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -10,6 +10,7 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
+  realProfile: Profile | null;
   roles: AppRole[];
   isLoading: boolean;
   isActive: boolean;
@@ -18,6 +19,11 @@ interface AuthContextType {
   hasProfile: boolean;
   profileLoaded: boolean;
   signOut: () => Promise<void>;
+  // Impersonation (QA mode)
+  impersonatedProfile: Profile | null;
+  isImpersonating: boolean;
+  impersonate: (profile: Profile | null) => void;
+  confirmIfImpersonating: (action?: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,6 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [impersonatedProfile, setImpersonatedProfile] = useState<Profile | null>(null);
+  const [impersonatedRoles, setImpersonatedRoles] = useState<AppRole[]>([]);
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
@@ -62,6 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(null);
           setRoles([]);
           setProfileLoaded(false);
+          setImpersonatedProfile(null);
+          setImpersonatedRoles([]);
         }
         setIsLoading(false);
       }
@@ -80,28 +90,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const impersonate = useCallback((p: Profile | null) => {
+    setImpersonatedProfile(p);
+    if (!p) {
+      setImpersonatedRoles([]);
+      return;
+    }
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", p.id)
+      .then(({ data }) => setImpersonatedRoles(data?.map((r) => r.role) ?? []));
+  }, []);
+
+  const confirmIfImpersonating = useCallback((action = "this action") => {
+    if (!impersonatedProfile) return true;
+    return window.confirm(
+      `Warning: You are in QA Mode. Perform ${action} as a real action?`
+    );
+  }, [impersonatedProfile]);
+
   const signOut = async () => {
+    setImpersonatedProfile(null);
+    setImpersonatedRoles([]);
     await supabase.auth.signOut();
   };
 
-  const hasProfile = profile !== null;
-  const isManager = roles.includes("manager");
-  const isAssistantManager = roles.includes("assistant_manager");
+  const effectiveProfile = impersonatedProfile ?? profile;
+  const effectiveRoles = impersonatedProfile ? impersonatedRoles : roles;
+
+  const hasProfile = effectiveProfile !== null;
+  const isManager = effectiveRoles.includes("manager");
+  const isAssistantManager = effectiveRoles.includes("assistant_manager");
 
   return (
     <AuthContext.Provider
       value={{
         session,
         user,
-        profile,
-        roles,
+        profile: effectiveProfile,
+        realProfile: profile,
+        roles: effectiveRoles,
         isLoading,
-        isActive: profile?.is_active ?? false,
+        isActive: effectiveProfile?.is_active ?? false,
         isManager,
         isAssistantManager,
         hasProfile,
         profileLoaded,
         signOut,
+        impersonatedProfile,
+        isImpersonating: impersonatedProfile !== null,
+        impersonate,
+        confirmIfImpersonating,
       }}
     >
       {children}
