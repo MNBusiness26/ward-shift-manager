@@ -177,7 +177,8 @@ export default function Admin() {
         .update({ invite_token: token, invited_at: new Date().toISOString() })
         .eq("id", entry.id);
       if (error) throw error;
-      return { url: `${window.location.origin}/auth?invite=${token}`, name: entry.full_name };
+      const base = (publicAppUrl?.trim() || window.location.origin).replace(/\/$/, "");
+      return { url: `${base}/auth?invite=${token}`, name: entry.full_name };
     },
     onSuccess: ({ url, name }) => {
       queryClient.invalidateQueries({ queryKey: ["staff-directory"] });
