@@ -65,7 +65,7 @@ export function AppSidebar() {
   };
 
   const showManagement = isManager || isAssistantManager;
-  const showAdmin = isManager && profile?.email === ADMIN_EMAIL;
+  const showAdmin = (realProfile?.email ?? profile?.email) === ADMIN_EMAIL;
 
   const isActive = (url: string) =>
     url === "/" ? location.pathname === "/" : location.pathname.startsWith(url);
