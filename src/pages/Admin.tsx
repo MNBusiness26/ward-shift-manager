@@ -22,7 +22,7 @@ import { compareStaff } from "@/components/roster/staffSort";
 const ADMIN_EMAIL = "michael.nejman@gmail.com";
 
 export default function Admin() {
-  const { user, profile } = useAuth();
+  const { user, profile, confirmIfImpersonating } = useAuth();
   const queryClient = useQueryClient();
   const { t, locale, setLocale } = useTranslation();
 
@@ -258,7 +258,7 @@ export default function Admin() {
               <Input type="number" min={1} max={20} value={nightLimit} onChange={(e) => setNightLimit(Number(e.target.value))} />
             </div>
           </div>
-          <Button onClick={handleSaveHeadcounts} className="gap-2">
+          <Button onClick={() => { if (confirmIfImpersonating("Save headcounts")) handleSaveHeadcounts(); }} className="gap-2">
             <Save className="h-4 w-4" />
             {t("admin.saveHeadcount")}
           </Button>
@@ -300,7 +300,7 @@ export default function Admin() {
               </Badge>
             ))}
           </div>
-          <Button onClick={handleSaveGreetingTemplate} className="gap-2">
+          <Button onClick={() => { if (confirmIfImpersonating("Save greeting template")) handleSaveGreetingTemplate(); }} className="gap-2">
             <Save className="h-4 w-4" />
             {t("admin.saveTemplate")}
           </Button>
@@ -411,7 +411,7 @@ export default function Admin() {
                         {entry.is_claimed ? (
                           <Check className="h-4 w-4 text-success" />
                         ) : (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeEntry.mutate(entry.id)}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (confirmIfImpersonating("Remove staff entry")) removeEntry.mutate(entry.id); }}>
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </Button>
                         )}

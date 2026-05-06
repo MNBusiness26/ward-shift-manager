@@ -97,7 +97,7 @@ interface CopiedWeek {
 
 export default function Roster() {
   const { t, locale } = useTranslation();
-  const { user } = useAuth();
+  const { user, confirmIfImpersonating } = useAuth();
   const queryClient = useQueryClient();
   const [viewStart, setViewStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
   const viewEnd = addDays(viewStart, 6);
@@ -1065,7 +1065,7 @@ export default function Roster() {
          <span className="text-sm font-medium text-muted-foreground mr-2">
           {t("roster.versions")}{currentVersionName ? `: ${currentVersionName}` : ""}
         </span>
-        <Button variant="outline" size="sm" onClick={handleSave} disabled={shifts.length === 0}>
+        <Button variant="outline" size="sm" onClick={() => { if (confirmIfImpersonating("Save")) handleSave(); }} disabled={shifts.length === 0}>
           <Save className="mr-1 h-4 w-4" />
           {t("common.save")}
         </Button>
@@ -1226,14 +1226,14 @@ export default function Roster() {
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => { deleteShift.mutate(editingShift); setDialogOpen(false); }}
+                  onClick={() => { if (!confirmIfImpersonating("Delete shift")) return; deleteShift.mutate(editingShift); setDialogOpen(false); }}
                 >
                    <Trash2 className="mr-1 h-4 w-4" />
                   {t("roster.delete")}
                 </Button>
               )}
                <Button variant="ghost" onClick={() => { setDialogOpen(false); setSaveError(null); }}>{t("common.cancel")}</Button>
-              <Button onClick={handleSaveWithFriction} disabled={saveShift.isPending}>
+              <Button onClick={() => { if (confirmIfImpersonating("Save shift")) handleSaveWithFriction(); }} disabled={saveShift.isPending}>
                 {editingShift ? t("roster.update") : t("roster.create")} {t("roster.shift")}
               </Button>
             </div>
@@ -1265,7 +1265,7 @@ export default function Roster() {
               <AlertDialogFooter>
                 <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={() => clearWeek.mutate()}
+                  onClick={() => { if (confirmIfImpersonating("Clear drafts")) clearWeek.mutate(); }}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   disabled={draftCount2 === 0}
                 >

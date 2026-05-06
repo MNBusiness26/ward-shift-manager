@@ -38,7 +38,7 @@ export function AppSidebar() {
   const { state, toggleSidebar, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { isManager, isAssistantManager, profile, signOut } = useAuth();
+  const { isManager, isAssistantManager, profile, realProfile, isImpersonating, impersonatedProfile, signOut } = useAuth();
   const isMobile = useIsMobile();
   const { t, dir } = useTranslation();
 
@@ -65,7 +65,7 @@ export function AppSidebar() {
   };
 
   const showManagement = isManager || isAssistantManager;
-  const showAdmin = isManager && profile?.email === ADMIN_EMAIL;
+  const showAdmin = (realProfile?.email ?? profile?.email) === ADMIN_EMAIL;
 
   const isActive = (url: string) =>
     url === "/" ? location.pathname === "/" : location.pathname.startsWith(url);
@@ -183,7 +183,15 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-3">
+      <SidebarFooter className={`border-t p-3 ${isImpersonating ? "border-t-4 border-t-[#9F66CC]" : "border-sidebar-border"}`}>
+        {isImpersonating && !collapsed && (
+          <div
+            className="mb-2 rounded-sm px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white"
+            style={{ background: "#9F66CC" }}
+          >
+            QA Mode: Viewing as {impersonatedProfile?.full_name}
+          </div>
+        )}
         {!collapsed && profile && (
           <p className="mb-2 truncate text-xs text-sidebar-foreground/70">
             {profile.full_name}
