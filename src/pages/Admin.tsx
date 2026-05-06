@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Shield, Save, UserPlus, Trash2, Check, X, Globe, ChevronDown } from "lucide-react";
+import { Shield, Save, UserPlus, Trash2, Check, X, Globe, ChevronDown, Pencil, Mail, Link as LinkIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
