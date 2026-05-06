@@ -85,7 +85,7 @@ export default function MyCalendar() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user,
+    enabled: !!profile,
   });
 
   const myRole = myRoles[0] || "nurse";
