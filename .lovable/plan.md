@@ -1,42 +1,21 @@
-# One stable invite link per employee
-
 ## Goal
-Each staff member already has a unique, permanent invite token. Make the generated link point to the **published** app URL (public, no Lovable login required) instead of whatever URL the manager happens to be on (currently the editor preview, which blocks outsiders).
-
-## Prerequisite (user action)
-Click **Publish** in the top-right of the editor once to get a permanent public URL (e.g. `https://wardwise.lovable.app`). After that, frontend changes just need "Update" in the publish dialog.
+Make the published app URL (`https://ward-wise-shift-flow.lovable.app`) easy to grab and share from the Admin panel, so staff get the public link instead of the Lovable preview link.
 
 ## Changes
 
-### 1. Store the public app URL as a setting
-Use the existing `app_settings` table — no schema change needed.
-- Key: `public_app_url`
-- Value: e.g. `https://wardwise.lovable.app`
+**`src/pages/Admin.tsx` — "Public App URL" card** (already exists, just enhance it):
 
-### 2. Add a small input in `src/pages/Admin.tsx`
-A new card section "Public App URL" with:
-- Input bound to the `public_app_url` setting
-- Save button (reuses existing `saveSetting` mutation)
-- Helper text: "The published URL where staff will sign in. Used to build invitation links."
+1. Update the input placeholder to the actual published URL: `https://ward-wise-shift-flow.lovable.app`.
+2. Add three buttons next to "Save URL":
+   - **Use published default** — fills the field with `https://ward-wise-shift-flow.lovable.app`.
+   - **Copy app link** — copies the current saved URL to clipboard (with toast confirmation).
+   - **Open ↗** — opens the URL in a new tab so admin can verify it.
+3. Add a short helper line: *"Share this link with staff so they sign up on the public app (no Lovable account required). Invitation links generated below are built from this URL."*
 
-### 3. Update `sendInvite` in `src/pages/Admin.tsx`
-Replace:
-```ts
-return { url: `${window.location.origin}/auth?invite=${token}`, name: entry.full_name };
-```
-with:
-```ts
-const publicUrl = settings.find(s => s.key === 'public_app_url')?.value || window.location.origin;
-return { url: `${publicUrl}/auth?invite=${token}`, name: entry.full_name };
-```
-
-### 4. (Optional polish) Warn if `public_app_url` is unset
-If the setting is empty when the manager clicks Invite, show a toast: "Set the Public App URL in Admin first, otherwise the link will only work for logged-in Lovable collaborators."
+No DB changes, no new components. Existing `public_app_url` setting in `app_settings` is reused — invite links already use it as the base (`Admin.tsx` line 180).
 
 ## Result
-- One permanent link per employee (token never changes on resend).
-- Link points to the published site → anyone can open it, sign up, and get auto-claimed via the existing `handle_new_user` trigger.
-- "Resend" reuses the same link.
-
-## Files touched
-- `src/pages/Admin.tsx` (add setting UI + use setting in `sendInvite`)
+From Admin → Public App URL card, you can:
+- One-click set + save the published URL as the invite base.
+- Copy the bare public link to paste into WhatsApp/email for any staff member.
+- Open it to confirm it loads without a Lovable login wall.
