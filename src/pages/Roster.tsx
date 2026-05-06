@@ -755,7 +755,7 @@ export default function Roster() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="h-[calc(100vh-3rem)] md:h-screen overflow-auto flex flex-col p-4 md:p-6 space-y-4 -m-4 md:-m-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-xl md:text-2xl font-bold">{t("roster.shiftManager")}</h1>
         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
@@ -840,7 +840,7 @@ export default function Roster() {
         )}
       </div>
 
-      <Card>
+      <Card className="overflow-visible">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" onClick={() => setViewStart(subWeeks(viewStart, 1))} title={locale === "he" ? "שבוע קודם" : "Previous week"}>
@@ -863,7 +863,7 @@ export default function Roster() {
           </div>
         </CardHeader>
         <CardContent className="overflow-visible p-0">
-          <div className="relative isolate overflow-x-auto overflow-y-visible w-full">
+          <div className="relative isolate overflow-visible w-full">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-y-0 left-0 z-10 w-[100px] bg-card shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px]"
@@ -872,13 +872,13 @@ export default function Roster() {
             <thead>
               {/* Row 1: weekday name — sticky to top while scrolling */}
               <tr>
-                <th className="sticky left-0 top-12 md:top-0 z-50 w-[100px] min-w-[100px] border-r border-b-2 border-border/60 bg-card py-2 px-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:px-2">{t("roster.staff")}</th>
+                <th className="sticky left-0 top-0 z-50 w-[100px] min-w-[100px] border-r border-b-2 border-border/60 bg-card py-2 px-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:px-2">{t("roster.staff")}</th>
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
                   const holiday = holidayMap.get(dateStr);
                   return (
-                    <th key={`wd-${d.toISOString()}`} className={`sticky top-12 md:top-0 z-30 min-w-[70px] md:min-w-[120px] py-2 px-1 md:px-2 text-center font-medium text-muted-foreground border-b-2 border-r border-border/60 ${dateBlocked ? "bg-muted/50" : "bg-card"}`}>
+                    <th key={`wd-${d.toISOString()}`} className={`sticky top-0 z-30 min-w-[70px] md:min-w-[120px] py-2 px-1 md:px-2 text-center font-medium text-muted-foreground border-b-2 border-r border-border/60 ${dateBlocked ? "bg-muted/50" : "bg-card"}`}>
                       <div
                         className={`flex items-center justify-center gap-1.5 px-1 py-0.5 rounded-sm ${holiday && !holiday.is_eve ? "bg-[hsla(274,53%,60%,0.15)]" : ""}`}
                         style={holiday?.is_eve ? { backgroundImage: "repeating-linear-gradient(45deg, hsla(274,53%,60%,0.22) 0 6px, transparent 6px 14px)" } : undefined}
