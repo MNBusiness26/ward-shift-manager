@@ -313,7 +313,9 @@ export default function MyCalendar() {
                       return (
                         <div
                           key={shift.id}
-                          className="ps-2 py-1.5 rounded hover:bg-accent/50 cursor-pointer space-y-1"
+                          className={`ps-2 py-1.5 rounded hover:bg-accent/50 cursor-pointer space-y-1 ${
+                            shift.is_draft ? "bg-draft-stripes border border-dashed" : ""
+                          } ${shift.is_standby ? "border border-blue-400" : ""}`}
                           onClick={() => setSelectedDay(day)}
                         >
                           <div className="flex items-center gap-3 text-sm">
@@ -325,6 +327,12 @@ export default function MyCalendar() {
                             </span>
                             {shift.is_responsible_on_shift && (
                               <Star className="h-3 w-3 fill-primary text-primary" />
+                            )}
+                            {shift.is_draft && (
+                              <span className="text-[10px] uppercase tracking-wide text-muted-foreground border rounded px-1">Draft</span>
+                            )}
+                            {shift.is_standby && (
+                              <span className="text-[10px] uppercase tracking-wide text-blue-600 border border-blue-400 rounded px-1">{t("payroll.onCall")}</span>
                             )}
                           </div>
                           {colleagues.length > 0 && (
