@@ -338,7 +338,16 @@ export default function MyCalendar() {
                               <span className="text-[10px] uppercase tracking-wide text-muted-foreground border rounded px-1">Draft</span>
                             )}
                             {shift.is_standby && (
-                              <span className="text-[10px] uppercase tracking-wide text-blue-600 border border-blue-400 rounded px-1">{t("payroll.onCall")}</span>
+                              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-blue-600 border border-blue-400 rounded px-1">
+                                <PhoneCall className="h-2.5 w-2.5" />
+                                {t("payroll.onCall")}
+                              </span>
+                            )}
+                            {shift.is_external && (
+                              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-slate-700 border border-slate-400 rounded px-1">
+                                <LogOut className="h-2.5 w-2.5" />
+                                {t("shift.awayFromWard") !== "shift.awayFromWard" ? t("shift.awayFromWard") : "Away"}
+                              </span>
                             )}
                           </div>
                           {colleagues.length > 0 && (
