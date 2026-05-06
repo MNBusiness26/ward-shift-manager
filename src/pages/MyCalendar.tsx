@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sun, Sunset, Moon, Users, RefreshCw, Star, CheckCircle2, FileDown } from "lucide-react";
+import { Sun, Sunset, Moon, Users, RefreshCw, Star, CheckCircle2, FileDown, PhoneCall, LogOut } from "lucide-react";
 import { CalendarSyncDialog } from "@/components/calendar/CalendarSyncDialog";
 import {
   format,
@@ -257,6 +257,12 @@ export default function MyCalendar() {
                               {s.is_responsible_on_shift && (
                                 <Star className="h-2.5 w-2.5 fill-primary text-primary flex-shrink-0" />
                               )}
+                              {s.is_standby && (
+                                <PhoneCall className="h-2.5 w-2.5 text-blue-600 flex-shrink-0" />
+                              )}
+                              {s.is_external && (
+                                <LogOut className="h-2.5 w-2.5 text-slate-600 flex-shrink-0" />
+                              )}
                               {s.is_verified && <CheckCircle2 className="h-2.5 w-2.5 text-green-600 flex-shrink-0 ms-auto" />}
                             </div>
                             {colleagues.length > 0 && (
@@ -332,7 +338,16 @@ export default function MyCalendar() {
                               <span className="text-[10px] uppercase tracking-wide text-muted-foreground border rounded px-1">Draft</span>
                             )}
                             {shift.is_standby && (
-                              <span className="text-[10px] uppercase tracking-wide text-blue-600 border border-blue-400 rounded px-1">{t("payroll.onCall")}</span>
+                              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-blue-600 border border-blue-400 rounded px-1">
+                                <PhoneCall className="h-2.5 w-2.5" />
+                                {t("payroll.onCall")}
+                              </span>
+                            )}
+                            {shift.is_external && (
+                              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-slate-700 border border-slate-400 rounded px-1">
+                                <LogOut className="h-2.5 w-2.5" />
+                                {t("shift.awayFromWard") !== "shift.awayFromWard" ? t("shift.awayFromWard") : "Away"}
+                              </span>
                             )}
                           </div>
                           {colleagues.length > 0 && (
