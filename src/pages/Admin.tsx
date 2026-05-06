@@ -34,6 +34,7 @@ export default function Admin() {
   const [morningLimit, setMorningLimit] = useState(6);
   const [eveningLimit, setEveningLimit] = useState(4);
   const [nightLimit, setNightLimit] = useState(3);
+  const [publicAppUrl, setPublicAppUrl] = useState("");
 
   // Staff directory form state
   const [newName, setNewName] = useState("");

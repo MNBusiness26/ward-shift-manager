@@ -1,25 +1,42 @@
-## Fix QA-mode Management menu visibility
+# One stable invite link per employee
 
-**Single change** in `src/contexts/AuthContext.tsx` — `impersonate()` callback.
+## Goal
+Each staff member already has a unique, permanent invite token. Make the generated link point to the **published** app URL (public, no Lovable login required) instead of whatever URL the manager happens to be on (currently the editor preview, which blocks outsiders).
 
-When the impersonated profile has no rows in `user_roles` (because they're a placeholder profile auto-created by shift assignment and haven't signed up yet — the FK to `auth.users` blocks pre-creating the role), fall back to `profiles.role`. This makes QA preview match the post-signup experience that `handle_new_user` will produce.
+## Prerequisite (user action)
+Click **Publish** in the top-right of the editor once to get a permanent public URL (e.g. `https://wardwise.lovable.app`). After that, frontend changes just need "Update" in the publish dialog.
 
+## Changes
+
+### 1. Store the public app URL as a setting
+Use the existing `app_settings` table — no schema change needed.
+- Key: `public_app_url`
+- Value: e.g. `https://wardwise.lovable.app`
+
+### 2. Add a small input in `src/pages/Admin.tsx`
+A new card section "Public App URL" with:
+- Input bound to the `public_app_url` setting
+- Save button (reuses existing `saveSetting` mutation)
+- Helper text: "The published URL where staff will sign in. Used to build invitation links."
+
+### 3. Update `sendInvite` in `src/pages/Admin.tsx`
+Replace:
 ```ts
-.then(({ data }) => {
-  const dbRoles = (data?.map(r => r.role) ?? []) as AppRole[];
-  if (dbRoles.length > 0) { setImpersonatedRoles(dbRoles); return; }
-  const fallback = p.role as AppRole | null;
-  const valid: AppRole[] = ["manager","assistant_manager","team_leader","nurse","assistant"];
-  setImpersonatedRoles(fallback && valid.includes(fallback) ? [fallback] : []);
-});
+return { url: `${window.location.origin}/auth?invite=${token}`, name: entry.full_name };
+```
+with:
+```ts
+const publicUrl = settings.find(s => s.key === 'public_app_url')?.value || window.location.origin;
+return { url: `${publicUrl}/auth?invite=${token}`, name: entry.full_name };
 ```
 
-### Unchanged
-- Sidebar gate stays `isManager || isAssistantManager` — only manager + assistant_manager (and you as admin) see Management. team_leader / nurse / assistant do not.
-- Real-login path (`fetchRoles`) untouched.
-- No DB migration (FK to auth.users prevents backfill; not needed — signup trigger handles it).
+### 4. (Optional polish) Warn if `public_app_url` is unset
+If the setting is empty when the manager clicks Invite, show a toast: "Set the Public App URL in Admin first, otherwise the link will only work for logged-in Lovable collaborators."
 
-### Verify after build
-- QA as מזרחי ליהיא → Management visible incl. Payroll.
-- QA as ניימן מיכל → Management visible, Payroll hidden.
-- QA as a nurse → Management hidden.
+## Result
+- One permanent link per employee (token never changes on resend).
+- Link points to the published site → anyone can open it, sign up, and get auto-claimed via the existing `handle_new_user` trigger.
+- "Resend" reuses the same link.
+
+## Files touched
+- `src/pages/Admin.tsx` (add setting UI + use setting in `sendInvite`)
