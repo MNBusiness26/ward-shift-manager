@@ -38,7 +38,7 @@ export function AppSidebar() {
   const { state, toggleSidebar, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { isManager, isAssistantManager, profile, signOut } = useAuth();
+  const { isManager, isAssistantManager, profile, realProfile, isImpersonating, impersonatedProfile, signOut } = useAuth();
   const isMobile = useIsMobile();
   const { t, dir } = useTranslation();
 
