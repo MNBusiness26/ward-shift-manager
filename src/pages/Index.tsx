@@ -84,12 +84,12 @@ export default function Index() {
 
   // 1. Confirmed shifts (next 7 days, mine)
   const { data: myShifts = [], isLoading: shiftsLoading } = useQuery({
-    queryKey: ["dash-my-shifts", user?.id, todayStr],
+    queryKey: ["dash-my-shifts", viewUserId, todayStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
         .select("*")
-        .eq("assigned_user_id", user!.id)
+        .eq("assigned_user_id", viewUserId!)
         .eq("is_draft", false)
         .gte("date", todayStr)
         .lte("date", endStr)
@@ -97,7 +97,7 @@ export default function Index() {
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   // 2. All shifts in range — for team context
