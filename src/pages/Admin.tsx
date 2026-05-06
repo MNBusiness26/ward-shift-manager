@@ -91,19 +91,6 @@ export default function Admin() {
   }, [settings]);
 
   const isPrimaryAdmin = profile?.email === ADMIN_EMAIL;
-  if (!user) return <Navigate to="/" replace />;
-  // Non-primary-admin manager/assistant_manager: show only the Localization panel.
-  if (!isPrimaryAdmin) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Shield className="h-6 w-6" />
-          {t("admin.title")}
-        </h1>
-        <LocalizationPanel />
-      </div>
-    );
-  }
 
   const saveSetting = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
@@ -231,6 +218,19 @@ export default function Admin() {
   const roleLabel = (r: string) => getRoleLabel(r, locale);
 
   const templateVars = ["{{title}}", "{{first_name}}", "{{last_name}}"];
+
+  if (!user) return <Navigate to="/" replace />;
+  if (!isPrimaryAdmin) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Shield className="h-6 w-6" />
+          {t("admin.title")}
+        </h1>
+        <LocalizationPanel />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
