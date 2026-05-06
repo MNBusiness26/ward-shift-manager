@@ -268,6 +268,39 @@ export default function Admin() {
         </CardContent>
       </Card>
 
+      {/* Public App URL */}
+      <Card className="shadow-md">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <LinkIcon className="h-5 w-5" />
+            Public App URL
+          </CardTitle>
+          <CardDescription>
+            The published URL where staff sign in. Used to build invitation links so they work for anyone (not just Lovable collaborators).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input
+            value={publicAppUrl}
+            onChange={(e) => setPublicAppUrl(e.target.value)}
+            placeholder="https://your-app.lovable.app"
+            type="url"
+          />
+          <Button
+            onClick={() => saveSetting.mutate({ key: "public_app_url", value: publicAppUrl.trim() })}
+            className="gap-2"
+          >
+            <Save className="h-4 w-4" />
+            Save URL
+          </Button>
+          {!publicAppUrl && (
+            <p className="text-xs text-muted-foreground">
+              Tip: publish the app first (top-right button), then paste the resulting URL here.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Target Headcount Limits */}
       <Card className="shadow-md">
         <CardHeader>
