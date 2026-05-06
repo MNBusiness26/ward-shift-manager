@@ -219,6 +219,19 @@ export default function Admin() {
 
   const templateVars = ["{{title}}", "{{first_name}}", "{{last_name}}"];
 
+  if (!user) return <Navigate to="/" replace />;
+  if (!isPrimaryAdmin) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Shield className="h-6 w-6" />
+          {t("admin.title")}
+        </h1>
+        <LocalizationPanel />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold flex items-center gap-2">
