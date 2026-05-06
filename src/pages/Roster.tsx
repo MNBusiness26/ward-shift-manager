@@ -1002,7 +1002,7 @@ export default function Roster() {
                             )}
                             <div className="flex items-center justify-center gap-0.5">
                               {isExternal && <ArrowLeftRight className="h-2.5 w-2.5" />}
-                              <span className="capitalize font-medium">{s.type.charAt(0)}</span>
+                              <span className="capitalize font-medium">{t(`shift.${s.type}`).charAt(0)}</span>
                               {(s as any).is_standby && (
                                 <Phone className="h-2.5 w-2.5 text-blue-500" />
                               )}
@@ -1022,7 +1022,7 @@ export default function Roster() {
                               setDialogOpen(true);
                             }}
                           >
-                            <span className="font-medium uppercase">{shiftType.charAt(0)}</span>
+                            <span className="font-medium uppercase">{t(`shift.${shiftType}`).charAt(0)}</span>
                             <span className="ms-1">{t("avail.requested")}</span>
                           </div>
                         ))}
@@ -1046,7 +1046,7 @@ export default function Roster() {
                             onClick={() => openEdit(s)}
                             className={`mb-1 rounded-sm border px-1.5 py-1 text-xs cursor-pointer hover:ring-1 hover:ring-primary/50 ${shiftBgDraft[s.type]} opacity-60`}
                           >
-                            <span className="capitalize font-medium">{s.type.charAt(0)}</span>
+                            <span className="capitalize font-medium">{t(`shift.${s.type}`).charAt(0)}</span>
                           </div>
                         ))}
                       </td>
