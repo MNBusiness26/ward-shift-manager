@@ -242,8 +242,14 @@ export default function MyCalendar() {
                         return (
                           <div key={s.id}>
                             <div
-                              className={`flex items-center gap-0.5 rounded px-0.5 py-px text-[9px] leading-tight border ${shiftBadgeColors[s.type]}`}
-                              title={`${shiftLabels[s.type]} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${s.is_responsible_on_shift ? ` ★ ${t("calendar.responsible")}` : ""}`}
+                              className={`flex items-center gap-0.5 rounded px-0.5 py-px text-[9px] leading-tight border ${
+                                s.is_draft
+                                  ? `bg-draft-stripes border-dashed ${shiftBadgeColors[s.type]}`
+                                  : s.is_standby
+                                  ? `border-blue-400 ${shiftBadgeColors[s.type]}`
+                                  : shiftBadgeColors[s.type]
+                              }`}
+                              title={`${shiftLabels[s.type]} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${s.is_responsible_on_shift ? ` ★ ${t("calendar.responsible")}` : ""}${s.is_draft ? " (Draft)" : ""}${s.is_standby ? ` ${t("payroll.onCall")}` : ""}`}
                             >
                               <Icon className="h-2.5 w-2.5 flex-shrink-0" />
                               <span className="truncate hidden md:inline">{s.start_time.slice(0, 5)}</span>
@@ -251,8 +257,7 @@ export default function MyCalendar() {
                               {s.is_responsible_on_shift && (
                                 <Star className="h-2.5 w-2.5 fill-primary text-primary flex-shrink-0" />
                               )}
-                              <CheckCircle2 className="h-2.5 w-2.5 text-green-600 flex-shrink-0 ms-auto" />
-
+                              {s.is_verified && <CheckCircle2 className="h-2.5 w-2.5 text-green-600 flex-shrink-0 ms-auto" />}
                             </div>
                             {colleagues.length > 0 && (
                               <div className="flex flex-col ps-0.5 mt-px">
