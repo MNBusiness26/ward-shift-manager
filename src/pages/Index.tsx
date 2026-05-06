@@ -118,34 +118,34 @@ export default function Index() {
 
   // 3. Availability requests (mine, in range, approved + pending)
   const { data: myAvailability = [] } = useQuery({
-    queryKey: ["dash-my-avail", user?.id, todayStr],
+    queryKey: ["dash-my-avail", viewUserId, todayStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("availability_requests")
         .select("*")
-        .eq("user_id", user!.id)
+        .eq("user_id", viewUserId!)
         .in("status", ["approved", "pending"])
         .lte("date", endStr)
         .or(`end_date.gte.${todayStr},end_date.is.null`);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   // 4. Swap requests for summary
   const { data: swaps = [] } = useQuery({
-    queryKey: ["dash-swaps", user?.id],
+    queryKey: ["dash-swaps", viewUserId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("swap_requests")
         .select("*, shift:shift_id(date, type, start_time, end_time), requester:requesting_user_id(full_name), coverer:covering_user_id(full_name)")
-        .or(`requesting_user_id.eq.${user!.id},covering_user_id.eq.${user!.id}`)
+        .or(`requesting_user_id.eq.${viewUserId},covering_user_id.eq.${viewUserId}`)
         .in("status", ["pending", "peer_accepted"]);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   // Accept swap action
