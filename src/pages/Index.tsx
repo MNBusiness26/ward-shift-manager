@@ -39,7 +39,8 @@ type TimelineItem =
   | { kind: "availability"; date: string; sortTime: string; data: any; pending: boolean };
 
 export default function Index() {
-  const { user, profile, roles } = useAuth();
+  const { user, profile, roles, confirmIfImpersonating } = useAuth();
+  const viewUserId = profile?.id ?? user?.id;
   const { settings } = useAppSettings();
   const { t, locale } = useTranslation();
   const queryClient = useQueryClient();
@@ -83,12 +84,12 @@ export default function Index() {
 
   // 1. Confirmed shifts (next 7 days, mine)
   const { data: myShifts = [], isLoading: shiftsLoading } = useQuery({
-    queryKey: ["dash-my-shifts", user?.id, todayStr],
+    queryKey: ["dash-my-shifts", viewUserId, todayStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
         .select("*")
-        .eq("assigned_user_id", user!.id)
+        .eq("assigned_user_id", viewUserId!)
         .eq("is_draft", false)
         .gte("date", todayStr)
         .lte("date", endStr)
@@ -96,7 +97,7 @@ export default function Index() {
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   // 2. All shifts in range — for team context
@@ -117,34 +118,34 @@ export default function Index() {
 
   // 3. Availability requests (mine, in range, approved + pending)
   const { data: myAvailability = [] } = useQuery({
-    queryKey: ["dash-my-avail", user?.id, todayStr],
+    queryKey: ["dash-my-avail", viewUserId, todayStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("availability_requests")
         .select("*")
-        .eq("user_id", user!.id)
+        .eq("user_id", viewUserId!)
         .in("status", ["approved", "pending"])
         .lte("date", endStr)
         .or(`end_date.gte.${todayStr},end_date.is.null`);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   // 4. Swap requests for summary
   const { data: swaps = [] } = useQuery({
-    queryKey: ["dash-swaps", user?.id],
+    queryKey: ["dash-swaps", viewUserId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("swap_requests")
         .select("*, shift:shift_id(date, type, start_time, end_time), requester:requesting_user_id(full_name), coverer:covering_user_id(full_name)")
-        .or(`requesting_user_id.eq.${user!.id},covering_user_id.eq.${user!.id}`)
+        .or(`requesting_user_id.eq.${viewUserId},covering_user_id.eq.${viewUserId}`)
         .in("status", ["pending", "peer_accepted"]);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   // Accept swap action
@@ -190,7 +191,7 @@ export default function Index() {
   }
 
   const getTeammates = (date: string, type: string) =>
-    allShifts.filter((s) => s.date === date && s.type === type && s.assigned_user_id !== user?.id).slice(0, 3);
+    allShifts.filter((s) => s.date === date && s.type === type && s.assigned_user_id !== viewUserId).slice(0, 3);
 
   const availIcon = (type: string) => {
     switch (type) {
@@ -228,10 +229,10 @@ export default function Index() {
   // Summary partitions
   const myPendingAvail = (myAvailability as any[]).filter((a) => a.status === "pending");
   const swapsToAction = swaps.filter((s: any) =>
-    (s.is_pool_request && s.requesting_user_id !== user?.id && s.status === "pending") ||
-    (s.covering_user_id === user?.id && s.status === "pending")
+    (s.is_pool_request && s.requesting_user_id !== viewUserId && s.status === "pending") ||
+    (s.covering_user_id === viewUserId && s.status === "pending")
   );
-  const swapsSent = swaps.filter((s: any) => s.requesting_user_id === user?.id);
+  const swapsSent = swaps.filter((s: any) => s.requesting_user_id === viewUserId);
 
   return (
     <div className="space-y-6">
@@ -430,7 +431,7 @@ export default function Index() {
                       size="sm"
                       className="min-h-11 px-3"
                       disabled={acceptSwap.isPending}
-                      onClick={() => acceptSwap.mutate(s.id)}
+                      onClick={() => { if (confirmIfImpersonating("Accept swap")) acceptSwap.mutate(s.id); }}
                     >
                       <ArrowLeftRight className="h-3.5 w-3.5 me-1" />
                       {t("swap.accept") || "Accept"}
