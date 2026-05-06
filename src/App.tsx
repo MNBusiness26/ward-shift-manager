@@ -64,6 +64,8 @@ function ProtectedRoute({ children, requireManager }: { children: React.ReactNod
 }
 
 function ManagerHomeRedirect() {
+  const { isManager, isAssistantManager } = useAuth();
+  if (isManager || isAssistantManager) return <Navigate to="/roster" replace />;
   return <Index />;
 }
 
