@@ -90,6 +90,7 @@
     "common.email": "Email",
     "common.submit": "Submit",
     "common.pending": "Pending",
+    "common.none": "None",
     "common.approved": "Approved",
     "common.declined": "Declined",
     "common.noShifts": "No shifts",
