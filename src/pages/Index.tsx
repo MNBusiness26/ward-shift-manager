@@ -191,7 +191,7 @@ export default function Index() {
   }
 
   const getTeammates = (date: string, type: string) =>
-    allShifts.filter((s) => s.date === date && s.type === type && s.assigned_user_id !== user?.id).slice(0, 3);
+    allShifts.filter((s) => s.date === date && s.type === type && s.assigned_user_id !== viewUserId).slice(0, 3);
 
   const availIcon = (type: string) => {
     switch (type) {
