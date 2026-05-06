@@ -435,10 +435,41 @@ export default function Admin() {
                       )}
                       <span className="text-xs text-muted-foreground">{Math.round(entry.target_fte_percent * 100)}%</span>
                       <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 text-primary hover:text-primary hover:bg-primary/10"
+                          onClick={() => setEditEntry(entry)}
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        {!entry.is_claimed && (
+                          <Button
+                            variant={entry.invited_at ? "outline" : "default"}
+                            size="sm"
+                            className="h-9 min-h-[44px] sm:min-h-0 gap-1.5 text-xs"
+                            onClick={() => { if (confirmIfImpersonating("Send invitation")) sendInvite.mutate(entry); }}
+                            disabled={sendInvite.isPending}
+                            title={entry.invited_at ? `Last sent ${new Date(entry.invited_at).toLocaleString()}` : "Send invitation"}
+                          >
+                            <Mail className="h-3.5 w-3.5" />
+                            {entry.invited_at ? (
+                              <span className="hidden sm:inline">Resend</span>
+                            ) : (
+                              <span className="hidden sm:inline">Invite</span>
+                            )}
+                          </Button>
+                        )}
+                        {entry.invited_at && !entry.is_claimed && (
+                          <span className="hidden md:inline text-[10px] text-muted-foreground whitespace-nowrap">
+                            {new Date(entry.invited_at).toLocaleDateString()}
+                          </span>
+                        )}
                         {entry.is_claimed ? (
                           <Check className="h-4 w-4 text-success" />
                         ) : (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (confirmIfImpersonating("Remove staff entry")) removeEntry.mutate(entry.id); }}>
+                          <Button variant="ghost" size="icon" className="h-9 w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0" onClick={() => { if (confirmIfImpersonating("Remove staff entry")) removeEntry.mutate(entry.id); }}>
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </Button>
                         )}
