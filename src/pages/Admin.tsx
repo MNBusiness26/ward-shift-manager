@@ -18,6 +18,8 @@ import { LocalizationPanel } from "@/components/admin/LocalizationPanel";
 import { FrictionSettingsPanel } from "@/components/admin/FrictionSettingsPanel";
 import { getRoleLabel, ROLE_OPTIONS } from "@/lib/roles";
 import { compareStaff } from "@/components/roster/staffSort";
+import { EditDirectoryDialog } from "@/components/admin/EditDirectoryDialog";
+import { InviteLinkDialog } from "@/components/admin/InviteLinkDialog";
 
 const ADMIN_EMAIL = "michael.nejman@gmail.com";
 
