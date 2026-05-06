@@ -178,6 +178,26 @@ export default function Admin() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const sendInvite = useMutation({
+    mutationFn: async (entry: any) => {
+      let token = entry.invite_token;
+      if (!token) token = crypto.randomUUID().replace(/-/g, "");
+      const { error } = await supabase
+        .from("staff_directory")
+        .update({ invite_token: token, invited_at: new Date().toISOString() })
+        .eq("id", entry.id);
+      if (error) throw error;
+      return { url: `${window.location.origin}/auth?invite=${token}`, name: entry.full_name };
+    },
+    onSuccess: ({ url, name }) => {
+      queryClient.invalidateQueries({ queryKey: ["staff-directory"] });
+      setInviteUrl(url);
+      setInviteRecipient(name);
+      toast.success("Invitation link generated");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const handleToggleFullWeek = (checked: boolean) => {
     setEnforceFullWeek(checked);
     saveSetting.mutate({ key: "enforce_full_week", value: checked ? "true" : "false" });
