@@ -242,8 +242,14 @@ export default function MyCalendar() {
                         return (
                           <div key={s.id}>
                             <div
-                              className={`flex items-center gap-0.5 rounded px-0.5 py-px text-[9px] leading-tight border ${shiftBadgeColors[s.type]}`}
-                              title={`${shiftLabels[s.type]} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${s.is_responsible_on_shift ? ` ★ ${t("calendar.responsible")}` : ""}`}
+                              className={`flex items-center gap-0.5 rounded px-0.5 py-px text-[9px] leading-tight border ${
+                                s.is_draft
+                                  ? `bg-draft-stripes border-dashed ${shiftBadgeColors[s.type]}`
+                                  : s.is_standby
+                                  ? `border-blue-400 ${shiftBadgeColors[s.type]}`
+                                  : shiftBadgeColors[s.type]
+                              }`}
+                              title={`${shiftLabels[s.type]} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${s.is_responsible_on_shift ? ` ★ ${t("calendar.responsible")}` : ""}${s.is_draft ? " (Draft)" : ""}${s.is_standby ? ` ${t("payroll.onCall")}` : ""}`}
                             >
                               <Icon className="h-2.5 w-2.5 flex-shrink-0" />
                               <span className="truncate hidden md:inline">{s.start_time.slice(0, 5)}</span>
@@ -251,8 +257,7 @@ export default function MyCalendar() {
                               {s.is_responsible_on_shift && (
                                 <Star className="h-2.5 w-2.5 fill-primary text-primary flex-shrink-0" />
                               )}
-                              <CheckCircle2 className="h-2.5 w-2.5 text-green-600 flex-shrink-0 ms-auto" />
-
+                              {s.is_verified && <CheckCircle2 className="h-2.5 w-2.5 text-green-600 flex-shrink-0 ms-auto" />}
                             </div>
                             {colleagues.length > 0 && (
                               <div className="flex flex-col ps-0.5 mt-px">
@@ -308,7 +313,9 @@ export default function MyCalendar() {
                       return (
                         <div
                           key={shift.id}
-                          className="ps-2 py-1.5 rounded hover:bg-accent/50 cursor-pointer space-y-1"
+                          className={`ps-2 py-1.5 rounded hover:bg-accent/50 cursor-pointer space-y-1 ${
+                            shift.is_draft ? "bg-draft-stripes border border-dashed" : ""
+                          } ${shift.is_standby ? "border border-blue-400" : ""}`}
                           onClick={() => setSelectedDay(day)}
                         >
                           <div className="flex items-center gap-3 text-sm">
@@ -320,6 +327,12 @@ export default function MyCalendar() {
                             </span>
                             {shift.is_responsible_on_shift && (
                               <Star className="h-3 w-3 fill-primary text-primary" />
+                            )}
+                            {shift.is_draft && (
+                              <span className="text-[10px] uppercase tracking-wide text-muted-foreground border rounded px-1">Draft</span>
+                            )}
+                            {shift.is_standby && (
+                              <span className="text-[10px] uppercase tracking-wide text-blue-600 border border-blue-400 rounded px-1">{t("payroll.onCall")}</span>
                             )}
                           </div>
                           {colleagues.length > 0 && (
