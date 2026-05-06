@@ -863,7 +863,7 @@ export default function Roster() {
           </div>
         </CardHeader>
         <CardContent className="overflow-visible p-0">
-          <div className="relative isolate overflow-x-auto overflow-y-visible">
+          <div className="relative isolate">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-y-0 left-0 z-10 w-[100px] bg-card shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px]"
