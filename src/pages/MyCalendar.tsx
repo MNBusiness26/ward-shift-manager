@@ -257,6 +257,12 @@ export default function MyCalendar() {
                               {s.is_responsible_on_shift && (
                                 <Star className="h-2.5 w-2.5 fill-primary text-primary flex-shrink-0" />
                               )}
+                              {s.is_standby && (
+                                <PhoneCall className="h-2.5 w-2.5 text-blue-600 flex-shrink-0" />
+                              )}
+                              {s.is_external && (
+                                <LogOut className="h-2.5 w-2.5 text-slate-600 flex-shrink-0" />
+                              )}
                               {s.is_verified && <CheckCircle2 className="h-2.5 w-2.5 text-green-600 flex-shrink-0 ms-auto" />}
                             </div>
                             {colleagues.length > 0 && (
