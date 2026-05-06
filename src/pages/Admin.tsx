@@ -41,6 +41,11 @@ export default function Admin() {
   const [newRole, setNewRole] = useState<string>("nurse");
   const [newFte, setNewFte] = useState("100");
 
+  // Edit + Invite dialog state
+  const [editEntry, setEditEntry] = useState<any | null>(null);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [inviteRecipient, setInviteRecipient] = useState<string>("");
+
   const { data: settings = [] } = useQuery({
     queryKey: ["app-settings"],
     queryFn: async () => {
