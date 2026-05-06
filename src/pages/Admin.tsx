@@ -34,6 +34,7 @@ export default function Admin() {
   const [morningLimit, setMorningLimit] = useState(6);
   const [eveningLimit, setEveningLimit] = useState(4);
   const [nightLimit, setNightLimit] = useState(3);
+  const [publicAppUrl, setPublicAppUrl] = useState("");
 
   // Staff directory form state
   const [newName, setNewName] = useState("");
@@ -88,6 +89,8 @@ export default function Admin() {
       if (v.evening != null) setEveningLimit(v.evening);
       if (v.night != null) setNightLimit(v.night);
     }
+    const pauSetting = settings.find((s: any) => s.key === "public_app_url");
+    if (pauSetting && typeof pauSetting.value === "string") setPublicAppUrl(pauSetting.value);
   }, [settings]);
 
   const isPrimaryAdmin = profile?.email === ADMIN_EMAIL;
@@ -174,7 +177,8 @@ export default function Admin() {
         .update({ invite_token: token, invited_at: new Date().toISOString() })
         .eq("id", entry.id);
       if (error) throw error;
-      return { url: `${window.location.origin}/auth?invite=${token}`, name: entry.full_name };
+      const base = (publicAppUrl?.trim() || window.location.origin).replace(/\/$/, "");
+      return { url: `${base}/auth?invite=${token}`, name: entry.full_name };
     },
     onSuccess: ({ url, name }) => {
       queryClient.invalidateQueries({ queryKey: ["staff-directory"] });
@@ -261,6 +265,39 @@ export default function Admin() {
           <Button asChild variant="outline" className="rounded-sm">
             <a href="/admin/dictionary">Edit Translation Dictionary →</a>
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Public App URL */}
+      <Card className="shadow-md">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <LinkIcon className="h-5 w-5" />
+            Public App URL
+          </CardTitle>
+          <CardDescription>
+            The published URL where staff sign in. Used to build invitation links so they work for anyone (not just Lovable collaborators).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input
+            value={publicAppUrl}
+            onChange={(e) => setPublicAppUrl(e.target.value)}
+            placeholder="https://your-app.lovable.app"
+            type="url"
+          />
+          <Button
+            onClick={() => saveSetting.mutate({ key: "public_app_url", value: publicAppUrl.trim() })}
+            className="gap-2"
+          >
+            <Save className="h-4 w-4" />
+            Save URL
+          </Button>
+          {!publicAppUrl && (
+            <p className="text-xs text-muted-foreground">
+              Tip: publish the app first (top-right button), then paste the resulting URL here.
+            </p>
+          )}
         </CardContent>
       </Card>
 
