@@ -283,16 +283,47 @@ export default function Admin() {
           <Input
             value={publicAppUrl}
             onChange={(e) => setPublicAppUrl(e.target.value)}
-            placeholder="https://your-app.lovable.app"
+            placeholder="https://ward-wise-shift-flow.lovable.app"
             type="url"
           />
-          <Button
-            onClick={() => saveSetting.mutate({ key: "public_app_url", value: publicAppUrl.trim() })}
-            className="gap-2"
-          >
-            <Save className="h-4 w-4" />
-            Save URL
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => saveSetting.mutate({ key: "public_app_url", value: publicAppUrl.trim() })}
+              className="gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save URL
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPublicAppUrl("https://ward-wise-shift-flow.lovable.app")}
+            >
+              Use published default
+            </Button>
+            {publicAppUrl?.trim() && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="gap-2"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(publicAppUrl.trim());
+                    toast.success("Public app link copied");
+                  }}
+                >
+                  <LinkIcon className="h-4 w-4" />
+                  Copy app link
+                </Button>
+                <Button asChild type="button" variant="ghost">
+                  <a href={publicAppUrl.trim()} target="_blank" rel="noreferrer">Open ↗</a>
+                </Button>
+              </>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Share this link with staff so they sign up on the public app (no Lovable account required). Invitation links generated below are built from this URL.
+          </p>
           {!publicAppUrl && (
             <p className="text-xs text-muted-foreground">
               Tip: publish the app first (top-right button), then paste the resulting URL here.
