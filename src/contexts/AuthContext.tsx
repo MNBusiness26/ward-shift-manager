@@ -118,8 +118,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const confirmIfImpersonating = useCallback((action = "this action") => {
     if (!impersonatedProfile) return true;
+    const name = impersonatedProfile.full_name || "this user";
     return window.confirm(
-      `Warning: You are in QA Mode. Perform ${action} as a real action?`
+      `⚠️ QA Mode: You are currently viewing as ${name}.\n\nPerform "${action}" as a REAL action for ${name}?`
     );
   }, [impersonatedProfile]);
 

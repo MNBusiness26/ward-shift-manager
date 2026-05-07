@@ -24,6 +24,7 @@ import { ChevronLeft, ChevronRight, X, CalendarOff, Palmtree, Plane, Bandage, Ba
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
 import { isLeaveType, isPreferenceType } from "@/lib/availabilityTypes";
+import { validateConsecutiveWeekendBlock } from "@/components/roster/frictionValidation";
 
 const SHIFT_TYPES = ["morning", "evening", "night"] as const;
 
@@ -113,6 +114,24 @@ export default function Availability() {
       }
       const isBlock = requestType === "block";
       const endStr = isBlock ? startStr : (endDate || startStr);
+
+      // Consecutive Weekend Block Restriction — fetch ALL approved blocks for the user
+      if (isBlock) {
+        const { data: approved } = await supabase
+          .from("availability_requests")
+          .select("date, end_date, request_type, status")
+          .eq("user_id", viewUserId)
+          .eq("status", "approved");
+        const dayMs = 24 * 60 * 60 * 1000;
+        const startD = new Date(startStr + "T00:00").getTime();
+        const endD = new Date(endStr + "T00:00").getTime();
+        for (let t = startD; t <= endD; t += dayMs) {
+          const ds = format(new Date(t), "yyyy-MM-dd");
+          const check = validateConsecutiveWeekendBlock(ds, (approved as any) || []);
+          if (check.violates) throw new Error(check.message!);
+        }
+      }
+
       const { error } = await supabase.from("availability_requests").insert({
         user_id: viewUserId, date: startStr, end_date: endStr,
         reason: reason || null, request_type: requestType,
