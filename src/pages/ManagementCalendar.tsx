@@ -559,7 +559,7 @@ export default function ManagementCalendar() {
                                     : isStandby
                                     ? "bg-blue-50/60 border-l-4 border-blue-400 border-t-0 border-r-0 border-b-0 rounded-sm text-foreground"
                                     : s.is_draft ? "bg-draft-stripes opacity-100" : "ring-1 ring-current/20"
-                                } ${assistantRole && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-gray-100/50 text-muted-foreground border-muted-foreground/20" : ""}`}
+                                } ${assistantRole && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-white text-[#0F172A] border-slate-300" : ""}`}
                               >
                                 {isExternal && <ArrowLeftRight className="h-2.5 w-2.5 shrink-0" />}
                                 <span className="calendar-staff-name min-w-0 flex-1 truncate">{getFirstName(s)}</span>
