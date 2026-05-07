@@ -339,7 +339,7 @@ export default function SwapRequests() {
             <AlertDialogCancel>{t("swap.cancelNo")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => cancelId && cancelSwap.mutate(cancelId)}
+              onClick={() => { if (cancelId && confirmIfImpersonating("cancel this swap")) cancelSwap.mutate(cancelId); }}
             >
               {t("swap.cancelYes")}
             </AlertDialogAction>
