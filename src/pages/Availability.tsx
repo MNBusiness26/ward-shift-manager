@@ -24,6 +24,7 @@ import { ChevronLeft, ChevronRight, X, CalendarOff, Palmtree, Plane, Bandage, Ba
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
 import { isLeaveType, isPreferenceType } from "@/lib/availabilityTypes";
+import { validateConsecutiveWeekendBlock } from "@/components/roster/frictionValidation";
 
 const SHIFT_TYPES = ["morning", "evening", "night"] as const;
 
