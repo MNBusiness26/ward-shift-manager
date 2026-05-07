@@ -7,6 +7,8 @@ import {
   eachDayOfInterval, addMonths, subMonths, addWeeks, subWeeks, isToday, isSameMonth,
 } from "date-fns";
 import { Fragment, useRef, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ChevronLeft, ChevronRight, Users, Star, Phone, ArrowLeftRight, FileDown } from "lucide-react";
 import { exportCalendarToPdf } from "@/lib/exportCalendarPdf";
@@ -46,6 +48,9 @@ export default function GlobalTeamCalendar() {
   const [isExporting, setIsExporting] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
   const holidayMap = useHolidayMap();
+  const isMobile = useIsMobile();
+  const { profile: effectiveProfile } = useAuth();
+  const myId = effectiveProfile?.id;
 
   const shiftLabels: Record<string, string> = {
     morning: t("shift.morning"), evening: t("shift.evening"), night: t("shift.night"),
@@ -173,6 +178,85 @@ export default function GlobalTeamCalendar() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 flex-1 flex flex-col">
+          {isMobile ? (
+            <div className="flex flex-col gap-3">
+              {allDays.filter((d) => isWeek || isSameMonth(d, currentMonth)).map((day) => {
+                const dateStr = format(day, "yyyy-MM-dd");
+                const today = isToday(day);
+                const holiday = holidayMap.get(dateStr);
+                return (
+                  <div key={dateStr} className={`rounded-lg border ${today ? "ring-2 ring-primary/40" : ""}`}>
+                    <div className={`flex items-center justify-between px-3 py-2 border-b ${holiday ? "bg-[hsla(274,53%,60%,0.12)]" : "bg-muted/40"}`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold">{formatLocale(day, "EEEE", locale)}</span>
+                        <span className="text-xs text-muted-foreground">{formatLocale(day, "d MMM", locale)}</span>
+                      </div>
+                      <HolidayCornerIcon holiday={holiday} inline />
+                    </div>
+                    <div className="flex flex-col">
+                      {shiftTypes.map((type) => {
+                        const typeShifts = getShifts(dateStr, type);
+                        const mineOnShift = !!myId && typeShifts.some((s) => (s as any).assigned_user_id === myId);
+                        const bg =
+                          type === "morning" ? "bg-[#DAA520]/15 border-s-4 border-s-[#DAA520]" :
+                          type === "evening" ? "bg-[#FF7F50]/15 border-s-4 border-s-[#FF7F50]" :
+                          "bg-[#4B0082]/15 border-s-4 border-s-[#4B0082]";
+                        const labelColor =
+                          type === "morning" ? "text-[#8B6508]" :
+                          type === "evening" ? "text-[#C2410C]" :
+                          "text-[#4B0082]";
+                        return (
+                          <div
+                            key={type}
+                            className={`px-3 py-2 border-b last:border-b-0 ${bg} ${mineOnShift ? "border-4 border-[#3B82F6]" : ""}`}
+                            style={{ lineHeight: 1.5 }}
+                          >
+                            <div className={`text-xs font-bold uppercase tracking-wide mb-1.5 ${labelColor}`}>
+                              {shiftLabels[type]}
+                            </div>
+                            {typeShifts.length === 0 ? (
+                              <div className="text-xs text-muted-foreground italic">—</div>
+                            ) : (
+                              <div className="flex flex-wrap gap-1.5">
+                                {typeShifts.map((s) => {
+                                  const profile = (s as any).assigned_profile;
+                                  const isStandby = (s as any).is_standby;
+                                  const isExternal = (s as any).is_external;
+                                  const isResp = s.is_responsible_on_shift || profile?.is_responsible;
+                                  const assistantRole = isAssistant(profile?.role);
+                                  const firstName = formatDisplayName(profile?.full_name);
+                                  return (
+                                    <span
+                                      key={s.id}
+                                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border whitespace-normal break-words ${
+                                        assistantRole
+                                          ? "bg-white text-[#0F172A] border-slate-300"
+                                          : isExternal
+                                          ? "bg-slate-50 border-slate-300 text-slate-600"
+                                          : isStandby
+                                          ? "bg-blue-50 border-blue-400 text-foreground"
+                                          : "bg-background border-current/30 text-foreground"
+                                      } ${isResp ? "font-bold" : ""}`}
+                                      style={{ fontFamily: "Heebo, Inter, sans-serif", lineHeight: 1.5 }}
+                                    >
+                                      {isExternal && <ArrowLeftRight className="h-3 w-3 shrink-0" />}
+                                      <span>{firstName}</span>
+                                      {isResp && <Star className="h-3 w-3 fill-current shrink-0" />}
+                                      {isStandby && <Phone className="h-3 w-3 shrink-0" />}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
           <table className="w-full text-sm border-collapse table-fixed flex-1 h-full">
             <colgroup>
               {dayHeaders.map((_, i) => (
@@ -274,7 +358,7 @@ export default function GlobalTeamCalendar() {
                                             : isStandby
                                             ? "bg-blue-50/60 border-l-4 border-blue-400 border-t-0 border-r-0 border-b-0 rounded-sm text-foreground"
                                             : (s as any).is_draft ? "bg-draft-stripes opacity-100" : "ring-1 ring-current/20"
-                                        } ${assistantRole && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-gray-100/50 text-muted-foreground border-muted-foreground/20" : ""}`}
+                                        } ${assistantRole && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-white text-[#0F172A] border-slate-300" : ""}`}
                                       >
                                         {isExternal && <ArrowLeftRight className="h-2.5 w-2.5 shrink-0" />}
                                         <span className="calendar-staff-name truncate min-w-0 flex-1">{firstName}</span>
@@ -295,6 +379,7 @@ export default function GlobalTeamCalendar() {
               ))}
             </tbody>
           </table>
+          )}
         </CardContent>
       </Card>
 
