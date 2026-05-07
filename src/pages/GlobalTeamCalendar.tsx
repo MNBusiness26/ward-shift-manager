@@ -120,37 +120,40 @@ export default function GlobalTeamCalendar() {
 
   return (
     <div className="space-y-4 flex flex-col min-h-[calc(100vh-6rem)]">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Users className="h-6 w-6" />
+      <div className="flex flex-row flex-wrap items-center justify-between gap-1">
+        <h1 className="text-base md:text-2xl font-bold flex items-center gap-1 md:gap-2">
+          <Users className="h-4 w-4 md:h-6 md:w-6" />
           {t("page.teamCalendar")}
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2 flex-wrap">
           <ToggleGroup
             type="single"
             value={view}
             onValueChange={(v) => v && setView(v as "month" | "week")}
             size="sm"
             variant="outline"
+            className="h-8"
           >
-            <ToggleGroupItem value="month">{t("calendar.month") || "Month"}</ToggleGroupItem>
-            <ToggleGroupItem value="week">{t("calendar.week") || "Week"}</ToggleGroupItem>
+            <ToggleGroupItem value="month" className="h-8 px-2 text-xs md:text-sm">{t("calendar.month") || "Month"}</ToggleGroupItem>
+            <ToggleGroupItem value="week" className="h-8 px-2 text-xs md:text-sm">{t("calendar.week") || "Week"}</ToggleGroupItem>
           </ToggleGroup>
           <Button
             variant="outline"
             size="icon"
+            className="h-8 w-8"
             onClick={() =>
               setCurrentMonth((m) => (isWeek ? subWeeks(m, 1) : subMonths(m, 1)))
             }
           >
             <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>
+          <Button variant="outline" size="sm" className="h-8 px-2 text-xs md:text-sm" onClick={() => setCurrentMonth(new Date())}>
             {isWeek ? t("calendar.thisWeek") : t("calendar.thisMonth")}
           </Button>
           <Button
             variant="outline"
             size="icon"
+            className="h-8 w-8"
             onClick={() =>
               setCurrentMonth((m) => (isWeek ? addWeeks(m, 1) : addMonths(m, 1)))
             }
@@ -160,6 +163,7 @@ export default function GlobalTeamCalendar() {
           <Button
             variant="outline"
             size="sm"
+            className="h-8 px-2"
             onClick={handleExportPdf}
             disabled={isExporting}
           >
