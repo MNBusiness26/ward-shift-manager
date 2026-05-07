@@ -64,8 +64,8 @@ function ProtectedRoute({ children, requireManager }: { children: React.ReactNod
 }
 
 function ManagerHomeRedirect() {
-  const { isManager, isAssistantManager } = useAuth();
-  if (isManager || isAssistantManager) return <Navigate to="/roster" replace />;
+  // Both managers and nurses land on the dashboard ("/").
+  // Managers can navigate to /roster from the sidebar.
   return <Index />;
 }
 
