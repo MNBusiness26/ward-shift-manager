@@ -10,6 +10,7 @@ import { formatLocale } from "@/i18n/dateLocale";
 
 export default function MyStats() {
   const { user, profile } = useAuth();
+  const viewUserId = profile?.id ?? user?.id;
   const { t, locale } = useTranslation();
   const now = new Date();
   const weekStart = startOfWeek(now);
@@ -18,33 +19,33 @@ export default function MyStats() {
   const monthEnd = endOfMonth(now);
 
   const { data: monthShifts = [] } = useQuery({
-    queryKey: ["stats-month", user?.id, format(monthStart, "yyyy-MM")],
+    queryKey: ["stats-month", viewUserId, format(monthStart, "yyyy-MM")],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
         .select("*")
-        .eq("assigned_user_id", user!.id)
+        .eq("assigned_user_id", viewUserId!)
         .gte("date", format(monthStart, "yyyy-MM-dd"))
         .lte("date", format(monthEnd, "yyyy-MM-dd"));
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   const { data: weekShifts = [] } = useQuery({
-    queryKey: ["stats-week", user?.id],
+    queryKey: ["stats-week", viewUserId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
         .select("*")
-        .eq("assigned_user_id", user!.id)
+        .eq("assigned_user_id", viewUserId!)
         .gte("date", format(weekStart, "yyyy-MM-dd"))
         .lte("date", format(weekEnd, "yyyy-MM-dd"));
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   const fte = profile?.target_fte_percent ?? 1;
