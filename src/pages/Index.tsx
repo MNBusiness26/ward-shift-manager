@@ -153,7 +153,7 @@ export default function Index() {
     mutationFn: async (swapId: string) => {
       const { error } = await supabase
         .from("swap_requests")
-        .update({ status: "peer_accepted", covering_user_id: user!.id })
+        .update({ status: "peer_accepted", covering_user_id: viewUserId! })
         .eq("id", swapId);
       if (error) throw error;
     },
