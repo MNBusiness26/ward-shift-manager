@@ -58,7 +58,8 @@ const typeLabelKey: Record<string, string> = {
 };
 
 export default function Availability() {
-  const { user } = useAuth();
+  const { user, profile, confirmIfImpersonating } = useAuth();
+  const viewUserId = profile?.id ?? user?.id;
   const { t, locale } = useTranslation();
   const queryClient = useQueryClient();
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -79,31 +80,31 @@ export default function Availability() {
   ];
 
   const { data: requests = [] } = useQuery({
-    queryKey: ["availability-requests", user?.id, format(monthStart, "yyyy-MM")],
+    queryKey: ["availability-requests", viewUserId, format(monthStart, "yyyy-MM")],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("availability_requests")
         .select("*")
-        .eq("user_id", user!.id)
+        .eq("user_id", viewUserId!)
         .or(`date.gte.${format(monthStart, "yyyy-MM-dd")},end_date.gte.${format(monthStart, "yyyy-MM-dd")}`)
         .lte("date", format(monthEnd, "yyyy-MM-dd"))
         .order("date");
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   const createRequest = useMutation({
     mutationFn: async () => {
-      if (!selectedDate || !user) return;
+      if (!selectedDate || !viewUserId) return;
       const startStr = format(selectedDate, "yyyy-MM-dd");
       if (dialogMode === "preference") {
         if (blockedShifts.length === 0) {
           throw new Error(t("avail.requestShiftsHint"));
         }
         const { error } = await supabase.from("availability_requests").insert({
-          user_id: user.id, date: startStr, end_date: startStr,
+          user_id: viewUserId, date: startStr, end_date: startStr,
           reason: reason || null, request_type: "preference",
           blocked_shifts: blockedShifts,
         } as any);
@@ -113,7 +114,7 @@ export default function Availability() {
       const isBlock = requestType === "block";
       const endStr = isBlock ? startStr : (endDate || startStr);
       const { error } = await supabase.from("availability_requests").insert({
-        user_id: user.id, date: startStr, end_date: endStr,
+        user_id: viewUserId, date: startStr, end_date: endStr,
         reason: reason || null, request_type: requestType,
         blocked_shifts: isBlock ? blockedShifts : [],
       } as any);
@@ -294,7 +295,7 @@ export default function Availability() {
               <div className="flex items-center gap-1 md:gap-2 shrink-0">
                 <Badge variant="outline" className={`text-[9px] md:text-xs ${statusColors[r.status]}`}>{statusLabel(r.status)}</Badge>
                 {r.status === "pending" && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteRequest.mutate(r.id)}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (confirmIfImpersonating("delete this request")) deleteRequest.mutate(r.id); }}>
                     <X className="h-3 w-3" />
                   </Button>
                 )}
@@ -446,7 +447,7 @@ export default function Availability() {
               <div className="flex flex-col-reverse md:flex-row gap-2 md:justify-end">
                 <Button variant="outline" onClick={closeDialog} className="w-full md:w-auto">{t("common.cancel")}</Button>
                 <Button
-                  onClick={() => createRequest.mutate()}
+                  onClick={() => { if (confirmIfImpersonating("submit this availability request")) createRequest.mutate(); }}
                   disabled={createRequest.isPending || (dialogMode === "preference" && blockedShifts.length === 0)}
                   className="w-full md:w-auto"
                 >

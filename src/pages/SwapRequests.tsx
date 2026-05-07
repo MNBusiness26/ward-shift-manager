@@ -48,7 +48,8 @@ function formatShiftFn(shift: any, locale?: string) {
 }
 
 export default function SwapRequests() {
-  const { user } = useAuth();
+  const { user, profile, confirmIfImpersonating } = useAuth();
+  const viewUserId = profile?.id ?? user?.id;
   const { t, locale } = useTranslation();
   const formatShift = (shift: any) => formatShiftFn(shift, locale);
   const queryClient = useQueryClient();
@@ -65,47 +66,47 @@ export default function SwapRequests() {
   const [poolTakeOnly, setPoolTakeOnly] = useState(false);
 
   const { data: myShifts = [] } = useQuery({
-    queryKey: ["my-shifts-for-swap", user?.id],
+    queryKey: ["my-shifts-for-swap", viewUserId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
         .select("*")
-        .eq("assigned_user_id", user!.id)
+        .eq("assigned_user_id", viewUserId!)
         .eq("is_draft", false)
         .gte("date", format(new Date(), "yyyy-MM-dd"))
         .order("date");
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   const { data: swapRequests = [] } = useQuery({
-    queryKey: ["swap-requests", user?.id],
+    queryKey: ["swap-requests", viewUserId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("swap_requests")
         .select("*, requesting_shift:shifts!swap_requests_shift_id_fkey(*), target_shift:shifts!swap_requests_target_shift_id_fkey(*), covering_profile:profiles!swap_requests_covering_user_id_fkey(full_name), requesting_profile:profiles!swap_requests_requesting_user_id_fkey(full_name)")
-        .or(`requesting_user_id.eq.${user!.id},covering_user_id.eq.${user!.id},is_pool_request.eq.true`)
+        .or(`requesting_user_id.eq.${viewUserId},covering_user_id.eq.${viewUserId},is_pool_request.eq.true`)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   const { data: colleagues = [] } = useQuery({
-    queryKey: ["colleagues"],
+    queryKey: ["colleagues", viewUserId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name")
         .eq("is_active", true)
-        .neq("id", user!.id);
+        .neq("id", viewUserId!);
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   // Fetch target colleague's shifts for direct swap
@@ -128,7 +129,7 @@ export default function SwapRequests() {
   const createSwap = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("swap_requests").insert({
-        requesting_user_id: user!.id,
+        requesting_user_id: viewUserId!,
         shift_id: selectedShiftId,
         is_pool_request: swapType === "pool",
         covering_user_id: swapType === "direct" ? targetUserId : null,
@@ -149,7 +150,7 @@ export default function SwapRequests() {
     mutationFn: async (swapId: string) => {
       const { error } = await supabase
         .from("swap_requests")
-        .update({ covering_user_id: user!.id, status: "peer_accepted" })
+        .update({ covering_user_id: viewUserId!, status: "peer_accepted" })
         .eq("id", swapId);
       if (error) throw error;
     },
@@ -166,7 +167,7 @@ export default function SwapRequests() {
       const { error } = await supabase
         .from("swap_requests")
         .update({
-          covering_user_id: user!.id,
+          covering_user_id: viewUserId!,
           status: "peer_accepted",
           target_shift_id: poolTakeOnly ? null : poolOfferShiftId || null,
           is_take_only: poolTakeOnly,
@@ -190,7 +191,7 @@ export default function SwapRequests() {
         .from("swap_requests")
         .delete()
         .eq("id", swapId)
-        .eq("requesting_user_id", user!.id);
+        .eq("requesting_user_id", viewUserId!);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -211,7 +212,7 @@ export default function SwapRequests() {
   };
 
   const canCancel = (swap: any) =>
-    swap.requesting_user_id === user?.id &&
+    swap.requesting_user_id === viewUserId &&
     (swap.status === "pending" || swap.status === "peer_accepted");
 
   return (
@@ -233,12 +234,12 @@ export default function SwapRequests() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {swapRequests.filter((s) => s.is_pool_request && s.status === "pending" && s.requesting_user_id !== user?.id).length === 0 ? (
+          {swapRequests.filter((s) => s.is_pool_request && s.status === "pending" && s.requesting_user_id !== viewUserId).length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("swap.noPoolOffers")}</p>
           ) : (
             <div className="space-y-2">
               {swapRequests
-                .filter((s) => s.is_pool_request && s.status === "pending" && s.requesting_user_id !== user?.id)
+                .filter((s) => s.is_pool_request && s.status === "pending" && s.requesting_user_id !== viewUserId)
                 .map((swap) => (
                   <div key={swap.id} className="flex items-center justify-between rounded-lg border p-3">
                     <div>
@@ -268,12 +269,12 @@ export default function SwapRequests() {
           <CardTitle className="text-base">{t("swap.myRequests")}</CardTitle>
         </CardHeader>
         <CardContent>
-          {swapRequests.filter((s) => s.requesting_user_id === user?.id || s.covering_user_id === user?.id).length === 0 ? (
+          {swapRequests.filter((s) => s.requesting_user_id === viewUserId || s.covering_user_id === viewUserId).length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("swap.noRequests")}</p>
           ) : (
             <div className="space-y-2">
               {swapRequests
-                .filter((s) => s.requesting_user_id === user?.id || s.covering_user_id === user?.id)
+                .filter((s) => s.requesting_user_id === viewUserId || s.covering_user_id === viewUserId)
                 .map((swap) => (
                   <div key={swap.id} className="flex items-center justify-between rounded-lg border p-3">
                     <div>
@@ -302,8 +303,8 @@ export default function SwapRequests() {
                         {t(`status.${swap.status}`)}
                       </Badge>
                       {/* Peer accept for direct swaps targeting current user */}
-                      {swap.covering_user_id === user?.id && swap.status === "pending" && !swap.is_pool_request && (
-                        <Button size="sm" variant="outline" onClick={() => acceptSwap.mutate(swap.id)}>
+                      {swap.covering_user_id === viewUserId && swap.status === "pending" && !swap.is_pool_request && (
+                        <Button size="sm" variant="outline" onClick={() => { if (confirmIfImpersonating("accept this swap")) acceptSwap.mutate(swap.id); }}>
                           {t("swap.accept")}
                         </Button>
                       )}
@@ -338,7 +339,7 @@ export default function SwapRequests() {
             <AlertDialogCancel>{t("swap.cancelNo")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => cancelId && cancelSwap.mutate(cancelId)}
+              onClick={() => { if (cancelId && confirmIfImpersonating("cancel this swap")) cancelSwap.mutate(cancelId); }}
             >
               {t("swap.cancelYes")}
             </AlertDialogAction>
@@ -394,7 +395,7 @@ export default function SwapRequests() {
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setPoolRespondId(null)}>{t("common.cancel")}</Button>
               <Button
-                onClick={() => respondToPool.mutate()}
+                onClick={() => { if (confirmIfImpersonating("respond to this pool offer")) respondToPool.mutate(); }}
                 disabled={(!poolTakeOnly && !poolOfferShiftId) || respondToPool.isPending}
               >
                 {t("common.submit")}
@@ -483,7 +484,7 @@ export default function SwapRequests() {
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
               <Button
-                onClick={() => createSwap.mutate()}
+                onClick={() => { if (confirmIfImpersonating("create this swap request")) createSwap.mutate(); }}
                 disabled={!selectedShiftId || (swapType === "direct" && (!targetUserId || !targetShiftId)) || createSwap.isPending}
               >
                 {t("common.submit")}
