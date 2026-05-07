@@ -6,7 +6,8 @@ export type FrictionCheckKey =
   | "excluded_shifts"
   | "excluded_days"
   | "rest_period"
-  | "headcount";
+  | "headcount"
+  | "consecutive_weekend";
 
 export interface FrictionCheckConfig {
   enabled: boolean;
