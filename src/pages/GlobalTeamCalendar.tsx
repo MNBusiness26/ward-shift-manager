@@ -7,6 +7,8 @@ import {
   eachDayOfInterval, addMonths, subMonths, addWeeks, subWeeks, isToday, isSameMonth,
 } from "date-fns";
 import { Fragment, useRef, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ChevronLeft, ChevronRight, Users, Star, Phone, ArrowLeftRight, FileDown } from "lucide-react";
 import { exportCalendarToPdf } from "@/lib/exportCalendarPdf";
@@ -46,6 +48,9 @@ export default function GlobalTeamCalendar() {
   const [isExporting, setIsExporting] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
   const holidayMap = useHolidayMap();
+  const isMobile = useIsMobile();
+  const { profile: effectiveProfile } = useAuth();
+  const myId = effectiveProfile?.id;
 
   const shiftLabels: Record<string, string> = {
     morning: t("shift.morning"), evening: t("shift.evening"), night: t("shift.night"),
