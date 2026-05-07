@@ -241,14 +241,6 @@ export default function GlobalTeamCalendar() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 flex-1 flex flex-col">
-          {/* Reusable per-shift stack used by Mobile-Monthly, Mobile-Weekly, and Desktop-Weekly */}
-          {(() => null)()}
-          {(() => {
-            // attach renderer to closure scope
-            return null;
-          })()}
-          {(() => null)()}
-
           {isMobile && !isWeek ? (
             // === MOBILE MONTHLY: Mini picker + selected-day shift stack ===
             <div className="flex flex-col gap-3">
