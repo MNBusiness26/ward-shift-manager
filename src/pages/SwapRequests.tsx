@@ -49,7 +49,7 @@ function formatShiftFn(shift: any, locale?: string) {
 
 export default function SwapRequests() {
   const { user, profile, confirmIfImpersonating } = useAuth();
-  const viewUserId = profile?.id ?? viewUserId;
+  const viewUserId = profile?.id ?? user?.id;
   const { t, locale } = useTranslation();
   const formatShift = (shift: any) => formatShiftFn(shift, locale);
   const queryClient = useQueryClient();
