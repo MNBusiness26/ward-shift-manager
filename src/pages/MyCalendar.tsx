@@ -373,9 +373,6 @@ export default function MyCalendar() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{selectedDay && formatLocale(selectedDay, "EEEE, MMMM d, yyyy", locale)}</DialogTitle>
-            <DialogDescription>
-              {t("calendar.yourRole")}: <span className="capitalize font-medium text-foreground">{myRole}</span>
-            </DialogDescription>
           </DialogHeader>
           {myDayShifts.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">{t("calendar.noShiftsDay")}</p>
