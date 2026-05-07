@@ -129,7 +129,7 @@ export default function SwapRequests() {
   const createSwap = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("swap_requests").insert({
-        requesting_user_id: user!.id,
+        requesting_user_id: viewUserId!,
         shift_id: selectedShiftId,
         is_pool_request: swapType === "pool",
         covering_user_id: swapType === "direct" ? targetUserId : null,
@@ -150,7 +150,7 @@ export default function SwapRequests() {
     mutationFn: async (swapId: string) => {
       const { error } = await supabase
         .from("swap_requests")
-        .update({ covering_user_id: user!.id, status: "peer_accepted" })
+        .update({ covering_user_id: viewUserId!, status: "peer_accepted" })
         .eq("id", swapId);
       if (error) throw error;
     },
@@ -167,7 +167,7 @@ export default function SwapRequests() {
       const { error } = await supabase
         .from("swap_requests")
         .update({
-          covering_user_id: user!.id,
+          covering_user_id: viewUserId!,
           status: "peer_accepted",
           target_shift_id: poolTakeOnly ? null : poolOfferShiftId || null,
           is_take_only: poolTakeOnly,
@@ -191,7 +191,7 @@ export default function SwapRequests() {
         .from("swap_requests")
         .delete()
         .eq("id", swapId)
-        .eq("requesting_user_id", user!.id);
+        .eq("requesting_user_id", viewUserId!);
       if (error) throw error;
     },
     onSuccess: () => {
