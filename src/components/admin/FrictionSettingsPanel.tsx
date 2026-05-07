@@ -24,6 +24,7 @@ const CHECK_LABELS: Record<FrictionCheckKey, { label: string; desc: string }> = 
   excluded_days: { label: "Excluded weekdays", desc: "Warn when assigning a weekday the staff member has excluded." },
   rest_period: { label: "Back-to-back rest", desc: "Warn when there is insufficient rest between two shifts." },
   headcount: { label: "Headcount over-staffing", desc: "Highlight cells exceeding the day-aware capacity target." },
+  consecutive_weekend: { label: "Consecutive weekend block", desc: "Block users from requesting weekend (Fri/Sat) blocks in adjacent weeks." },
 };
 
 import { useTranslation } from "@/i18n/useTranslation";
