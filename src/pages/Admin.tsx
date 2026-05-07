@@ -25,7 +25,7 @@ import { PendingSignupsPanel } from "@/components/admin/PendingSignupsPanel";
 const ADMIN_EMAIL = "michael.nejman@gmail.com";
 
 export default function Admin() {
-  const { user, profile, confirmIfImpersonating } = useAuth();
+  const { user, profile, isManager, isAssistantManager, confirmIfImpersonating } = useAuth();
   const queryClient = useQueryClient();
   const { t, locale, setLocale } = useTranslation();
 
