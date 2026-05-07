@@ -379,7 +379,8 @@
     "payroll.verifiedToast": "Shift verified for payroll",
     "payroll.unverifiedToast": "Verification removed",
     "payroll.verified": "Verified",
-    "payroll.onCall": "On-Call"
+    "payroll.onCall": "On-Call",
+    "pwa.installTip": "Tip: Add WardWise to your home screen for an app-like experience."
   },
   "he": {
     "nav.dashboard": "לוח בקרה",
@@ -761,6 +762,7 @@
     "payroll.verifiedToast": "המשמרת אומתה לשכר",
     "payroll.unverifiedToast": "האימות הוסר",
     "payroll.verified": "מאומת",
-    "payroll.onCall": "כוננות"
+    "payroll.onCall": "כוננות",
+    "pwa.installTip": "טיפ: הוסיפו את WardWise למסך הבית לחוויית אפליקציה מלאה."
   }
 }
