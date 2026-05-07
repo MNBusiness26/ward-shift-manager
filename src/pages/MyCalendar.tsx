@@ -316,6 +316,12 @@ export default function MyCalendar() {
                           </div>
                         );
                       })}
+                      {preferredShifts.map((st) => (
+                        <div key={`pref-${st}`} className="shift-preferred-placeholder" title={t("avail.preferenceLabel")}>
+                          <span className="font-medium uppercase">{t(`shift.${st}`).charAt(0)}</span>
+                          <span className="ms-1">{t("avail.requested")}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
