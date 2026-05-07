@@ -97,14 +97,14 @@ export default function Availability() {
 
   const createRequest = useMutation({
     mutationFn: async () => {
-      if (!selectedDate || !user) return;
+      if (!selectedDate || !viewUserId) return;
       const startStr = format(selectedDate, "yyyy-MM-dd");
       if (dialogMode === "preference") {
         if (blockedShifts.length === 0) {
           throw new Error(t("avail.requestShiftsHint"));
         }
         const { error } = await supabase.from("availability_requests").insert({
-          user_id: user.id, date: startStr, end_date: startStr,
+          user_id: viewUserId, date: startStr, end_date: startStr,
           reason: reason || null, request_type: "preference",
           blocked_shifts: blockedShifts,
         } as any);
@@ -114,7 +114,7 @@ export default function Availability() {
       const isBlock = requestType === "block";
       const endStr = isBlock ? startStr : (endDate || startStr);
       const { error } = await supabase.from("availability_requests").insert({
-        user_id: user.id, date: startStr, end_date: endStr,
+        user_id: viewUserId, date: startStr, end_date: endStr,
         reason: reason || null, request_type: requestType,
         blocked_shifts: isBlock ? blockedShifts : [],
       } as any);
