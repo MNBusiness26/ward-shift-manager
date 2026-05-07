@@ -259,9 +259,10 @@ export default function MyCalendar() {
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`relative min-h-[5rem] md:min-h-[7rem] rounded-md border border-solid p-1 md:p-2 text-sm md:text-base leading-[1.5] hover:bg-accent/50 cursor-pointer transition-colors ${
+                    className={`relative min-h-[5rem] md:min-h-[7rem] rounded-md border border-solid p-1 md:p-3 text-sm md:text-base leading-[1.5] hover:bg-accent/50 cursor-pointer transition-colors ${
                       isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
-                    } ${isSelected ? "ring-2 ring-primary" : ""} ${blockType ? "bg-muted/30 roster-ghosted" : ""}`}
+                    } ${isSelected ? "ring-2 ring-primary" : ""} ${blockType ? "roster-ghosted" : ""}`}
+                    style={blockType ? { backgroundColor: "#9F66CC1A" } : undefined}
                     onClick={() => setSelectedDay(day)}
                   >
                     <HolidayCellBackground holiday={holiday} />
