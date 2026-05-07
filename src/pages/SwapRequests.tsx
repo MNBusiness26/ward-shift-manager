@@ -212,7 +212,7 @@ export default function SwapRequests() {
   };
 
   const canCancel = (swap: any) =>
-    swap.requesting_user_id === user?.id &&
+    swap.requesting_user_id === viewUserId &&
     (swap.status === "pending" || swap.status === "peer_accepted");
 
   return (
