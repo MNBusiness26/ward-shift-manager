@@ -61,6 +61,7 @@ const typeLabelKey: Record<string, string> = {
 
 export default function Availability() {
   const { user, profile, confirmIfImpersonating } = useAuth();
+  const frictionConfig = useFrictionConfig();
   const viewUserId = profile?.id ?? user?.id;
   const { t, locale } = useTranslation();
   const queryClient = useQueryClient();
