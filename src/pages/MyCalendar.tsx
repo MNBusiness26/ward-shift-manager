@@ -267,18 +267,22 @@ export default function MyCalendar() {
                 const isSelected = selectedDay && isSameDay(day, selectedDay);
                 const holiday = holidayMap.get(format(day, "yyyy-MM-dd"));
                 const availability = getAvailabilityForDay(day);
+                const availStyle = availability ? getAvailabilityStyle(availability) : null;
                 return (
                   <div
                     key={day.toISOString()}
                     className={`relative min-h-[5rem] md:min-h-[7rem] rounded-md border border-solid p-2 text-sm md:text-base leading-[1.5] hover:bg-accent/50 cursor-pointer transition-colors ${
                       isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
-                    } ${isSelected ? "ring-2 ring-primary" : ""}`}
-                    style={availability ? { backgroundColor: "#9F66CC22", borderColor: "#9F66CC" } : undefined}
+                    } ${isSelected ? "ring-2 ring-primary" : ""} ${availStyle?.className || ""}`}
+                    style={availStyle?.style}
                     onClick={() => setSelectedDay(day)}
                   >
                     <HolidayCellBackground holiday={holiday} />
                     <HolidayCornerIcon holiday={holiday} />
                     <span className="text-muted-foreground">{format(day, "d")}</span>
+                    {availStyle && (
+                      <div className="text-[9px] leading-tight font-medium opacity-80 truncate">{availStyle.label}</div>
+                    )}
                     <div className="mt-0.5 flex flex-col gap-1 overflow-hidden">
                       {dayShifts.map((s) => {
                         const Icon = shiftIcons[s.type] || Sun;
