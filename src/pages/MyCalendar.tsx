@@ -78,36 +78,22 @@ export default function MyCalendar() {
     });
   };
 
-  const isLeaveType = (t: string) => ["leave", "sick_leave", "maternity_leave"].includes(t);
-  const getAvailabilityStyle = (req: any): { className?: string; style?: React.CSSProperties; label: string } => {
-    const type = req?.request_type || "block";
-    if (type === "preference") {
-      const shifts: string[] = req.blocked_shifts || [];
-      const labels = shifts.map((s) => t(`shift.${s}`)).join(" & ");
-      return { className: "shift-preferred-placeholder", label: labels ? `${labels} ${t("avail.requested")}` : t("avail.requested") };
+  const blockTypeLabel = (bt: string | null): string => {
+    switch (bt) {
+      case "vacation": return t("common.vacation");
+      case "leave": return t("common.leave");
+      case "sick_leave": return t("common.sickLeave");
+      case "maternity_leave": return t("common.maternityLeave");
+      case "yearly_leave": return t("common.yearlyLeave");
+      case "study": return t("common.study");
+      default: return t("roster.blocked");
     }
-    if (type === "vacation" || type === "yearly_leave") {
-      return {
-        style: req.status === "approved"
-          ? { backgroundColor: "hsl(214 100% 92%)", borderColor: "hsl(214 80% 70%)" }
-          : { backgroundColor: "hsl(214 100% 96%)", borderColor: "hsl(214 80% 85%)" },
-        label: t("common.vacation"),
-      };
-    }
-    if (isLeaveType(type)) {
-      return {
-        style: req.status === "approved"
-          ? { backgroundColor: "hsl(270 60% 92%)", borderColor: "hsl(270 50% 70%)" }
-          : { backgroundColor: "hsl(270 60% 96%)", borderColor: "hsl(270 50% 85%)" },
-        label: type === "maternity_leave" ? t("common.maternityLeave") : type === "sick_leave" ? t("common.sickLeave") : t("common.leave"),
-      };
-    }
-    return {
-      style: req.status === "approved"
-        ? { backgroundColor: "hsl(var(--destructive) / 0.12)", borderColor: "hsl(var(--destructive) / 0.35)" }
-        : { backgroundColor: "hsl(48 100% 96%)", borderColor: "hsl(48 90% 80%)" },
-      label: t("avail.legend.blocked"),
-    };
+  };
+  const blockTypeClass = (bt: string | null): string => {
+    if (bt === "vacation" || bt === "yearly_leave") return "text-amber-600";
+    if (bt === "leave" || bt === "sick_leave" || bt === "maternity_leave") return "text-purple-600";
+    if (bt === "study") return "text-sky-600";
+    return "text-destructive";
   };
 
 
@@ -267,21 +253,22 @@ export default function MyCalendar() {
                 const isSelected = selectedDay && isSameDay(day, selectedDay);
                 const holiday = holidayMap.get(format(day, "yyyy-MM-dd"));
                 const availability = getAvailabilityForDay(day);
-                const availStyle = availability ? getAvailabilityStyle(availability) : null;
+                const isPreference = availability?.request_type === "preference";
+                const preferredShifts: string[] = isPreference ? (availability.blocked_shifts || []) : [];
+                const blockType = availability && !isPreference ? (availability.request_type || "block") : null;
                 return (
                   <div
                     key={day.toISOString()}
                     className={`relative min-h-[5rem] md:min-h-[7rem] rounded-md border border-solid p-2 text-sm md:text-base leading-[1.5] hover:bg-accent/50 cursor-pointer transition-colors ${
                       isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
-                    } ${isSelected ? "ring-2 ring-primary" : ""} ${availStyle?.className || ""}`}
-                    style={availStyle?.style}
+                    } ${isSelected ? "ring-2 ring-primary" : ""} ${blockType ? "bg-muted/30 roster-ghosted" : ""}`}
                     onClick={() => setSelectedDay(day)}
                   >
                     <HolidayCellBackground holiday={holiday} />
                     <HolidayCornerIcon holiday={holiday} />
                     <span className="text-muted-foreground">{format(day, "d")}</span>
-                    {availStyle && (
-                      <div className="text-[9px] leading-tight font-medium opacity-80 truncate">{availStyle.label}</div>
+                    {blockType && dayShifts.length === 0 && (
+                      <div className={`text-[10px] ${blockTypeClass(blockType)}`}>{blockTypeLabel(blockType)}</div>
                     )}
                     <div className="mt-0.5 flex flex-col gap-1 overflow-hidden">
                       {dayShifts.map((s) => {
@@ -319,7 +306,7 @@ export default function MyCalendar() {
                                   const fn = (c.profiles as any)?.full_name?.trim().split(/\s+/).filter(Boolean) || [];
                                   const firstName = fn.length > 1 ? fn[fn.length - 1] : fn[0] || "?";
                                   return (
-                                    <span key={c.id} className="text-[8px] leading-[1.3] text-muted-foreground truncate">
+                                    <span key={c.id} className="text-[11px] md:text-sm leading-[1.4] text-foreground/80 truncate">
                                       {firstName}
                                     </span>
                                   );
@@ -329,6 +316,12 @@ export default function MyCalendar() {
                           </div>
                         );
                       })}
+                      {preferredShifts.map((st) => (
+                        <div key={`pref-${st}`} className="shift-preferred-placeholder" title={t("avail.preferenceLabel")}>
+                          <span className="font-medium uppercase">{t(`shift.${st}`).charAt(0)}</span>
+                          <span className="ms-1">{t("avail.requested")}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
