@@ -68,8 +68,14 @@ export function FrictionSettingsPanel() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const applyAndSave = (next: FrictionConfig) => {
+    setConfig(next);
+    save.mutate(next);
+  };
+
   const updateCheck = (key: FrictionCheckKey, patch: Partial<FrictionConfig["checks"][FrictionCheckKey]>) => {
-    setConfig((c) => ({ ...c, checks: { ...c.checks, [key]: { ...c.checks[key], ...patch } } }));
+    const next = { ...config, checks: { ...config.checks, [key]: { ...config.checks[key], ...patch } } };
+    applyAndSave(next);
   };
 
   return (
