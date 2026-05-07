@@ -253,21 +253,22 @@ export default function MyCalendar() {
                 const isSelected = selectedDay && isSameDay(day, selectedDay);
                 const holiday = holidayMap.get(format(day, "yyyy-MM-dd"));
                 const availability = getAvailabilityForDay(day);
-                const availStyle = availability ? getAvailabilityStyle(availability) : null;
+                const isPreference = availability?.request_type === "preference";
+                const preferredShifts: string[] = isPreference ? (availability.blocked_shifts || []) : [];
+                const blockType = availability && !isPreference ? (availability.request_type || "block") : null;
                 return (
                   <div
                     key={day.toISOString()}
                     className={`relative min-h-[5rem] md:min-h-[7rem] rounded-md border border-solid p-2 text-sm md:text-base leading-[1.5] hover:bg-accent/50 cursor-pointer transition-colors ${
                       isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
-                    } ${isSelected ? "ring-2 ring-primary" : ""} ${availStyle?.className || ""}`}
-                    style={availStyle?.style}
+                    } ${isSelected ? "ring-2 ring-primary" : ""} ${blockType ? "bg-muted/30 roster-ghosted" : ""}`}
                     onClick={() => setSelectedDay(day)}
                   >
                     <HolidayCellBackground holiday={holiday} />
                     <HolidayCornerIcon holiday={holiday} />
                     <span className="text-muted-foreground">{format(day, "d")}</span>
-                    {availStyle && (
-                      <div className="text-[9px] leading-tight font-medium opacity-80 truncate">{availStyle.label}</div>
+                    {blockType && dayShifts.length === 0 && (
+                      <div className={`text-[10px] ${blockTypeClass(blockType)}`}>{blockTypeLabel(blockType)}</div>
                     )}
                     <div className="mt-0.5 flex flex-col gap-1 overflow-hidden">
                       {dayShifts.map((s) => {
@@ -305,7 +306,7 @@ export default function MyCalendar() {
                                   const fn = (c.profiles as any)?.full_name?.trim().split(/\s+/).filter(Boolean) || [];
                                   const firstName = fn.length > 1 ? fn[fn.length - 1] : fn[0] || "?";
                                   return (
-                                    <span key={c.id} className="text-[8px] leading-[1.3] text-muted-foreground truncate">
+                                    <span key={c.id} className="text-[11px] md:text-sm leading-[1.4] text-foreground/80 truncate">
                                       {firstName}
                                     </span>
                                   );
