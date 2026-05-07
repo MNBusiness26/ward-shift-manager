@@ -64,9 +64,19 @@ export default function MyCalendar() {
 
   const { data: shifts = [] } = useMyShifts(rangeStart, rangeEnd);
   const { data: allShifts = [] } = useAllShiftsInRange(rangeStart, rangeEnd);
+  const { data: myAvailability = [] } = useMyAvailability(rangeStart, rangeEnd);
   const { data: myRoles = [] } = useMyRole();
   const selectedDateStr = selectedDay ? format(selectedDay, "yyyy-MM-dd") : null;
   const { data: dayAllShifts = [] } = useDayShifts(selectedDateStr);
+
+  const getAvailabilityForDay = (day: Date) => {
+    const ds = format(day, "yyyy-MM-dd");
+    return (myAvailability as any[]).find((a) => {
+      const start = a.date;
+      const end = a.end_date || a.date;
+      return ds >= start && ds <= end;
+    });
+  };
 
   // Approved leaves overlapping the visible range — used for PDF export
   const monthStartStr = format(startOfMonth(currentMonth), "yyyy-MM-dd");
