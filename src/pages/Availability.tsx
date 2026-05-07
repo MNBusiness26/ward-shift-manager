@@ -80,19 +80,19 @@ export default function Availability() {
   ];
 
   const { data: requests = [] } = useQuery({
-    queryKey: ["availability-requests", user?.id, format(monthStart, "yyyy-MM")],
+    queryKey: ["availability-requests", viewUserId, format(monthStart, "yyyy-MM")],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("availability_requests")
         .select("*")
-        .eq("user_id", user!.id)
+        .eq("user_id", viewUserId!)
         .or(`date.gte.${format(monthStart, "yyyy-MM-dd")},end_date.gte.${format(monthStart, "yyyy-MM-dd")}`)
         .lte("date", format(monthEnd, "yyyy-MM-dd"))
         .order("date");
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   const createRequest = useMutation({
