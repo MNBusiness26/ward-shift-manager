@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Sun, Sunset, Moon, Star, Users, CheckCircle2, PhoneCall } from "lucide-react";
+import { Sun, Sunset, Moon, Star, Users, PhoneCall } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 
 const shiftIcons: Record<string, React.ElementType> = { morning: Sun, evening: Sunset, night: Moon };
