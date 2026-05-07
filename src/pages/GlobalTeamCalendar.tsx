@@ -51,6 +51,7 @@ export default function GlobalTeamCalendar() {
   const isMobile = useIsMobile();
   const { profile: effectiveProfile } = useAuth();
   const myId = effectiveProfile?.id;
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const shiftLabels: Record<string, string> = {
     morning: t("shift.morning"), evening: t("shift.evening"), night: t("shift.night"),
@@ -118,6 +119,64 @@ export default function GlobalTeamCalendar() {
     }
   };
 
+  const renderShiftBar = (dateStr: string, type: typeof shiftTypes[number], idx: number, mode: "mobile" | "desktop") => {
+    const typeShifts = getShifts(dateStr, type);
+    const bg =
+      type === "morning" ? "bg-[#DAA520]/15 border-s-4 border-s-[#DAA520]" :
+      type === "evening" ? "bg-[#FF7F50]/15 border-s-4 border-s-[#FF7F50]" :
+      "bg-[#4B0082]/15 border-s-4 border-s-[#4B0082]";
+    const labelColor =
+      type === "morning" ? "text-[#8B6508]" :
+      type === "evening" ? "text-[#C2410C]" :
+      "text-[#4B0082]";
+    const separator = idx < shiftTypes.length - 1 ? "border-b-2 border-white" : "";
+    const pad = mode === "desktop" ? "p-3" : "px-3 py-2";
+    const nameSize = mode === "desktop" ? "text-sm" : "text-xs";
+    return (
+      <div key={type} className={`${pad} ${separator} ${bg}`} style={{ lineHeight: 1.5 }}>
+        <div className={`text-xs font-bold uppercase tracking-wide mb-1.5 ${labelColor}`}>
+          {shiftLabels[type]}
+        </div>
+        {typeShifts.length === 0 ? (
+          <div className="text-xs text-muted-foreground italic">—</div>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {typeShifts.map((s) => {
+              const profile = (s as any).assigned_profile;
+              const isStandby = (s as any).is_standby;
+              const isExternal = (s as any).is_external;
+              const isResp = s.is_responsible_on_shift || profile?.is_responsible;
+              const assistantRole = isAssistant(profile?.role);
+              const firstName = formatDisplayName(profile?.full_name);
+              const isMine = !!myId && (s as any).assigned_user_id === myId;
+              const baseStyle = isMine
+                ? "bg-[#3B82F6] text-white border-[#3B82F6]"
+                : assistantRole
+                ? "bg-white text-[#0F172A] border-slate-300"
+                : isExternal
+                ? "bg-slate-50 border-slate-300 text-slate-600"
+                : isStandby
+                ? "bg-blue-50 border-blue-400 text-foreground"
+                : "bg-background border-current/30 text-foreground";
+              return (
+                <span
+                  key={s.id}
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md ${nameSize} font-medium border whitespace-normal break-words ${baseStyle} ${isResp ? "font-bold" : ""}`}
+                  style={{ fontFamily: "Heebo, Inter, sans-serif", lineHeight: 1.5 }}
+                >
+                  {isExternal && <ArrowLeftRight className="h-3 w-3 shrink-0" />}
+                  <span>{firstName}</span>
+                  {isResp && <Star className="h-3 w-3 fill-current shrink-0" />}
+                  {isStandby && <Phone className="h-3 w-3 shrink-0" />}
+                </span>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4 flex flex-col min-h-[calc(100vh-6rem)]">
       <div className="flex flex-row flex-wrap items-center justify-between gap-1">
@@ -182,9 +241,67 @@ export default function GlobalTeamCalendar() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 flex-1 flex flex-col">
-          {isMobile ? (
+          {isMobile && !isWeek ? (
+            // === MOBILE MONTHLY: Mini picker + selected-day shift stack ===
             <div className="flex flex-col gap-3">
-              {allDays.filter((d) => isWeek || isSameMonth(d, currentMonth)).map((day) => {
+              <div dir="rtl" className="grid grid-cols-7 gap-1 sticky top-0 bg-card z-10 pb-2 border-b">
+                {dayHeaders.map((d, i) => (
+                  <div key={i} className="text-[10px] text-center font-medium text-muted-foreground py-1">{d}</div>
+                ))}
+                {allDays.map((day) => {
+                  const dateStr = format(day, "yyyy-MM-dd");
+                  const inMonth = isSameMonth(day, currentMonth);
+                  const today = isToday(day);
+                  const isSel = isToday(day) ? isToday(selectedDate) && format(selectedDate, "yyyy-MM-dd") === dateStr : format(selectedDate, "yyyy-MM-dd") === dateStr;
+                  const hasShifts = shifts.some((s) => s.date === dateStr);
+                  const holiday = holidayMap.get(dateStr);
+                  return (
+                    <button
+                      key={dateStr}
+                      type="button"
+                      onClick={() => setSelectedDate(day)}
+                      className={`aspect-square rounded-md flex flex-col items-center justify-center text-sm font-medium transition-colors ${
+                        isSel
+                          ? "bg-primary text-primary-foreground"
+                          : today
+                          ? "bg-primary/10 text-primary"
+                          : !inMonth
+                          ? "text-muted-foreground/40"
+                          : holiday
+                          ? "bg-[hsla(274,53%,60%,0.12)] text-purple-700"
+                          : "hover:bg-accent"
+                      }`}
+                    >
+                      <span>{format(day, "d")}</span>
+                      {hasShifts && !isSel && <span className="w-1 h-1 rounded-full bg-primary mt-0.5" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {(() => {
+                const dateStr = format(selectedDate, "yyyy-MM-dd");
+                const holiday = holidayMap.get(dateStr);
+                return (
+                  <div className="rounded-lg border">
+                    <div className={`flex items-center justify-between px-3 py-2 border-b ${holiday ? "bg-[hsla(274,53%,60%,0.12)]" : "bg-muted/40"}`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold">{formatLocale(selectedDate, "EEEE", locale)}</span>
+                        <span className="text-xs text-muted-foreground">{formatLocale(selectedDate, "d MMM yyyy", locale)}</span>
+                      </div>
+                      <HolidayCornerIcon holiday={holiday} inline />
+                    </div>
+                    <div className="flex flex-col">
+                      {shiftTypes.map((type, idx) => renderShiftBar(dateStr, type, idx, "mobile"))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          ) : isMobile ? (
+            // === MOBILE WEEKLY: stacked day cards ===
+            <div className="flex flex-col gap-3">
+              {allDays.map((day) => {
                 const dateStr = format(day, "yyyy-MM-dd");
                 const today = isToday(day);
                 const holiday = holidayMap.get(dateStr);
@@ -198,193 +315,120 @@ export default function GlobalTeamCalendar() {
                       <HolidayCornerIcon holiday={holiday} inline />
                     </div>
                     <div className="flex flex-col">
-                      {shiftTypes.map((type, idx) => {
-                        const typeShifts = getShifts(dateStr, type);
-                        const bg =
-                          type === "morning" ? "bg-[#DAA520]/15 border-s-4 border-s-[#DAA520]" :
-                          type === "evening" ? "bg-[#FF7F50]/15 border-s-4 border-s-[#FF7F50]" :
-                          "bg-[#4B0082]/15 border-s-4 border-s-[#4B0082]";
-                        const labelColor =
-                          type === "morning" ? "text-[#8B6508]" :
-                          type === "evening" ? "text-[#C2410C]" :
-                          "text-[#4B0082]";
-                        const separator = idx < shiftTypes.length - 1 ? "border-b-2 border-white" : "";
-                        return (
-                          <div
-                            key={type}
-                            className={`px-3 py-2 ${separator} ${bg}`}
-                            style={{ lineHeight: 1.5 }}
-                          >
-                            <div className={`text-xs font-bold uppercase tracking-wide mb-1.5 ${labelColor}`}>
-                              {shiftLabels[type]}
-                            </div>
-                            {typeShifts.length === 0 ? (
-                              <div className="text-xs text-muted-foreground italic">—</div>
-                            ) : (
-                              <div className="flex flex-wrap gap-1.5">
-                                {typeShifts.map((s) => {
-                                  const profile = (s as any).assigned_profile;
-                                  const isStandby = (s as any).is_standby;
-                                  const isExternal = (s as any).is_external;
-                                  const isResp = s.is_responsible_on_shift || profile?.is_responsible;
-                                  const assistantRole = isAssistant(profile?.role);
-                                  const firstName = formatDisplayName(profile?.full_name);
-                                  const isMine = !!myId && (s as any).assigned_user_id === myId;
-                                  const baseStyle = isMine
-                                    ? "bg-[#3B82F6] text-white border-[#3B82F6]"
-                                    : assistantRole
-                                    ? "bg-white text-[#0F172A] border-slate-300"
-                                    : isExternal
-                                    ? "bg-slate-50 border-slate-300 text-slate-600"
-                                    : isStandby
-                                    ? "bg-blue-50 border-blue-400 text-foreground"
-                                    : "bg-background border-current/30 text-foreground";
-                                  return (
-                                    <span
-                                      key={s.id}
-                                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border whitespace-normal break-words ${baseStyle} ${isResp ? "font-bold" : ""}`}
-                                      style={{ fontFamily: "Heebo, Inter, sans-serif", lineHeight: 1.5 }}
-                                    >
-                                      {isExternal && <ArrowLeftRight className="h-3 w-3 shrink-0" />}
-                                      <span>{firstName}</span>
-                                      {isResp && <Star className="h-3 w-3 fill-current shrink-0" />}
-                                      {isStandby && <Phone className="h-3 w-3 shrink-0" />}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                      {shiftTypes.map((type, idx) => renderShiftBar(dateStr, type, idx, "mobile"))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : isWeek ? (
+            // === DESKTOP WEEKLY: 7-col grid of shift stacks (RTL, Sun on far right) ===
+            <div dir="rtl" className="grid grid-cols-7 gap-4">
+              {allDays.map((day, i) => {
+                const dateStr = format(day, "yyyy-MM-dd");
+                const today = isToday(day);
+                const holiday = holidayMap.get(dateStr);
+                return (
+                  <div key={dateStr} className={`rounded-lg border bg-card ${today ? "ring-2 ring-primary/40" : "border-slate-200"}`}>
+                    <div className={`flex items-center justify-between px-3 py-2 border-b ${holiday ? "bg-[hsla(274,53%,60%,0.12)]" : "bg-muted/40"}`}>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold">{dayHeaders[i]}</span>
+                        <span className="text-xs text-muted-foreground">{formatLocale(day, "d MMM", locale)}</span>
+                      </div>
+                      <HolidayCornerIcon holiday={holiday} inline />
+                    </div>
+                    <div className="flex flex-col">
+                      {shiftTypes.map((type, idx) => renderShiftBar(dateStr, type, idx, "desktop"))}
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-          <table className="w-full text-sm border-collapse table-fixed flex-1 h-full">
-            <colgroup>
-              {dayHeaders.map((_, i) => (
-                <col key={i} style={{ width: `${100 / 7}%` }} />
-              ))}
-            </colgroup>
-            <thead>
-              <tr>
+            // === DESKTOP MONTHLY: tidied calendar grid ===
+            <div dir="rtl" className="border-separate border-spacing-1">
+              <div className="grid grid-cols-7 gap-1 mb-1">
                 {dayHeaders.map((d, i) => (
-                  <th key={i} className="p-1.5 text-center font-medium text-muted-foreground text-xs border-b">
-                    {d}
-                  </th>
+                  <div key={i} className="p-1.5 text-center font-medium text-muted-foreground text-xs">{d}</div>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {weeks.map((week, wi) => (
-                <Fragment key={wi}>
-                  {/* Date header row for this week */}
-                  <tr key={`dates-${wi}`} className="border-t">
-                    {week.map((day) => {
-                      const dateStr = format(day, "yyyy-MM-dd");
-                      const inMonth = isWeek || isSameMonth(day, currentMonth);
-                      const today = isToday(day);
-                      const holiday = holidayMap.get(dateStr);
-                      return (
-                        <td
-                          key={`d-${dateStr}`}
-                          className={`border-s p-1 align-top ${!inMonth ? "bg-muted/30" : ""} ${today ? "ring-2 ring-inset ring-primary/40" : ""}`}
-                        >
-                          <div
-                            className={`flex items-center justify-between px-1 rounded-sm overflow-hidden ${holiday && !holiday.is_eve ? "bg-[hsla(274,53%,60%,0.15)]" : ""}`}
-                            style={holiday?.is_eve ? { backgroundImage: "repeating-linear-gradient(45deg, hsla(274,53%,60%,0.22) 0 6px, transparent 6px 14px)" } : undefined}
-                          >
-                            <span className={`text-xs font-medium ${!inMonth ? "text-muted-foreground/50" : today ? "text-primary font-bold" : holiday ? "text-purple-700 font-semibold" : "text-muted-foreground"}`}>
-                              {format(day, "d")}
-                            </span>
-                            <HolidayCornerIcon holiday={holiday} inline />
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                  {/* One row per shift type, so morning/evening/night align across all days */}
-                  {shiftTypes.map((type) => (
-                    <tr key={`${wi}-${type}`} className="align-top">
-                      {week.map((day) => {
-                        const dateStr = format(day, "yyyy-MM-dd");
-                        const inMonth = isWeek || isSameMonth(day, currentMonth);
-                        const today = isToday(day);
-                        const typeShifts = inMonth
-                          ? getShifts(dateStr, type).slice().sort((a, b) => {
-                              const pa = (a as any).assigned_profile;
-                              const pb = (b as any).assigned_profile;
-                              return compareShiftAssignment(
-                                {
-                                  full_name: pa?.full_name || "",
-                                  is_responsible_on_shift: (a as any).is_responsible_on_shift,
-                                  is_responsible: pa?.is_responsible,
-                                  role: pa?.role,
-                                  is_standby: (a as any).is_standby,
-                                },
-                                {
-                                  full_name: pb?.full_name || "",
-                                  is_responsible_on_shift: (b as any).is_responsible_on_shift,
-                                  is_responsible: pb?.is_responsible,
-                                  role: pb?.role,
-                                  is_standby: (b as any).is_standby,
-                                },
-                              );
-                            })
-                          : [];
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {allDays.map((day) => {
+                  const dateStr = format(day, "yyyy-MM-dd");
+                  const inMonth = isSameMonth(day, currentMonth);
+                  const today = isToday(day);
+                  const holiday = holidayMap.get(dateStr);
+                  return (
+                    <div
+                      key={dateStr}
+                      className={`min-h-[120px] rounded-md border border-slate-200 bg-card p-2 flex flex-col gap-1 ${
+                        !inMonth ? "opacity-50" : ""
+                      } ${today ? "ring-2 ring-primary/40" : ""}`}
+                    >
+                      <div
+                        className={`flex items-center justify-between px-1 rounded-sm overflow-hidden ${holiday && !holiday.is_eve ? "bg-[hsla(274,53%,60%,0.15)]" : ""}`}
+                        style={holiday?.is_eve ? { backgroundImage: "repeating-linear-gradient(45deg, hsla(274,53%,60%,0.22) 0 6px, transparent 6px 14px)" } : undefined}
+                      >
+                        <span className={`text-xs font-medium ${!inMonth ? "text-muted-foreground/50" : today ? "text-primary font-bold" : holiday ? "text-purple-700 font-semibold" : "text-muted-foreground"}`}>
+                          {format(day, "d")}
+                        </span>
+                        <HolidayCornerIcon holiday={holiday} inline />
+                      </div>
+                      {inMonth && shiftTypes.map((type) => {
+                        const typeShifts = getShifts(dateStr, type).slice().sort((a, b) => {
+                          const pa = (a as any).assigned_profile;
+                          const pb = (b as any).assigned_profile;
+                          return compareShiftAssignment(
+                            { full_name: pa?.full_name || "", is_responsible_on_shift: (a as any).is_responsible_on_shift, is_responsible: pa?.is_responsible, role: pa?.role, is_standby: (a as any).is_standby },
+                            { full_name: pb?.full_name || "", is_responsible_on_shift: (b as any).is_responsible_on_shift, is_responsible: pb?.is_responsible, role: pb?.role, is_standby: (b as any).is_standby },
+                          );
+                        });
+                        if (typeShifts.length === 0) return null;
                         return (
-                          <td
-                            key={`${dateStr}-${type}`}
-                            className={`border-s p-1 align-top ${!inMonth ? "bg-muted/30" : ""} ${today ? "ring-1 ring-inset ring-primary/30" : ""}`}
-                          >
-                            {inMonth && (
-                              <div className={`calendar-shift-box rounded border px-1 py-0.5 h-full ${shiftColors[type]}`}>
-                                <div className={`text-[9px] font-semibold ${shiftTextColors[type]} flex items-center gap-0.5 mb-1`}>
-                                  <span className={`w-1.5 h-1.5 rounded-full ${shiftDotColors[type]}`} />
-                                  {shiftLabels[type]}
-                                </div>
-                                <div className="calendar-staff-list flex flex-col gap-1">
-                                  {typeShifts.map((s) => {
-                                    const profile = (s as any).assigned_profile;
-                                    const isStandby = (s as any).is_standby;
-                                    const isExternal = (s as any).is_external;
-                                    const isResp = s.is_responsible_on_shift || profile?.is_responsible;
-                                    const assistantRole = isAssistant(profile?.role);
-                                    const firstName = formatDisplayName(profile?.full_name);
-                                    return (
-                                      <Badge
-                                        key={s.id}
-                                        variant={s.is_responsible_on_shift ? "default" : "secondary"}
-                                        className={`calendar-staff-badge flex w-full min-w-0 items-center gap-0.5 text-[10px] px-1.5 py-0 leading-tight shadow-none whitespace-nowrap overflow-hidden ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
-                                          isExternal
-                                            ? "bg-slate-50 border-slate-200 text-slate-400 opacity-80"
-                                            : isStandby
-                                            ? "bg-blue-50/60 border-l-4 border-blue-400 border-t-0 border-r-0 border-b-0 rounded-sm text-foreground"
-                                            : (s as any).is_draft ? "bg-draft-stripes opacity-100" : "ring-1 ring-current/20"
-                                        } ${assistantRole && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-white text-[#0F172A] border-slate-300" : ""}`}
-                                      >
-                                        {isExternal && <ArrowLeftRight className="h-2.5 w-2.5 shrink-0" />}
-                                        <span className="calendar-staff-name truncate min-w-0 flex-1">{firstName}</span>
-                                        {isResp && <Star className="h-2.5 w-2.5 fill-current shrink-0" />}
-                                        {isStandby && <Phone className="h-2.5 w-2.5 shrink-0" />}
-                                      </Badge>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-                          </td>
+                          <div key={type} className={`calendar-shift-box rounded border px-1 py-0.5 ${shiftColors[type]}`}>
+                            <div className={`text-[9px] font-semibold ${shiftTextColors[type]} flex items-center gap-0.5 mb-1`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${shiftDotColors[type]}`} />
+                              {shiftLabels[type]}
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              {typeShifts.map((s) => {
+                                const profile = (s as any).assigned_profile;
+                                const isStandby = (s as any).is_standby;
+                                const isExternal = (s as any).is_external;
+                                const isResp = s.is_responsible_on_shift || profile?.is_responsible;
+                                const assistantRole = isAssistant(profile?.role);
+                                const firstName = formatDisplayName(profile?.full_name);
+                                const isMine = !!myId && (s as any).assigned_user_id === myId;
+                                return (
+                                  <Badge
+                                    key={s.id}
+                                    variant={s.is_responsible_on_shift ? "default" : "secondary"}
+                                    className={`flex w-full min-w-0 items-center gap-0.5 text-[10px] px-1.5 py-0 leading-tight shadow-none whitespace-nowrap overflow-hidden ${s.is_responsible_on_shift ? "font-bold" : "font-normal"} ${
+                                      isMine
+                                        ? "bg-[#3B82F6] text-white border-[#3B82F6]"
+                                        : isExternal
+                                        ? "bg-slate-50 border-slate-200 text-slate-400 opacity-80"
+                                        : isStandby
+                                        ? "bg-blue-50/60 border-l-4 border-blue-400 rounded-sm text-foreground"
+                                        : (s as any).is_draft ? "bg-draft-stripes" : "ring-1 ring-current/20"
+                                    } ${assistantRole && !isMine && !s.is_responsible_on_shift && !isExternal && !isStandby ? "bg-white text-[#0F172A] border-slate-300" : ""}`}
+                                  >
+                                    {isExternal && <ArrowLeftRight className="h-2.5 w-2.5 shrink-0" />}
+                                    <span className="truncate min-w-0 flex-1">{firstName}</span>
+                                    {isResp && <Star className="h-2.5 w-2.5 fill-current shrink-0" />}
+                                    {isStandby && <Phone className="h-2.5 w-2.5 shrink-0" />}
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                          </div>
                         );
                       })}
-                    </tr>
-                  ))}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
