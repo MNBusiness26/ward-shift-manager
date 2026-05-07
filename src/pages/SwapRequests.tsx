@@ -304,7 +304,7 @@ export default function SwapRequests() {
                       </Badge>
                       {/* Peer accept for direct swaps targeting current user */}
                       {swap.covering_user_id === viewUserId && swap.status === "pending" && !swap.is_pool_request && (
-                        <Button size="sm" variant="outline" onClick={() => acceptSwap.mutate(swap.id)}>
+                        <Button size="sm" variant="outline" onClick={() => { if (confirmIfImpersonating("accept this swap")) acceptSwap.mutate(swap.id); }}>
                           {t("swap.accept")}
                         </Button>
                       )}
