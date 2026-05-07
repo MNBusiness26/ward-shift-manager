@@ -423,11 +423,11 @@ export default function ManagementCalendar() {
           </Button>
           <Button variant="outline" size="sm" onClick={() => { setBulkDate(undefined); setBulkType(undefined); setBulkOpen(true); }}>
             <Users className="h-4 w-4 md:mr-2" />
-            <span className="hidden sm:inline">Bulk Assign</span>
+            <span className="hidden sm:inline">{t("mgmt.bulkAssign")}</span>
           </Button>
           <Button size="sm" onClick={() => openAddShift()}>
             <Plus className="h-4 w-4 md:mr-2" />
-            <span className="hidden sm:inline">Add Shift</span>
+            <span className="hidden sm:inline">{t("mgmt.addShift")}</span>
           </Button>
         </div>
       </div>
