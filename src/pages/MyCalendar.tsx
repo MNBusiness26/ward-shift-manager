@@ -27,7 +27,6 @@ import { HolidayCellBackground, HolidayCornerIcon } from "@/components/holidays/
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
