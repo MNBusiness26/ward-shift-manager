@@ -58,7 +58,8 @@ const typeLabelKey: Record<string, string> = {
 };
 
 export default function Availability() {
-  const { user } = useAuth();
+  const { user, profile, confirmIfImpersonating } = useAuth();
+  const viewUserId = profile?.id ?? user?.id;
   const { t, locale } = useTranslation();
   const queryClient = useQueryClient();
   const [currentMonth, setCurrentMonth] = useState(new Date());
