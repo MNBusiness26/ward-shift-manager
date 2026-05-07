@@ -66,47 +66,47 @@ export default function SwapRequests() {
   const [poolTakeOnly, setPoolTakeOnly] = useState(false);
 
   const { data: myShifts = [] } = useQuery({
-    queryKey: ["my-shifts-for-swap", user?.id],
+    queryKey: ["my-shifts-for-swap", viewUserId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
         .select("*")
-        .eq("assigned_user_id", user!.id)
+        .eq("assigned_user_id", viewUserId!)
         .eq("is_draft", false)
         .gte("date", format(new Date(), "yyyy-MM-dd"))
         .order("date");
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   const { data: swapRequests = [] } = useQuery({
-    queryKey: ["swap-requests", user?.id],
+    queryKey: ["swap-requests", viewUserId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("swap_requests")
         .select("*, requesting_shift:shifts!swap_requests_shift_id_fkey(*), target_shift:shifts!swap_requests_target_shift_id_fkey(*), covering_profile:profiles!swap_requests_covering_user_id_fkey(full_name), requesting_profile:profiles!swap_requests_requesting_user_id_fkey(full_name)")
-        .or(`requesting_user_id.eq.${user!.id},covering_user_id.eq.${user!.id},is_pool_request.eq.true`)
+        .or(`requesting_user_id.eq.${viewUserId},covering_user_id.eq.${viewUserId},is_pool_request.eq.true`)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   const { data: colleagues = [] } = useQuery({
-    queryKey: ["colleagues"],
+    queryKey: ["colleagues", viewUserId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name")
         .eq("is_active", true)
-        .neq("id", user!.id);
+        .neq("id", viewUserId!);
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!viewUserId,
   });
 
   // Fetch target colleague's shifts for direct swap
