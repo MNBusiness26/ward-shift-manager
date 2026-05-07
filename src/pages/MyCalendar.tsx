@@ -78,6 +78,39 @@ export default function MyCalendar() {
     });
   };
 
+  const isLeaveType = (t: string) => ["leave", "sick_leave", "maternity_leave"].includes(t);
+  const getAvailabilityStyle = (req: any): { className?: string; style?: React.CSSProperties; label: string } => {
+    const type = req?.request_type || "block";
+    if (type === "preference") {
+      const shifts: string[] = req.blocked_shifts || [];
+      const labels = shifts.map((s) => t(`shift.${s}`)).join(" & ");
+      return { className: "shift-preferred-placeholder", label: labels ? `${labels} ${t("avail.requested")}` : t("avail.requested") };
+    }
+    if (type === "vacation" || type === "yearly_leave") {
+      return {
+        style: req.status === "approved"
+          ? { backgroundColor: "hsl(214 100% 92%)", borderColor: "hsl(214 80% 70%)" }
+          : { backgroundColor: "hsl(214 100% 96%)", borderColor: "hsl(214 80% 85%)" },
+        label: t("common.vacation"),
+      };
+    }
+    if (isLeaveType(type)) {
+      return {
+        style: req.status === "approved"
+          ? { backgroundColor: "hsl(270 60% 92%)", borderColor: "hsl(270 50% 70%)" }
+          : { backgroundColor: "hsl(270 60% 96%)", borderColor: "hsl(270 50% 85%)" },
+        label: type === "maternity_leave" ? t("common.maternityLeave") : type === "sick_leave" ? t("common.sickLeave") : t("common.leave"),
+      };
+    }
+    return {
+      style: req.status === "approved"
+        ? { backgroundColor: "hsl(var(--destructive) / 0.12)", borderColor: "hsl(var(--destructive) / 0.35)" }
+        : { backgroundColor: "hsl(48 100% 96%)", borderColor: "hsl(48 90% 80%)" },
+      label: t("avail.legend.blocked"),
+    };
+  };
+
+
   // Approved leaves overlapping the visible range — used for PDF export
   const monthStartStr = format(startOfMonth(currentMonth), "yyyy-MM-dd");
   const monthEndStr = format(endOfMonth(currentMonth), "yyyy-MM-dd");
@@ -234,18 +267,22 @@ export default function MyCalendar() {
                 const isSelected = selectedDay && isSameDay(day, selectedDay);
                 const holiday = holidayMap.get(format(day, "yyyy-MM-dd"));
                 const availability = getAvailabilityForDay(day);
+                const availStyle = availability ? getAvailabilityStyle(availability) : null;
                 return (
                   <div
                     key={day.toISOString()}
                     className={`relative min-h-[5rem] md:min-h-[7rem] rounded-md border border-solid p-2 text-sm md:text-base leading-[1.5] hover:bg-accent/50 cursor-pointer transition-colors ${
                       isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
-                    } ${isSelected ? "ring-2 ring-primary" : ""}`}
-                    style={availability ? { backgroundColor: "#9F66CC22", borderColor: "#9F66CC" } : undefined}
+                    } ${isSelected ? "ring-2 ring-primary" : ""} ${availStyle?.className || ""}`}
+                    style={availStyle?.style}
                     onClick={() => setSelectedDay(day)}
                   >
                     <HolidayCellBackground holiday={holiday} />
                     <HolidayCornerIcon holiday={holiday} />
                     <span className="text-muted-foreground">{format(day, "d")}</span>
+                    {availStyle && (
+                      <div className="text-[9px] leading-tight font-medium opacity-80 truncate">{availStyle.label}</div>
+                    )}
                     <div className="mt-0.5 flex flex-col gap-1 overflow-hidden">
                       {dayShifts.map((s) => {
                         const Icon = shiftIcons[s.type] || Sun;
@@ -278,11 +315,15 @@ export default function MyCalendar() {
                             </div>
                             {colleagues.length > 0 && (
                               <div className="flex flex-col ps-0.5 mt-px">
-                                {colleagues.map((c) => (
-                                  <span key={c.id} className="text-[8px] leading-[1.3] text-muted-foreground truncate">
-                                    {(c.profiles as any)?.full_name?.split(" ")[0] || "?"}
-                                  </span>
-                                ))}
+                                {colleagues.map((c) => {
+                                  const fn = (c.profiles as any)?.full_name?.trim().split(/\s+/).filter(Boolean) || [];
+                                  const firstName = fn.length > 1 ? fn[fn.length - 1] : fn[0] || "?";
+                                  return (
+                                    <span key={c.id} className="text-[8px] leading-[1.3] text-muted-foreground truncate">
+                                      {firstName}
+                                    </span>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
