@@ -25,6 +25,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
 import { isLeaveType, isPreferenceType } from "@/lib/availabilityTypes";
 import { validateConsecutiveWeekendBlock } from "@/components/roster/frictionValidation";
+import { useFrictionConfig } from "@/hooks/useFrictionConfig";
 
 const SHIFT_TYPES = ["morning", "evening", "night"] as const;
 
@@ -60,6 +61,7 @@ const typeLabelKey: Record<string, string> = {
 
 export default function Availability() {
   const { user, profile, confirmIfImpersonating } = useAuth();
+  const frictionConfig = useFrictionConfig();
   const viewUserId = profile?.id ?? user?.id;
   const { t, locale } = useTranslation();
   const queryClient = useQueryClient();
@@ -116,7 +118,7 @@ export default function Availability() {
       const endStr = isBlock ? startStr : (endDate || startStr);
 
       // Consecutive Weekend Block Restriction — fetch ALL approved blocks for the user
-      if (isBlock) {
+      if (isBlock && frictionConfig.enabled && frictionConfig.checks.consecutive_weekend?.enabled) {
         const { data: approved } = await supabase
           .from("availability_requests")
           .select("date, end_date, request_type, status")

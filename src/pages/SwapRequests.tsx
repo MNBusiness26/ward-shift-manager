@@ -100,9 +100,9 @@ export default function SwapRequests() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name")
-        .eq("is_active", true)
-        .neq("id", viewUserId!);
+        .select("id, full_name, is_active")
+        .neq("id", viewUserId!)
+        .order("full_name");
       if (error) throw error;
       return data;
     },

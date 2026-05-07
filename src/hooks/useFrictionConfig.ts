@@ -6,7 +6,8 @@ export type FrictionCheckKey =
   | "excluded_shifts"
   | "excluded_days"
   | "rest_period"
-  | "headcount";
+  | "headcount"
+  | "consecutive_weekend";
 
 export interface FrictionCheckConfig {
   enabled: boolean;
@@ -31,6 +32,7 @@ export const DEFAULT_FRICTION_CONFIG: FrictionConfig = {
     excluded_days: { enabled: true, severity: "yellow" },
     rest_period: { enabled: true, severity: "red", min_hours: 8 },
     headcount: { enabled: true, severity: "yellow" },
+    consecutive_weekend: { enabled: true, severity: "red" },
   },
 };
 
