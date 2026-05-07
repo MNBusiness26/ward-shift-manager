@@ -51,6 +51,7 @@ export default function GlobalTeamCalendar() {
   const isMobile = useIsMobile();
   const { profile: effectiveProfile } = useAuth();
   const myId = effectiveProfile?.id;
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const shiftLabels: Record<string, string> = {
     morning: t("shift.morning"), evening: t("shift.evening"), night: t("shift.night"),
