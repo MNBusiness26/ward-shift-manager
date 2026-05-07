@@ -49,7 +49,7 @@ function formatShiftFn(shift: any, locale?: string) {
 
 export default function SwapRequests() {
   const { user, profile, confirmIfImpersonating } = useAuth();
-  const viewUserId = profile?.id ?? user?.id;
+  const viewUserId = profile?.id ?? viewUserId;
   const { t, locale } = useTranslation();
   const formatShift = (shift: any) => formatShiftFn(shift, locale);
   const queryClient = useQueryClient();
@@ -234,12 +234,12 @@ export default function SwapRequests() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {swapRequests.filter((s) => s.is_pool_request && s.status === "pending" && s.requesting_user_id !== user?.id).length === 0 ? (
+          {swapRequests.filter((s) => s.is_pool_request && s.status === "pending" && s.requesting_user_id !== viewUserId).length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("swap.noPoolOffers")}</p>
           ) : (
             <div className="space-y-2">
               {swapRequests
-                .filter((s) => s.is_pool_request && s.status === "pending" && s.requesting_user_id !== user?.id)
+                .filter((s) => s.is_pool_request && s.status === "pending" && s.requesting_user_id !== viewUserId)
                 .map((swap) => (
                   <div key={swap.id} className="flex items-center justify-between rounded-lg border p-3">
                     <div>
@@ -269,12 +269,12 @@ export default function SwapRequests() {
           <CardTitle className="text-base">{t("swap.myRequests")}</CardTitle>
         </CardHeader>
         <CardContent>
-          {swapRequests.filter((s) => s.requesting_user_id === user?.id || s.covering_user_id === user?.id).length === 0 ? (
+          {swapRequests.filter((s) => s.requesting_user_id === viewUserId || s.covering_user_id === viewUserId).length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("swap.noRequests")}</p>
           ) : (
             <div className="space-y-2">
               {swapRequests
-                .filter((s) => s.requesting_user_id === user?.id || s.covering_user_id === user?.id)
+                .filter((s) => s.requesting_user_id === viewUserId || s.covering_user_id === viewUserId)
                 .map((swap) => (
                   <div key={swap.id} className="flex items-center justify-between rounded-lg border p-3">
                     <div>
@@ -303,7 +303,7 @@ export default function SwapRequests() {
                         {t(`status.${swap.status}`)}
                       </Badge>
                       {/* Peer accept for direct swaps targeting current user */}
-                      {swap.covering_user_id === user?.id && swap.status === "pending" && !swap.is_pool_request && (
+                      {swap.covering_user_id === viewUserId && swap.status === "pending" && !swap.is_pool_request && (
                         <Button size="sm" variant="outline" onClick={() => acceptSwap.mutate(swap.id)}>
                           {t("swap.accept")}
                         </Button>
