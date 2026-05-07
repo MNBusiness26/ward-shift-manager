@@ -755,74 +755,53 @@ export default function Roster() {
   };
 
   return (
-    <div className="h-[calc(100vh-3rem)] md:h-screen overflow-auto flex flex-col px-2 pb-2 md:px-6 md:pb-6 space-y-4 -m-4 md:-m-6">
-      <div className="flex items-center justify-between flex-wrap gap-2 pt-2 md:pt-6">
-        <h1 className="text-xl md:text-2xl font-bold">{t("roster.shiftManager")}</h1>
-        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-          <TooltipProvider>
-            {draftCount > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button
-                      size="sm"
-                      onClick={() => setPublishConfirmOpen(true)}
-                      disabled={publishDrafts.isPending || (enforceFullWeek && !isFullWeek)}
-                    >
-                      <Eye className="h-4 w-4 md:mr-1" />
-                      <span className="hidden sm:inline">{t("roster.publishCount")} {draftCount}</span>
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                {enforceFullWeek && !isFullWeek && (
-                  <TooltipContent>Navigate to a full Sun–Sat week to publish</TooltipContent>
-                )}
-              </Tooltip>
-            )}
+    <div className="h-[calc(100vh-3rem)] md:h-screen overflow-auto flex flex-col px-2 pb-2 md:px-6 md:pb-6 space-y-3 -m-4 md:-m-6">
+      {/* Condensed top header — title + all action buttons in one high-density row */}
+      <div className="flex items-center gap-1.5 md:gap-2 flex-wrap pt-2 md:pt-4">
+        <h1 className="text-lg md:text-xl font-bold mr-2">{t("roster.shiftManager")}</h1>
+        <TooltipProvider>
+          {draftCount > 0 && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
                   <Button
-                    variant="destructive"
                     size="sm"
-                    onClick={() => setClearWeekConfirmOpen(true)}
-                    disabled={shifts.length === 0 || (enforceFullWeek && !isFullWeek)}
+                    onClick={() => setPublishConfirmOpen(true)}
+                    disabled={publishDrafts.isPending || (enforceFullWeek && !isFullWeek)}
                   >
-                    <Trash2 className="h-4 w-4 md:mr-1" />
-                    <span className="hidden sm:inline">{t("roster.clearWeek")}</span>
+                    <Eye className="h-4 w-4 md:mr-1" />
+                    <span className="hidden sm:inline">{t("roster.publishCount")} {draftCount}</span>
                   </Button>
                 </span>
               </TooltipTrigger>
               {enforceFullWeek && !isFullWeek && (
-                <TooltipContent>Navigate to a full Sun–Sat week to clear</TooltipContent>
+                <TooltipContent>Navigate to a full Sun–Sat week to publish</TooltipContent>
               )}
             </Tooltip>
-          </TooltipProvider>
-          <Button size="sm" onClick={() => openCreate()}>
-            <Plus className="h-4 w-4 md:mr-1" />
-            <span className="hidden sm:inline">{t("roster.addShift")}</span>
-          </Button>
-        </div>
-      </div>
-
-      {missingResponsible.length > 0 && !dismissedWarningKeys.has(warningDismissKey) && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
-          <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
-          <span className="flex-1">{missingResponsible.length} {t("roster.missingRN")}</span>
-          <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={dismissWarning}>
-            <X className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      )}
-
-      {/* Shift management toolbar */}
-      <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-        {enforceFullWeek && !isFullWeek && (
-          <div className="flex items-center gap-2 mr-4 border-r pr-4">
-            <Settings className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-destructive">{t("roster.fullWeekEnforced")}</span>
-          </div>
-        )}
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setClearWeekConfirmOpen(true)}
+                  disabled={shifts.length === 0 || (enforceFullWeek && !isFullWeek)}
+                >
+                  <Trash2 className="h-4 w-4 md:mr-1" />
+                  <span className="hidden sm:inline">{t("roster.clearWeek")}</span>
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {enforceFullWeek && !isFullWeek && (
+              <TooltipContent>Navigate to a full Sun–Sat week to clear</TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
+        <Button size="sm" onClick={() => openCreate()}>
+          <Plus className="h-4 w-4 md:mr-1" />
+          <span className="hidden sm:inline">{t("roster.addShift")}</span>
+        </Button>
         <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
           <Users className="h-4 w-4 md:mr-1" />
           <span className="hidden sm:inline">{t("roster.bulkAssign")}</span>
@@ -838,7 +817,23 @@ export default function Roster() {
             <span className="hidden sm:inline">{t("roster.pasteWeek")}</span>
           </Button>
         )}
+        {enforceFullWeek && !isFullWeek && (
+          <div className="flex items-center gap-1.5 ms-auto">
+            <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs text-destructive">{t("roster.fullWeekEnforced")}</span>
+          </div>
+        )}
       </div>
+
+      {missingResponsible.length > 0 && !dismissedWarningKeys.has(warningDismissKey) && (
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-2 text-sm">
+          <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+          <span className="flex-1">{missingResponsible.length} {t("roster.missingRN")}</span>
+          <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={dismissWarning}>
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
 
       <Card className="overflow-visible">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
