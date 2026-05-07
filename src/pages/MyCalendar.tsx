@@ -227,7 +227,7 @@ export default function MyCalendar() {
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`relative min-h-[5rem] md:min-h-[7rem] rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
+                    className={`relative min-h-[5rem] md:min-h-[7rem] rounded-md border border-solid p-2 text-sm md:text-base leading-[1.5] hover:bg-accent/50 cursor-pointer transition-colors ${
                       isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
                     } ${isSelected ? "ring-2 ring-primary" : ""}`}
                     onClick={() => setSelectedDay(day)}
