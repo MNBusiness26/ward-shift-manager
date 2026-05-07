@@ -100,7 +100,7 @@ export function FrictionSettingsPanel() {
             </div>
             <Switch
               checked={config.enabled}
-              onCheckedChange={(v) => setConfig((c) => ({ ...c, enabled: v }))}
+              onCheckedChange={(v) => applyAndSave({ ...config, enabled: v })}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -110,7 +110,7 @@ export function FrictionSettingsPanel() {
             </div>
             <Switch
               checked={config.log_when_disabled}
-              onCheckedChange={(v) => setConfig((c) => ({ ...c, log_when_disabled: v }))}
+              onCheckedChange={(v) => applyAndSave({ ...config, log_when_disabled: v })}
             />
           </div>
         </div>
