@@ -36,7 +36,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <SidebarTrigger />
             <span className="ms-3 font-semibold text-primary">WardWise</span>
           </header>
-          <main className="flex-1 p-4 md:p-6">{children}</main>
+          <main className="flex-1 p-2 md:p-6">{children}</main>
         </div>
       </div>
     </SidebarProvider>
