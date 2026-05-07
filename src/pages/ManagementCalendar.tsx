@@ -524,23 +524,26 @@ export default function ManagementCalendar() {
                            },
                          );
                       });
+                    const eligibleCount = dayShifts.filter(s => !(s as any).is_standby && !(s as any).is_external && (() => { const r = staffRoleMap.get(s.assigned_user_id || ""); return r !== "assistant"; })()).length;
+                    const headcountTarget = getHeadcountTarget(type, dateStr, headcountLimits);
                     const overHeadcount = isOverHeadcount(shifts as any[], dateStr, type, headcountLimits, staffRoleMap);
+                    const underHeadcount = !blocked && eligibleCount < headcountTarget;
                     return (
                       <td
                         key={d.toISOString()}
-                        className={`relative z-0 border-l p-2 align-top h-full ${blocked ? "cursor-not-allowed bg-muted/50" : `${shiftColors[type]} cursor-pointer hover:opacity-80`} ${overHeadcount ? "bg-red-50/50 border border-red-200" : ""} ${holiday && !blocked && !overHeadcount ? "bg-[hsl(274_53%_98%)]" : ""}`}
+                        className={`relative z-0 border-l p-2 align-top h-full ${blocked ? "cursor-not-allowed bg-muted/50" : `${shiftColors[type]} cursor-pointer hover:opacity-80`} ${overHeadcount ? "bg-red-50/50 border border-red-200" : ""} ${underHeadcount ? "ring-1 ring-destructive/30" : ""} ${holiday && !blocked && !overHeadcount ? "bg-[hsl(274_53%_98%)]" : ""}`}
                         onClick={() => !blocked && handleCellClick(dateStr, type)}
                       >
-                        {overHeadcount && (
+                        {(overHeadcount || underHeadcount) && (
                           <div className="absolute top-1 right-1 flex items-center gap-0.5">
-                            <span className="text-[9px] text-red-500 font-medium leading-none">{dayShifts.filter(s => !(s as any).is_standby && !(s as any).is_external && (() => { const r = staffRoleMap.get(s.assigned_user_id || ""); return r !== "assistant"; })()).length}/{getHeadcountTarget(type, dateStr, headcountLimits)}</span>
-                            <AlertTriangle className="h-3 w-3 text-red-400" />
+                            <span className={`text-[9px] font-medium leading-none ${overHeadcount ? "text-red-500" : "text-destructive"}`}>{eligibleCount}/{headcountTarget}</span>
+                            <AlertTriangle className={`h-3 w-3 ${overHeadcount ? "text-red-400" : "text-destructive"}`} />
                           </div>
                         )}
                         {dayShifts.length === 0 ? (
                           <span className="text-xs text-muted-foreground italic">{blocked ? "🔒" : "—"}</span>
                         ) : (
-                          <div className={`calendar-staff-list flex flex-col gap-1 ${overHeadcount ? "mt-4" : ""}`}>
+                          <div className={`calendar-staff-list flex flex-col gap-1 ${overHeadcount || underHeadcount ? "mt-4" : ""}`} style={{ lineHeight: 1.5 }}>
                             {dayShifts.map((s) => {
                               const profile = staff.find((p) => p.id === s.assigned_user_id);
                               const assistantRole = isAssistant(profile?.role ?? profile?.app_role);
