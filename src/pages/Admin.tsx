@@ -94,7 +94,7 @@ export default function Admin() {
     if (pauSetting && typeof pauSetting.value === "string") setPublicAppUrl(pauSetting.value);
   }, [settings]);
 
-  const isPrimaryAdmin = profile?.email === ADMIN_EMAIL;
+  const isPrimaryAdmin = profile?.email === ADMIN_EMAIL || isManager || isAssistantManager;
 
   const saveSetting = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
