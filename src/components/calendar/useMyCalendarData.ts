@@ -16,12 +16,32 @@ export function useMyShifts(rangeStart: Date, rangeEnd: Date) {
         .from("shifts")
         .select("*")
         .eq("assigned_user_id", userId!)
+        .eq("is_draft", false)
         .gte("date", format(rangeStart, "yyyy-MM-dd"))
         .lte("date", format(rangeEnd, "yyyy-MM-dd"))
         .order("date")
         .order("start_time");
       if (error) throw error;
       return data as Shift[];
+    },
+    enabled: !!userId,
+  });
+}
+
+export function useMyAvailability(rangeStart: Date, rangeEnd: Date) {
+  const { profile } = useAuth();
+  const userId = profile?.id;
+  return useQuery({
+    queryKey: ["my-availability", userId, format(rangeStart, "yyyy-MM-dd"), format(rangeEnd, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("availability_requests")
+        .select("*")
+        .eq("user_id", userId!)
+        .lte("date", format(rangeEnd, "yyyy-MM-dd"))
+        .or(`end_date.gte.${format(rangeStart, "yyyy-MM-dd")},and(end_date.is.null,date.gte.${format(rangeStart, "yyyy-MM-dd")})`);
+      if (error) throw error;
+      return data || [];
     },
     enabled: !!userId,
   });

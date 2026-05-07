@@ -27,12 +27,11 @@ import { HolidayCellBackground, HolidayCornerIcon } from "@/components/holidays/
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ShiftDetailCard } from "@/components/calendar/ShiftDetailCard";
-import { useMyShifts, useMyRole, useDayShifts, useAllShiftsInRange, type Shift } from "@/components/calendar/useMyCalendarData";
+import { useMyShifts, useMyRole, useDayShifts, useAllShiftsInRange, useMyAvailability, type Shift } from "@/components/calendar/useMyCalendarData";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
 import { exportMyAttendancePDF } from "@/lib/payrollExport";
@@ -65,9 +64,19 @@ export default function MyCalendar() {
 
   const { data: shifts = [] } = useMyShifts(rangeStart, rangeEnd);
   const { data: allShifts = [] } = useAllShiftsInRange(rangeStart, rangeEnd);
+  const { data: myAvailability = [] } = useMyAvailability(rangeStart, rangeEnd);
   const { data: myRoles = [] } = useMyRole();
   const selectedDateStr = selectedDay ? format(selectedDay, "yyyy-MM-dd") : null;
   const { data: dayAllShifts = [] } = useDayShifts(selectedDateStr);
+
+  const getAvailabilityForDay = (day: Date) => {
+    const ds = format(day, "yyyy-MM-dd");
+    return (myAvailability as any[]).find((a) => {
+      const start = a.date;
+      const end = a.end_date || a.date;
+      return ds >= start && ds <= end;
+    });
+  };
 
   // Approved leaves overlapping the visible range — used for PDF export
   const monthStartStr = format(startOfMonth(currentMonth), "yyyy-MM-dd");
@@ -224,12 +233,14 @@ export default function MyCalendar() {
                 const dayShifts = getShiftsForDay(day);
                 const isSelected = selectedDay && isSameDay(day, selectedDay);
                 const holiday = holidayMap.get(format(day, "yyyy-MM-dd"));
+                const availability = getAvailabilityForDay(day);
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`relative min-h-[5rem] md:min-h-[7rem] rounded-md border p-1 text-xs hover:bg-accent/50 cursor-pointer transition-colors ${
+                    className={`relative min-h-[5rem] md:min-h-[7rem] rounded-md border border-solid p-2 text-sm md:text-base leading-[1.5] hover:bg-accent/50 cursor-pointer transition-colors ${
                       isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
                     } ${isSelected ? "ring-2 ring-primary" : ""}`}
+                    style={availability ? { backgroundColor: "#9F66CC22", borderColor: "#9F66CC" } : undefined}
                     onClick={() => setSelectedDay(day)}
                   >
                     <HolidayCellBackground holiday={holiday} />
@@ -373,9 +384,6 @@ export default function MyCalendar() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{selectedDay && formatLocale(selectedDay, "EEEE, MMMM d, yyyy", locale)}</DialogTitle>
-            <DialogDescription>
-              {t("calendar.yourRole")}: <span className="capitalize font-medium text-foreground">{myRole}</span>
-            </DialogDescription>
           </DialogHeader>
           {myDayShifts.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">{t("calendar.noShiftsDay")}</p>
