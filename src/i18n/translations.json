@@ -701,6 +701,8 @@
     "roster.assignToStaff": "שבץ לצוות",
     "roster.managerOnDuty": "מנהל תורן",
     "roster.responsibleNurse": "אח/ות אחראי/ת",
+    "shift.teamOnShift": "צוות במשמרת",
+    "shift.shiftDetails": "פרטי משמרת",
     "roster.comments": "הערות",
     "roster.delete": "מחק",
     "roster.update": "עדכן",
