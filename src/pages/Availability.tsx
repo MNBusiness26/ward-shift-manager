@@ -118,7 +118,7 @@ export default function Availability() {
       const endStr = isBlock ? startStr : (endDate || startStr);
 
       // Consecutive Weekend Block Restriction — fetch ALL approved blocks for the user
-      if (isBlock) {
+      if (isBlock && frictionConfig.enabled && frictionConfig.checks.consecutive_weekend?.enabled) {
         const { data: approved } = await supabase
           .from("availability_requests")
           .select("date, end_date, request_type, status")
