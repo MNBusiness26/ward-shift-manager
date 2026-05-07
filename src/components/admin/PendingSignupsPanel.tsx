@@ -7,6 +7,7 @@ import { UserCheck, Trash2, Inbox } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
+import { useTranslation } from "@/i18n/useTranslation";
 
 type PendingUser = {
   id: string;
