@@ -873,7 +873,7 @@ export default function Roster() {
                   const dateBlocked = isDateBlocked(dateStr);
                   const holiday = holidayMap.get(dateStr);
                   return (
-                    <th key={`wd-${d.toISOString()}`} className={`sticky top-0 z-30 min-w-[70px] md:min-w-[120px] py-1.5 px-1 md:px-2 text-center font-medium text-muted-foreground border-b-2 border-r border-border/60 ${dateBlocked ? "bg-muted/50" : "bg-card"}`}>
+                    <th key={`wd-${d.toISOString()}`} className={`sticky top-0 z-40 min-w-[70px] md:min-w-[120px] py-1.5 px-1 md:px-2 text-center font-medium text-muted-foreground border-b border-r border-border/60 ${dateBlocked ? "bg-muted/50" : "bg-card"}`}>
                       <div
                         className={`flex items-center justify-center gap-1.5 px-1 py-0.5 rounded-sm ${holiday && !holiday.is_eve ? "bg-[hsla(274,53%,60%,0.15)]" : ""}`}
                         style={holiday?.is_eve ? { backgroundImage: "repeating-linear-gradient(45deg, hsla(274,53%,60%,0.22) 0 6px, transparent 6px 14px)" } : undefined}
@@ -888,13 +888,13 @@ export default function Roster() {
               </tr>
               {/* Row 2: date + per-shift first-name lists — also sticky, sits below row 1 */}
               <tr>
-                <th className="sticky left-0 top-[34px] z-40 w-[100px] min-w-[100px] border-r border-b border-border/60 bg-card py-1 px-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:px-2"></th>
+                <th className="sticky left-0 top-[36px] z-40 w-[100px] min-w-[100px] border-r border-b-2 border-border/60 bg-card py-1 px-1.5 text-left font-medium text-muted-foreground shadow-[2px_0_8px_-4px_hsl(var(--foreground)/0.18)] md:w-[140px] md:min-w-[140px] md:px-2"></th>
                 {days.map((d) => {
                   const dateStr = format(d, "yyyy-MM-dd");
                   const dateBlocked = isDateBlocked(dateStr);
                   const holiday = holidayMap.get(dateStr);
                   return (
-                    <th key={`dt-${d.toISOString()}`} className={`sticky top-[34px] z-20 min-w-[70px] md:min-w-[120px] pb-2 pt-1 px-1 md:px-2 text-center font-medium text-muted-foreground border-b border-r border-border/60 align-top ${dateBlocked ? "bg-muted/50" : "bg-card"}`}>
+                    <th key={`dt-${d.toISOString()}`} className={`sticky top-[36px] z-30 min-w-[70px] md:min-w-[140px] max-w-[160px] pb-2 pt-1 px-1 md:px-2 text-center font-medium text-muted-foreground border-b-2 border-r border-border/60 align-top ${dateBlocked ? "bg-muted/50" : "bg-card"}`}>
                       <div className={`text-[10px] md:text-xs mb-1 ${holiday ? "text-purple-700/80" : ""}`}>{formatLocale(d, "MMM d", locale)}</div>
                       <div className="flex flex-col gap-0.5" style={{ lineHeight: 1.5 }}>
                         {(["morning", "evening", "night"] as const).map((st) => {
@@ -922,21 +922,20 @@ export default function Roster() {
                           return (
                             <div
                               key={st}
-                              className={`text-[10px] md:text-[11px] rounded-sm px-1 py-px font-normal text-start ${
+                              className={`text-[10px] rounded-sm px-1 py-px font-normal text-start whitespace-normal break-words leading-tight ${
                                 under
                                   ? "bg-destructive/10 text-destructive"
                                   : over
                                   ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                                   : "text-foreground/80"
                               }`}
-                              style={{ lineHeight: 1.5 }}
                               title={`${count}/${target}`}
                             >
-                              <span className="font-semibold inline-flex items-center gap-0.5">
+                              <span className="font-semibold inline-flex items-center gap-0.5 align-middle">
                                 {under && <AlertTriangle className="h-2.5 w-2.5 inline" />}
                                 {letter}:
                               </span>{" "}
-                              <span className="break-words">
+                              <span className="break-words whitespace-normal">
                                 {firstNames.length > 0 ? firstNames.join(", ") : "—"}
                               </span>
                             </div>
