@@ -302,3 +302,48 @@ export function isOverHeadcount(
   }).length;
   return count > limit;
 }
+
+/**
+ * Consecutive Weekend Block Restriction.
+ * If the user already has an APPROVED block on Friday/Saturday in the same
+ * Sun–Sat week as `targetDate` neighbours, returns a friction error when they
+ * try to block the Friday/Saturday of an adjacent week.
+ *
+ * approvedRequests: rows from availability_requests for this user with
+ * status='approved' and request_type !== 'preference'. Must include at least
+ * `date` and optional `end_date`.
+ */
+export function validateConsecutiveWeekendBlock(
+  targetDate: string,
+  approvedRequests: Array<{ date: string; end_date?: string | null; request_type?: string | null; status?: string | null }>,
+): { violates: boolean; message?: string } {
+  const d = new Date(targetDate + "T00:00");
+  const dow = d.getDay();
+  if (dow !== 5 && dow !== 6) return { violates: false }; // only Fri/Sat
+  const targetTime = d.getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  for (const r of approvedRequests) {
+    if (r.status && r.status !== "approved") continue;
+    if (r.request_type === "preference") continue;
+    const start = new Date(r.date + "T00:00").getTime();
+    const end = new Date((r.end_date || r.date) + "T00:00").getTime();
+    // Iterate days within the existing block
+    for (let t = start; t <= end; t += dayMs) {
+      const od = new Date(t);
+      const odow = od.getDay();
+      if (odow !== 5 && odow !== 6) continue;
+      const diffDays = Math.round(Math.abs(targetTime - t) / dayMs);
+      // Adjacent weekend = same weekday in the prior or next week
+      if (diffDays === 7 || (diffDays >= 6 && diffDays <= 8 && odow !== dow)) {
+        return {
+          violates: true,
+          message:
+            "Cannot block this weekend day — you already have an approved weekend block in the adjacent week. Consecutive weekend blocks are restricted.",
+        };
+      }
+    }
+  }
+  return { violates: false };
+}
+
