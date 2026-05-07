@@ -277,7 +277,7 @@ export default function Admin() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <LinkIcon className="h-5 w-5" />
-            Public App URL
+            {t("admin.publicAppUrl")}
           </CardTitle>
           <CardDescription>
             The published URL where staff sign in. Used to build invitation links so they work for anyone (not just Lovable collaborators).

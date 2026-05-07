@@ -296,22 +296,22 @@ export default function Staff() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ fontFamily: "'Heebo', sans-serif", lineHeight: 1.5 }}>
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">{t("staff.title")}</h1>
         <div className="flex gap-2">
           <Badge variant="outline">
             <Users className="me-1 h-3 w-3" />
-            {totalRoster} Total
+            {totalRoster} {t("staff.totalBadge")}
           </Badge>
           <Badge variant="outline">
             <UserCheck className="me-1 h-3 w-3" />
-            {activeStaff.length} Registered
+            {activeStaff.length} {t("staff.registeredBadge")}
           </Badge>
           {pendingStaff.length > 0 && (
             <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
               <Clock className="me-1 h-3 w-3" />
-              {pendingStaff.length} Pending
+              {pendingStaff.length} {t("staff.pendingBadge")}
             </Badge>
           )}
         </div>
@@ -319,15 +319,15 @@ export default function Staff() {
 
       <Tabs defaultValue="all" className="w-full">
         <TabsList>
-          <TabsTrigger value="all">All Ward Staff ({totalRoster})</TabsTrigger>
-          <TabsTrigger value="registered">Registered ({activeStaff.length})</TabsTrigger>
-          <TabsTrigger value="pending">Pending Invitations ({pendingStaff.length})</TabsTrigger>
+          <TabsTrigger value="all">{t("staff.allWardStaff")} ({totalRoster})</TabsTrigger>
+          <TabsTrigger value="registered">{t("staff.registeredBadge")} ({activeStaff.length})</TabsTrigger>
+          <TabsTrigger value="pending">{t("staff.pendingInvitations")} ({pendingStaff.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">All Ward Staff</CardTitle>
+              <CardTitle className="text-base">{t("staff.allWardStaff")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {totalRoster === 0 ? (
@@ -389,7 +389,7 @@ export default function Staff() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Clock className="h-4 w-4 text-amber-600" />
-                Pending Invitations ({pendingStaff.length})
+                {t("staff.pendingInvitations")} ({pendingStaff.length})
               </CardTitle>
               <p className="text-xs text-muted-foreground">
                 Imported staff who haven't signed up yet. They are still schedulable from the Master Roster.

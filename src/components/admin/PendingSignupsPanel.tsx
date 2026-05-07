@@ -77,7 +77,7 @@ export function PendingSignupsPanel() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Inbox className="h-5 w-5" />
-          Pending Sign-ins
+          <PendingSignupsTitle />
           {pending.length > 0 && (
             <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground">
               {pending.length}
