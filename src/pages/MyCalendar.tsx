@@ -315,11 +315,15 @@ export default function MyCalendar() {
                             </div>
                             {colleagues.length > 0 && (
                               <div className="flex flex-col ps-0.5 mt-px">
-                                {colleagues.map((c) => (
-                                  <span key={c.id} className="text-[8px] leading-[1.3] text-muted-foreground truncate">
-                                    {(c.profiles as any)?.full_name?.split(" ")[0] || "?"}
-                                  </span>
-                                ))}
+                                {colleagues.map((c) => {
+                                  const fn = (c.profiles as any)?.full_name?.trim().split(/\s+/).filter(Boolean) || [];
+                                  const firstName = fn.length > 1 ? fn[fn.length - 1] : fn[0] || "?";
+                                  return (
+                                    <span key={c.id} className="text-[8px] leading-[1.3] text-muted-foreground truncate">
+                                      {firstName}
+                                    </span>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
