@@ -73,7 +73,7 @@ export function FrictionSettingsPanel() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShieldAlert className="h-5 w-5" />
-          Friction & Validation
+          <span style={{ fontFamily: "'Heebo', sans-serif", lineHeight: 1.5 }}>{t("admin.frictionValidation")}</span>
         </CardTitle>
         <CardDescription>
           Control which conflict and FTE checks are surfaced to managers. When master is off, violations are still

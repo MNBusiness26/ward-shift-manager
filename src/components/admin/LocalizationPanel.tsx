@@ -171,7 +171,7 @@ export function LocalizationPanel() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Globe2 className="h-5 w-5" />
-          Localization
+          <span style={{ fontFamily: "'Heebo', sans-serif", lineHeight: 1.5 }}>{t("admin.localization")}</span>
         </CardTitle>
         <CardDescription>
           Holiday calendar and regional overlays. Synced monthly from Hebcal for Israel.
