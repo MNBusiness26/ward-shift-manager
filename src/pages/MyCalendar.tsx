@@ -238,7 +238,7 @@ export default function MyCalendar() {
               <ChevronRight className="h-4 w-4 rtl:rotate-180" />
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-1 sm:px-6">
             <div className="grid grid-cols-7 gap-px text-center text-xs font-medium text-muted-foreground mb-1">
               {dayHeaders.map((d, i) => (
                 <div key={i} className="py-2">{d}</div>
@@ -259,7 +259,7 @@ export default function MyCalendar() {
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`relative min-h-[5rem] md:min-h-[7rem] rounded-md border border-solid p-2 text-sm md:text-base leading-[1.5] hover:bg-accent/50 cursor-pointer transition-colors ${
+                    className={`relative min-h-[5rem] md:min-h-[7rem] rounded-md border border-solid p-1 md:p-2 text-sm md:text-base leading-[1.5] hover:bg-accent/50 cursor-pointer transition-colors ${
                       isSameDay(day, new Date()) ? "bg-primary/5 border-primary/30" : ""
                     } ${isSelected ? "ring-2 ring-primary" : ""} ${blockType ? "bg-muted/30 roster-ghosted" : ""}`}
                     onClick={() => setSelectedDay(day)}
@@ -306,7 +306,7 @@ export default function MyCalendar() {
                                   const fn = (c.profiles as any)?.full_name?.trim().split(/\s+/).filter(Boolean) || [];
                                   const firstName = fn.length > 1 ? fn[fn.length - 1] : fn[0] || "?";
                                   return (
-                                    <span key={c.id} className="text-[11px] md:text-sm leading-[1.4] text-foreground/80 truncate">
+                                  <span key={c.id} className="text-[10px] md:text-sm leading-[1.3] text-foreground/80 truncate block">
                                       {firstName}
                                     </span>
                                   );
