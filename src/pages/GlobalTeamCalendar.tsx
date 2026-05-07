@@ -198,9 +198,8 @@ export default function GlobalTeamCalendar() {
                       <HolidayCornerIcon holiday={holiday} inline />
                     </div>
                     <div className="flex flex-col">
-                      {shiftTypes.map((type) => {
+                      {shiftTypes.map((type, idx) => {
                         const typeShifts = getShifts(dateStr, type);
-                        const mineOnShift = !!myId && typeShifts.some((s) => (s as any).assigned_user_id === myId);
                         const bg =
                           type === "morning" ? "bg-[#DAA520]/15 border-s-4 border-s-[#DAA520]" :
                           type === "evening" ? "bg-[#FF7F50]/15 border-s-4 border-s-[#FF7F50]" :
@@ -209,10 +208,11 @@ export default function GlobalTeamCalendar() {
                           type === "morning" ? "text-[#8B6508]" :
                           type === "evening" ? "text-[#C2410C]" :
                           "text-[#4B0082]";
+                        const separator = idx < shiftTypes.length - 1 ? "border-b-2 border-white" : "";
                         return (
                           <div
                             key={type}
-                            className={`px-3 py-2 border-b last:border-b-0 ${bg} ${mineOnShift ? "border-4 border-[#3B82F6]" : ""}`}
+                            className={`px-3 py-2 ${separator} ${bg}`}
                             style={{ lineHeight: 1.5 }}
                           >
                             <div className={`text-xs font-bold uppercase tracking-wide mb-1.5 ${labelColor}`}>
@@ -229,18 +229,20 @@ export default function GlobalTeamCalendar() {
                                   const isResp = s.is_responsible_on_shift || profile?.is_responsible;
                                   const assistantRole = isAssistant(profile?.role);
                                   const firstName = formatDisplayName(profile?.full_name);
+                                  const isMine = !!myId && (s as any).assigned_user_id === myId;
+                                  const baseStyle = isMine
+                                    ? "bg-[#3B82F6] text-white border-[#3B82F6]"
+                                    : assistantRole
+                                    ? "bg-white text-[#0F172A] border-slate-300"
+                                    : isExternal
+                                    ? "bg-slate-50 border-slate-300 text-slate-600"
+                                    : isStandby
+                                    ? "bg-blue-50 border-blue-400 text-foreground"
+                                    : "bg-background border-current/30 text-foreground";
                                   return (
                                     <span
                                       key={s.id}
-                                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border whitespace-normal break-words ${
-                                        assistantRole
-                                          ? "bg-white text-[#0F172A] border-slate-300"
-                                          : isExternal
-                                          ? "bg-slate-50 border-slate-300 text-slate-600"
-                                          : isStandby
-                                          ? "bg-blue-50 border-blue-400 text-foreground"
-                                          : "bg-background border-current/30 text-foreground"
-                                      } ${isResp ? "font-bold" : ""}`}
+                                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border whitespace-normal break-words ${baseStyle} ${isResp ? "font-bold" : ""}`}
                                       style={{ fontFamily: "Heebo, Inter, sans-serif", lineHeight: 1.5 }}
                                     >
                                       {isExternal && <ArrowLeftRight className="h-3 w-3 shrink-0" />}
