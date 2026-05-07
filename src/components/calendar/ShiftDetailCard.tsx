@@ -61,10 +61,7 @@ export function ShiftDetailCard({ shift, colleagues }: ShiftDetailCardProps) {
           <Icon className={`h-5 w-5 ${colors.icon}`} />
           <span className={`font-medium ${colors.icon}`}>{shiftLabels[shift.type] || shift.type}</span>
           {shift.is_responsible_on_shift && (
-            <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
-              <Star className="h-4 w-4 fill-primary text-primary" />
-              {t("roster.responsibleNurse")}
-            </span>
+            <Star className="h-4 w-4 fill-primary text-primary" />
           )}
         </div>
         <span className="text-sm text-muted-foreground">
