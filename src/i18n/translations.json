@@ -316,6 +316,8 @@
     "roster.assignToStaff": "Assign to Staff",
     "roster.managerOnDuty": "Manager on Duty",
     "roster.responsibleNurse": "Responsible Nurse",
+    "shift.teamOnShift": "Team on Shift",
+    "shift.shiftDetails": "Shift Details",
     "roster.comments": "Comments",
     "roster.delete": "Delete",
     "roster.update": "Update",
