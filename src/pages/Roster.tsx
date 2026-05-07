@@ -755,9 +755,9 @@ export default function Roster() {
   };
 
   return (
-    <div className="h-[calc(100vh-3rem)] md:h-screen overflow-auto flex flex-col px-2 pb-2 md:px-6 md:pb-6 space-y-3 -m-4 md:-m-6">
+    <div className="h-[calc(100vh-3rem)] md:h-screen overflow-auto flex flex-col px-2 pb-2 md:px-6 md:pb-6 pt-0 space-y-3 -m-4 md:-m-6">
       {/* Condensed top header — title + all action buttons in one high-density row */}
-      <div className="flex items-center gap-1.5 md:gap-2 flex-wrap pt-2 md:pt-4">
+      <div className="flex items-center gap-1.5 md:gap-2 flex-wrap px-2 md:px-0 pt-3 md:pt-4 pb-1 bg-background">
         <h1 className="text-lg md:text-xl font-bold mr-2">{t("roster.shiftManager")}</h1>
         <TooltipProvider>
           {draftCount > 0 && (
