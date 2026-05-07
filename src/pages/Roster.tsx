@@ -922,21 +922,20 @@ export default function Roster() {
                           return (
                             <div
                               key={st}
-                              className={`text-[10px] md:text-[11px] rounded-sm px-1 py-px font-normal text-start ${
+                              className={`text-[10px] rounded-sm px-1 py-px font-normal text-start whitespace-normal break-words leading-tight ${
                                 under
                                   ? "bg-destructive/10 text-destructive"
                                   : over
                                   ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                                   : "text-foreground/80"
                               }`}
-                              style={{ lineHeight: 1.5 }}
                               title={`${count}/${target}`}
                             >
-                              <span className="font-semibold inline-flex items-center gap-0.5">
+                              <span className="font-semibold inline-flex items-center gap-0.5 align-middle">
                                 {under && <AlertTriangle className="h-2.5 w-2.5 inline" />}
                                 {letter}:
                               </span>{" "}
-                              <span className="break-words">
+                              <span className="break-words whitespace-normal">
                                 {firstNames.length > 0 ? firstNames.join(", ") : "—"}
                               </span>
                             </div>
