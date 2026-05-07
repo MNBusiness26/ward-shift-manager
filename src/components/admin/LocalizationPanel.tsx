@@ -22,8 +22,11 @@ const CATEGORIES: { key: HolidayCategory; label: string }[] = [
   { key: "ward", label: "Ward (מחלקה)" },
 ];
 
+import { useTranslation } from "@/i18n/useTranslation";
+
 export function LocalizationPanel() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const qc = useQueryClient();
 
   // Settings

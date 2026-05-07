@@ -26,9 +26,12 @@ const CHECK_LABELS: Record<FrictionCheckKey, { label: string; desc: string }> = 
   headcount: { label: "Headcount over-staffing", desc: "Highlight cells exceeding the day-aware capacity target." },
 };
 
+import { useTranslation } from "@/i18n/useTranslation";
+
 export function FrictionSettingsPanel() {
   const remote = useFrictionConfig();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [config, setConfig] = useState<FrictionConfig>(DEFAULT_FRICTION_CONFIG);
 
