@@ -56,7 +56,7 @@ export function FrictionDialog({ open, onOpenChange, warnings, onConfirm, isPend
                         : "border-amber-300/50 bg-amber-50 dark:bg-amber-950/20"
                     }`}
                   >
-                    <p className={`text-sm font-medium ${isRed ? "text-destructive" : "text-amber-800 dark:text-amber-300"}`}>
+                    <p className={`text-sm font-medium ${isRed ? "text-destructive" : "text-amber-800 dark:text-amber-300"}`} style={{ lineHeight: 1.5 }}>
                       {w.message}
                     </p>
                     <label className="flex items-center gap-2 cursor-pointer">
