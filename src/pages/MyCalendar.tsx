@@ -239,7 +239,7 @@ export default function MyCalendar() {
             </Button>
           </CardHeader>
           <CardContent className="px-1 sm:px-6">
-            <div className="grid grid-cols-7 gap-px text-center text-xs font-medium text-muted-foreground mb-1">
+            <div className="grid grid-cols-7 gap-px text-center text-sm md:text-base font-medium text-muted-foreground mb-1 leading-[1.5]">
               {dayHeaders.map((d, i) => (
                 <div key={i} className="py-2">{d}</div>
               ))}
@@ -353,10 +353,10 @@ export default function MyCalendar() {
                 >
                   <div className="font-medium text-sm">
                     {formatLocale(day, "EEEE, MMM d", locale)}
-                    {isToday && <span className="ms-2 text-xs text-primary font-normal">({t("dashboard.today")})</span>}
+                    {isToday && <span className="ms-2 text-sm md:text-base text-primary font-normal leading-[1.5]">({t("dashboard.today")})</span>}
                   </div>
                   {dayShifts.length === 0 ? (
-                    <p className="text-xs text-muted-foreground ps-2">{t("common.noShifts")}</p>
+                    <p className="text-sm md:text-base text-muted-foreground ps-2 leading-[1.5]">{t("common.noShifts")}</p>
                   ) : (
                     dayShifts.map((shift) => {
                       const Icon = shiftIcons[shift.type] || Sun;
@@ -396,7 +396,7 @@ export default function MyCalendar() {
                             )}
                           </div>
                           {colleagues.length > 0 && (
-                            <div className="flex items-center gap-1.5 ps-7 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1.5 ps-7 text-sm md:text-base text-muted-foreground leading-[1.5]">
                               <Users className="h-3 w-3 flex-shrink-0" />
                               <span>
                                 {colleagues.map((c) => (c.profiles as any)?.full_name || t("common.unknown")).join(", ")}

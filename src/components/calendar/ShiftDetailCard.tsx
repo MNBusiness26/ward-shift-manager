@@ -61,10 +61,13 @@ export function ShiftDetailCard({ shift, colleagues }: ShiftDetailCardProps) {
           <Icon className={`h-5 w-5 ${colors.icon}`} />
           <span className={`font-medium ${colors.icon}`}>{shiftLabels[shift.type] || shift.type}</span>
           {shift.is_responsible_on_shift && (
-            <Star className="h-4 w-4 fill-primary text-primary" />
+            <span className="inline-flex items-center gap-1 text-sm font-medium text-primary leading-[1.5]">
+              <Star className="h-4 w-4 fill-primary text-primary" />
+              {t("roster.responsibleNurse")}
+            </span>
           )}
         </div>
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm text-muted-foreground leading-[1.5]">
           {shift.start_time.slice(0, 5)} — {shift.end_time.slice(0, 5)}
         </span>
       </div>
@@ -76,11 +79,6 @@ export function ShiftDetailCard({ shift, colleagues }: ShiftDetailCardProps) {
         {shift.is_standby && (
           <Badge variant="outline" className="gap-1">
             <PhoneCall className="h-3 w-3" /> {t("payroll.onCall")}
-          </Badge>
-        )}
-        {shift.is_verified && (
-          <Badge variant="outline" className="gap-1 border-green-600/40 text-green-700 dark:text-green-500">
-            <CheckCircle2 className="h-3 w-3" /> {t("payroll.verified")}
           </Badge>
         )}
       </div>
@@ -96,13 +94,12 @@ export function ShiftDetailCard({ shift, colleagues }: ShiftDetailCardProps) {
           <div className="space-y-1 ps-5">
             {colleagues.map((c) => {
               const isLead = !!c.is_responsible_on_shift;
-              const isAssistantRole = c.profiles?.role === "assistant";
               return (
                 <div
                   key={c.id}
                   className={`flex items-center gap-2 text-sm leading-[1.5] px-2 py-1 rounded ${
-                    isAssistantRole ? "bg-white text-[#0F172A] border border-slate-300" : ""
-                  } ${isLead ? "font-medium" : "font-normal"}`}
+                    isLead ? "font-medium" : "font-normal"
+                  }`}
                 >
                   <span>{c.profiles?.full_name || "Unknown"}</span>
                   {isLead && <Star className="h-3 w-3 fill-primary text-primary" />}
