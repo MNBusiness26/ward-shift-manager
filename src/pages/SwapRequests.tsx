@@ -484,7 +484,7 @@ export default function SwapRequests() {
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
               <Button
-                onClick={() => createSwap.mutate()}
+                onClick={() => { if (confirmIfImpersonating("create this swap request")) createSwap.mutate(); }}
                 disabled={!selectedShiftId || (swapType === "direct" && (!targetUserId || !targetShiftId)) || createSwap.isPending}
               >
                 {t("common.submit")}
