@@ -25,6 +25,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
 import { isLeaveType, isPreferenceType } from "@/lib/availabilityTypes";
 import { validateConsecutiveWeekendBlock } from "@/components/roster/frictionValidation";
+import { useFrictionConfig } from "@/hooks/useFrictionConfig";
 
 const SHIFT_TYPES = ["morning", "evening", "night"] as const;
 
