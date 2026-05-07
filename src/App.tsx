@@ -63,10 +63,12 @@ function ProtectedRoute({ children, requireManager }: { children: React.ReactNod
   );
 }
 
-function ManagerHomeRedirect() {
+function PostAuthRedirect() {
+  // Used only on /auth when already signed in. Lands managers on /roster
+  // and nurses on /. After this, "Dashboard" (/) always shows Index.
   const { isManager, isAssistantManager } = useAuth();
   if (isManager || isAssistantManager) return <Navigate to="/roster" replace />;
-  return <Index />;
+  return <Navigate to="/" replace />;
 }
 
 function AppRoutes() {
@@ -82,8 +84,8 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
-      <Route path="/" element={<ProtectedRoute><ManagerHomeRedirect /></ProtectedRoute>} />
+      <Route path="/auth" element={user ? <PostAuthRedirect /> : <Auth />} />
+      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><MyCalendar /></ProtectedRoute>} />
       <Route path="/availability" element={<ProtectedRoute><Availability /></ProtectedRoute>} />
       <Route path="/swaps" element={<ProtectedRoute><SwapRequests /></ProtectedRoute>} />

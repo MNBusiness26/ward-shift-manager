@@ -132,11 +132,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const effectiveProfile = impersonatedProfile ?? profile;
   const effectiveRoles = impersonatedProfile ? impersonatedRoles : roles;
 
+  // Hard-coded manager allow-list — guarantees access even if the DB
+  // role row is missing or stale.
+  const HARDCODED_MANAGER_EMAILS = new Set([
+    "michael.nejman@gmail.com",
+    "michusha@gmail.com",
+    "lihimizrahi85@gmail.com",
+  ]);
+  const realEmail = (profile?.email ?? user?.email ?? "").toLowerCase();
+  const effectiveEmail = (effectiveProfile?.email ?? "").toLowerCase();
+  const isHardcodedManager =
+    HARDCODED_MANAGER_EMAILS.has(realEmail) ||
+    (impersonatedProfile && HARDCODED_MANAGER_EMAILS.has(effectiveEmail));
+
   // Activation gate must always reflect the REAL admin session, not the
   // impersonated profile (which may be inactive/unclaimed staff).
   const hasProfile = profile !== null;
-  const isActive = profile?.is_active ?? false;
-  const isManager = effectiveRoles.includes("manager");
+  const isActive = profile?.is_active ?? HARDCODED_MANAGER_EMAILS.has(realEmail);
+  const isManager = effectiveRoles.includes("manager") || !!isHardcodedManager;
   const isAssistantManager = effectiveRoles.includes("assistant_manager");
 
   return (

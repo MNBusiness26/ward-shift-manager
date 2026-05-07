@@ -7,6 +7,7 @@ import { UserCheck, Trash2, Inbox } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
+import { useTranslation } from "@/i18n/useTranslation";
 
 type PendingUser = {
   id: string;
@@ -33,6 +34,7 @@ async function callFn(action: string, body: Record<string, any> = {}) {
 
 export function PendingSignupsPanel() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   const [selectedDir, setSelectedDir] = useState<Record<string, string>>({});
 
   const { data, isLoading, refetch } = useQuery({
@@ -77,7 +79,7 @@ export function PendingSignupsPanel() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Inbox className="h-5 w-5" />
-          Pending Sign-ins
+          <span style={{ fontFamily: "'Heebo', sans-serif", lineHeight: 1.5 }}>{t("admin.pendingSignins")}</span>
           {pending.length > 0 && (
             <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground">
               {pending.length}

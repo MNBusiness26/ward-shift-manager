@@ -26,9 +26,12 @@ const CHECK_LABELS: Record<FrictionCheckKey, { label: string; desc: string }> = 
   headcount: { label: "Headcount over-staffing", desc: "Highlight cells exceeding the day-aware capacity target." },
 };
 
+import { useTranslation } from "@/i18n/useTranslation";
+
 export function FrictionSettingsPanel() {
   const remote = useFrictionConfig();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [config, setConfig] = useState<FrictionConfig>(DEFAULT_FRICTION_CONFIG);
 
@@ -73,7 +76,7 @@ export function FrictionSettingsPanel() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShieldAlert className="h-5 w-5" />
-          Friction & Validation
+          <span style={{ fontFamily: "'Heebo', sans-serif", lineHeight: 1.5 }}>{t("admin.frictionValidation")}</span>
         </CardTitle>
         <CardDescription>
           Control which conflict and FTE checks are surfaced to managers. When master is off, violations are still
