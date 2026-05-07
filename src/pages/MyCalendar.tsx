@@ -31,7 +31,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ShiftDetailCard } from "@/components/calendar/ShiftDetailCard";
-import { useMyShifts, useMyRole, useDayShifts, useAllShiftsInRange, type Shift } from "@/components/calendar/useMyCalendarData";
+import { useMyShifts, useMyRole, useDayShifts, useAllShiftsInRange, useMyAvailability, type Shift } from "@/components/calendar/useMyCalendarData";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatLocale } from "@/i18n/dateLocale";
 import { exportMyAttendancePDF } from "@/lib/payrollExport";
