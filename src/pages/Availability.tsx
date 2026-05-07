@@ -295,7 +295,7 @@ export default function Availability() {
               <div className="flex items-center gap-1 md:gap-2 shrink-0">
                 <Badge variant="outline" className={`text-[9px] md:text-xs ${statusColors[r.status]}`}>{statusLabel(r.status)}</Badge>
                 {r.status === "pending" && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteRequest.mutate(r.id)}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (confirmIfImpersonating("delete this request")) deleteRequest.mutate(r.id); }}>
                     <X className="h-3 w-3" />
                   </Button>
                 )}
