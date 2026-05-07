@@ -119,6 +119,64 @@ export default function GlobalTeamCalendar() {
     }
   };
 
+  const renderShiftBar = (dateStr: string, type: typeof shiftTypes[number], idx: number, mode: "mobile" | "desktop") => {
+    const typeShifts = getShifts(dateStr, type);
+    const bg =
+      type === "morning" ? "bg-[#DAA520]/15 border-s-4 border-s-[#DAA520]" :
+      type === "evening" ? "bg-[#FF7F50]/15 border-s-4 border-s-[#FF7F50]" :
+      "bg-[#4B0082]/15 border-s-4 border-s-[#4B0082]";
+    const labelColor =
+      type === "morning" ? "text-[#8B6508]" :
+      type === "evening" ? "text-[#C2410C]" :
+      "text-[#4B0082]";
+    const separator = idx < shiftTypes.length - 1 ? "border-b-2 border-white" : "";
+    const pad = mode === "desktop" ? "p-3" : "px-3 py-2";
+    const nameSize = mode === "desktop" ? "text-sm" : "text-xs";
+    return (
+      <div key={type} className={`${pad} ${separator} ${bg}`} style={{ lineHeight: 1.5 }}>
+        <div className={`text-xs font-bold uppercase tracking-wide mb-1.5 ${labelColor}`}>
+          {shiftLabels[type]}
+        </div>
+        {typeShifts.length === 0 ? (
+          <div className="text-xs text-muted-foreground italic">—</div>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {typeShifts.map((s) => {
+              const profile = (s as any).assigned_profile;
+              const isStandby = (s as any).is_standby;
+              const isExternal = (s as any).is_external;
+              const isResp = s.is_responsible_on_shift || profile?.is_responsible;
+              const assistantRole = isAssistant(profile?.role);
+              const firstName = formatDisplayName(profile?.full_name);
+              const isMine = !!myId && (s as any).assigned_user_id === myId;
+              const baseStyle = isMine
+                ? "bg-[#3B82F6] text-white border-[#3B82F6]"
+                : assistantRole
+                ? "bg-white text-[#0F172A] border-slate-300"
+                : isExternal
+                ? "bg-slate-50 border-slate-300 text-slate-600"
+                : isStandby
+                ? "bg-blue-50 border-blue-400 text-foreground"
+                : "bg-background border-current/30 text-foreground";
+              return (
+                <span
+                  key={s.id}
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md ${nameSize} font-medium border whitespace-normal break-words ${baseStyle} ${isResp ? "font-bold" : ""}`}
+                  style={{ fontFamily: "Heebo, Inter, sans-serif", lineHeight: 1.5 }}
+                >
+                  {isExternal && <ArrowLeftRight className="h-3 w-3 shrink-0" />}
+                  <span>{firstName}</span>
+                  {isResp && <Star className="h-3 w-3 fill-current shrink-0" />}
+                  {isStandby && <Phone className="h-3 w-3 shrink-0" />}
+                </span>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4 flex flex-col min-h-[calc(100vh-6rem)]">
       <div className="flex flex-row flex-wrap items-center justify-between gap-1">
