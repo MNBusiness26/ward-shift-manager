@@ -122,9 +122,9 @@ export function ShiftDetailCard({ shift, myRole, colleagues }: ShiftDetailCardPr
               return (
                 <div
                   key={c.id}
-                  className={`flex items-center gap-2 text-sm opacity-100 ${
-                    isLead ? "font-medium" : isAssistantRole ? "font-normal" : "font-normal"
-                  }`}
+                  className={`flex items-center gap-2 text-sm opacity-100 px-2 py-1 rounded ${
+                    isAssistantRole ? "bg-white text-[#0F172A] border border-slate-300" : ""
+                  } ${isLead ? "font-medium" : "font-normal"}`}
                 >
                   <span>{c.profiles?.full_name || "Unknown"}</span>
                   {isLead && <Star className="h-3 w-3 fill-primary text-primary" />}
