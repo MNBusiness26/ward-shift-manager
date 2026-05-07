@@ -447,7 +447,7 @@ export default function Availability() {
               <div className="flex flex-col-reverse md:flex-row gap-2 md:justify-end">
                 <Button variant="outline" onClick={closeDialog} className="w-full md:w-auto">{t("common.cancel")}</Button>
                 <Button
-                  onClick={() => createRequest.mutate()}
+                  onClick={() => { if (confirmIfImpersonating("submit this availability request")) createRequest.mutate(); }}
                   disabled={createRequest.isPending || (dialogMode === "preference" && blockedShifts.length === 0)}
                   className="w-full md:w-auto"
                 >
