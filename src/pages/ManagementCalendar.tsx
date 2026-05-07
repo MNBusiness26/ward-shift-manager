@@ -423,11 +423,11 @@ export default function ManagementCalendar() {
           </Button>
           <Button variant="outline" size="sm" onClick={() => { setBulkDate(undefined); setBulkType(undefined); setBulkOpen(true); }}>
             <Users className="h-4 w-4 md:mr-2" />
-            <span className="hidden sm:inline">Bulk Assign</span>
+            <span className="hidden sm:inline">{t("mgmt.bulkAssign")}</span>
           </Button>
           <Button size="sm" onClick={() => openAddShift()}>
             <Plus className="h-4 w-4 md:mr-2" />
-            <span className="hidden sm:inline">Add Shift</span>
+            <span className="hidden sm:inline">{t("mgmt.addShift")}</span>
           </Button>
         </div>
       </div>
@@ -666,7 +666,7 @@ export default function ManagementCalendar() {
       <Dialog open={dialogOpen} onOpenChange={(v) => { setDialogOpen(v); if (!v) setSaveError(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingShift ? "Edit Shift" : "Add Shift"}</DialogTitle>
+            <DialogTitle>{editingShift ? t("roster.editShift") || "Edit Shift" : t("mgmt.addShift")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
