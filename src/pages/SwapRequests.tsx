@@ -395,7 +395,7 @@ export default function SwapRequests() {
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setPoolRespondId(null)}>{t("common.cancel")}</Button>
               <Button
-                onClick={() => respondToPool.mutate()}
+                onClick={() => { if (confirmIfImpersonating("respond to this pool offer")) respondToPool.mutate(); }}
                 disabled={(!poolTakeOnly && !poolOfferShiftId) || respondToPool.isPending}
               >
                 {t("common.submit")}
