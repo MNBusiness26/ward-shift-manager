@@ -9,7 +9,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { WelcomeOverlay } from "@/components/WelcomeOverlay";
 
 import Auth from "./pages/Auth";
-import DemoRoster from "./pages/DemoRoster";
+import DemoWorkspace from "./pages/DemoWorkspace";
 import PendingActivation from "./pages/PendingActivation";
 import RestrictedAccess from "./pages/RestrictedAccess";
 import Index from "./pages/Index";
@@ -85,7 +85,7 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/demo" element={<DemoRoster />} />
+      <Route path="/demo" element={<DemoWorkspace />} />
       <Route path="/auth" element={user ? <PostAuthRedirect /> : <Auth />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><MyCalendar /></ProtectedRoute>} />
