@@ -111,7 +111,7 @@ export function generateDemoShifts(startDate = '2026-10-18', days = 14) {
   let offset=0;
   for(const type of ['morning','evening','night'] as const) {
    for(let slot=0;slot<demoHeadcount[type];slot++) {
-    const nurse=demoNurses[(day*7+offset+slot)%demoNurses.length];
+    const nurse=demoNurses[(day*16+offset+slot)%demoNurses.length];
     shifts.push({id:`demo-${date}-${type}-${slot}`,date,type,start_time:demoShiftTimes[type][0],end_time:demoShiftTimes[type][1],assigned_user_id:nurse.id,is_draft:false});
    }
    offset+=demoHeadcount[type];
