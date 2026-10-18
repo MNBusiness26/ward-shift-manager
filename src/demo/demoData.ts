@@ -79,7 +79,27 @@ export const demoNurses = [
   {
     "id": "demo-20",
     "full_name": "Joshua Jackson"
-  }
+  },
+  { "id": "demo-21", "full_name": "Grace Wilson" },
+  { "id": "demo-22", "full_name": "Sophia Bennett" },
+  { "id": "demo-23", "full_name": "Isabella Moore" },
+  { "id": "demo-24", "full_name": "Ava Thompson" },
+  { "id": "demo-25", "full_name": "Lily Parker" },
+  { "id": "demo-26", "full_name": "Zoe Mitchell" },
+  { "id": "demo-27", "full_name": "Natalie Brooks" },
+  { "id": "demo-28", "full_name": "Victoria Reed" },
+  { "id": "demo-29", "full_name": "Ella Cooper" },
+  { "id": "demo-30", "full_name": "Abigail Foster" },
+  { "id": "demo-31", "full_name": "Julia Morgan" },
+  { "id": "demo-32", "full_name": "Madison Hughes" },
+  { "id": "demo-33", "full_name": "Benjamin Carter" },
+  { "id": "demo-34", "full_name": "Ethan Phillips" },
+  { "id": "demo-35", "full_name": "Noah Turner" },
+  { "id": "demo-36", "full_name": "Liam Edwards" },
+  { "id": "demo-37", "full_name": "Oliver Collins" },
+  { "id": "demo-38", "full_name": "Lucas Stewart" },
+  { "id": "demo-39", "full_name": "Samuel Baker" },
+  { "id": "demo-40", "full_name": "Jacob Rivera" }
 ] as const;
 export const demoShiftTimes = { morning: ['07:00','15:00'], evening: ['15:00','23:00'], night: ['23:00','07:00'] } as const;
 export const demoHeadcount = {morning:6,evening:6,night:4} as const;
